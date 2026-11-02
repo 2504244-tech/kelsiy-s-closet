@@ -1,0 +1,347 @@
+/* GENERAL PAGE SETTINGS */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --burgundy: #701b3a;
+    --dark-burgundy: #481027;
+    --cream: #fbf5ed;
+    --light-cream: #fffaf4;
+    --gold: #c9a46a;
+    --text: #30252a;
+    --muted: #82747a;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* CENTRE THE LOGIN CARD */
+
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 35px 18px;
+    background:
+        radial-gradient(
+            circle at top left,
+            #f0dfd1 0,
+            transparent 40%
+        ),
+        var(--cream);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 490px;
+    background: var(--light-cream);
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #ead8d0;
+    box-shadow: 0 15px 45px rgba(72, 16, 39, 0.12);
+}
+
+/* BRAND AND LOGO */
+
+.brand {
+    background: var(--burgundy);
+    color: var(--cream);
+    text-align: center;
+    padding: 38px 25px 30px;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 22px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--dark-burgundy);
+    box-shadow: 0 0 0 6px rgba(201, 164, 106, 0.12);
+}
+
+.logo-k {
+    color: var(--cream);
+    font-family: Georgia, serif;
+    font-size: 49px;
+    font-style: italic;
+    margin-right: -13px;
+    z-index: 2;
+}
+
+.logo-c {
+    color: var(--gold);
+    font-family: Georgia, serif;
+    font-size: 49px;
+    font-style: italic;
+    margin-left: -4px;
+}
+
+.brand h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    letter-spacing: 3px;
+    line-height: 1.5;
+}
+
+.brand h1 span {
+    color: var(--gold);
+}
+
+.tagline {
+    font-size: 10px;
+    letter-spacing: 4px;
+    margin-top: 7px;
+}
+
+.decorative-line {
+    width: 65px;
+    height: 2px;
+    margin: 20px auto;
+    background: var(--gold);
+}
+
+.system-name {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #f4e5dc;
+}
+
+/* LOGIN FORM */
+
+.form-section {
+    padding: 34px 35px 25px;
+}
+
+.form-section h2,
+#app-view h2 {
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    color: var(--burgundy);
+    font-size: 27px;
+    margin-bottom: 12px;
+}
+
+.intro {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 30px;
+}
+
+/* SPACING BETWEEN FORM ELEMENTS */
+
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--dark-burgundy);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 13px;
+    border: 1px solid #ddc9ce;
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-group input:focus {
+    border-color: var(--burgundy);
+    box-shadow: 0 0 0 3px rgba(112, 27, 58, 0.1);
+}
+
+/* SIGN-IN BUTTON */
+
+#submit-button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 5px;
+    border: none;
+    border-radius: 8px;
+    background: var(--burgundy);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+#submit-button:hover {
+    background: var(--dark-burgundy);
+    transform: translateY(-1px);
+}
+
+#submit-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* CREATE ACCOUNT OPTION */
+
+.account-option {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    margin-top: 26px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.text-button {
+    border: none;
+    background: transparent;
+    color: var(--burgundy);
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.text-button:hover {
+    text-decoration: underline;
+}
+
+/* MESSAGES AND FOOTER */
+
+#message {
+    margin-top: 14px;
+    min-height: 20px;
+    color: var(--burgundy);
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.security-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-top: 27px;
+}
+
+.login-footer {
+    text-align: center;
+    padding: 18px 15px;
+    background: #f3e8df;
+    border-top: 1px solid #ead8d0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.9;
+    letter-spacing: 0.5px;
+}
+
+/* SIGNED-IN CONTENT */
+
+#app-view {
+    padding: 35px;
+}
+
+#app-view > p {
+    text-align: center;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 15px 0;
+}
+
+.role-card {
+    margin-top: 20px;
+    padding: 22px;
+    border: 1px solid #ead8d0;
+    border-radius: 10px;
+    background: var(--cream);
+    line-height: 1.8;
+}
+
+.role-card h3 {
+    color: var(--burgundy);
+    margin-bottom: 10px;
+}
+
+.role-card p {
+    font-size: 14px;
+}
+
+.sign-out-button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--burgundy);
+    color: white;
+    cursor: pointer;
+}
+
+/* HIDE ELEMENTS WHEN REQUIRED */
+
+[hidden] {
+    display: none !important;
+}
+
+/* MOBILE PHONE DISPLAY */
+
+@media (max-width: 520px) {
+    .login-container {
+        padding: 18px 12px;
+    }
+
+    .brand {
+        padding: 30px 18px 25px;
+    }
+
+    .brand h1 {
+        font-size: 23px;
+        letter-spacing: 2px;
+    }
+
+    .logo {
+        width: 85px;
+        height: 85px;
+    }
+
+    .logo-k,
+    .logo-c {
+        font-size: 42px;
+    }
+
+    .form-section {
+        padding: 30px 23px 25px;
+    }
+
+    #app-view {
+        padding: 25px;
+    }
+}
