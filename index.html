@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelsiy's Closet | Sign In</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <main class="login-container">
+
+        <section class="login-card">
+
+            <!-- Logo created using HTML and CSS -->
+            <header class="brand">
+                <div class="logo">
+                    <span class="logo-k">K</span>
+                    <span class="logo-c">C</span>
+                </div>
+
+                <h1>KELSIY'S <span>CLOSET</span></h1>
+                <p class="tagline">STYLE THAT SPEAKS</p>
+                <div class="decorative-line"></div>
+                <p class="system-name">
+                    Inventory and Sales Management System
+                </p>
+            </header>
+
+            <div class="form-section" id="auth-view">
+
+                <h2 id="form-title">Welcome Back</h2>
+
+                <p class="intro">
+                    Sign in to access your Kelsiy's Closet account.
+                </p>
+
+                <form id="auth-form">
+
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter your email address"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" id="submit-button">
+                        Sign In
+                    </button>
+
+                </form>
+
+                <p id="message" role="status" aria-live="polite"></p>
+
+                <div class="account-option">
+                    <span id="switch-prompt">Don't have an account?</span>
+                    <button
+                        type="button"
+                        id="switch-mode"
+                        class="text-button"
+                    >
+                        Create Account
+                    </button>
+                </div>
+
+                <p class="security-note">
+                    Secure access for the business owner and customers.
+                </p>
+
+            </div>
+
+            <!-- Displayed after successful sign-in -->
+            <section id="app-view" hidden>
+
+                <h2 id="welcome-title">Welcome</h2>
+                <p id="role-message"></p>
+
+                <div id="owner-content" class="role-card" hidden>
+                    <h3>Owner Dashboard</h3>
+                    <p>
+                        Manage products, stock and sales.
+                    </p>
+                </div>
+
+                <div id="customer-content" class="role-card" hidden>
+                    <h3>Customer Catalogue</h3>
+                    <p>
+                        View products, available quantities,
+                        colours, sizes and prices.
+                    </p>
+                </div>
+
+                <button type="button" id="sign-out" class="sign-out-button">
+                    Sign Out
+                </button>
+
+            </section>
+
+            <footer class="login-footer">
+                <p>© 2026 Kelsiy's Closet</p>
+                <p>Fashion • Confidence • Elegance</p>
+            </footer>
+
+        </section>
+
+    </main>
+
+</body>
+</html>
