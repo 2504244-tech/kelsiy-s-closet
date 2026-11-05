@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Kelsiy's Closet | Style That Speaks</title>
-  <meta name="description" content="Discover fashionable clothing, shoes and accessories at Kelsiy's Closet. Style that speaks, fashion that defines you.">
+  <meta name="description" content="Discover clothing, shoes and accessories at Kelsiy's Closet.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,17 +14,17 @@
 
   <style>
     :root {
-      --kc-burgundy: #701b39;
-      --kc-dark: #3e1023;
-      --kc-cream: #faf5ed;
-      --kc-gold: #c49a58;
-      --kc-blush: #ead2d1;
-      --kc-ink: #292126;
-      --kc-muted: #70636a;
-      --kc-white: #fff;
+      --burgundy: #701b39;
+      --dark-burgundy: #3e1023;
+      --cream: #faf5ed;
+      --gold: #c49a58;
+      --ink: #292126;
+      --muted: #70636a;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html {
       scroll-behavior: smooth;
@@ -34,30 +33,30 @@
 
     body {
       margin: 0;
-      color: var(--kc-ink);
-      background: var(--kc-cream);
+      background: var(--cream);
+      color: var(--ink);
       font-family: "DM Sans", Arial, sans-serif;
-      font-size: 16px;
       line-height: 1.7;
     }
 
-    button, input, textarea {
+    button,
+    input,
+    textarea,
+    select {
       font: inherit;
     }
 
-    button, a {
-      -webkit-tap-highlight-color: transparent;
+    a {
+      color: inherit;
     }
-
-    a { color: inherit; }
 
     .kc-header {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(250, 245, 237, .98);
+      background: var(--cream);
       border-bottom: 1px solid #e8d9d1;
-      box-shadow: 0 4px 18px rgba(62, 16, 35, .06);
+      box-shadow: 0 4px 18px rgba(62, 16, 35, 0.06);
     }
 
     .kc-header-inner {
@@ -68,7 +67,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 30px;
+      gap: 20px;
     }
 
     .kc-brand {
@@ -84,8 +83,8 @@
       height: 58px;
       display: grid;
       place-items: center;
-      border: 2px solid var(--kc-gold);
-      color: var(--kc-burgundy);
+      border: 2px solid var(--gold);
+      color: var(--burgundy);
       font-family: "Playfair Display", Georgia, serif;
       font-size: 25px;
       font-weight: 800;
@@ -93,12 +92,10 @@
 
     .kc-brand-name {
       margin: 0;
-      color: var(--kc-burgundy);
+      color: var(--burgundy);
       font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(19px, 2vw, 27px);
-      font-weight: 800;
+      font-size: clamp(18px, 2vw, 27px);
       line-height: 1.2;
-      letter-spacing: .5px;
     }
 
     .kc-brand-tagline {
@@ -106,7 +103,7 @@
       color: #8b6744;
       font-size: 11px;
       font-weight: 800;
-      letter-spacing: 1.6px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
@@ -118,46 +115,80 @@
     }
 
     .kc-nav a {
-      padding: 13px 17px;
-      border-radius: 6px;
-      color: var(--kc-dark);
+      padding: 12px 14px;
+      border-radius: 5px;
+      color: var(--dark-burgundy);
       text-decoration: none;
-      text-transform: uppercase;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
-      letter-spacing: .5px;
-      transition: background .2s, color .2s;
+      letter-spacing: 0.4px;
     }
 
-    .kc-nav a:hover,
-    .kc-nav a:focus-visible {
-      background: var(--kc-burgundy);
-      color: var(--kc-white);
+    .kc-nav a:hover {
+      background: var(--burgundy);
+      color: white;
+    }
+
+    .kc-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      min-height: 50px;
+      padding: 13px 22px;
+      border: 2px solid var(--burgundy);
+      border-radius: 5px;
+      background: var(--burgundy);
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .kc-button:hover {
+      background: var(--dark-burgundy);
+      transform: translateY(-2px);
+    }
+
+    .kc-button-light {
+      background: var(--cream);
+      color: var(--burgundy);
+      border-color: var(--burgundy);
+    }
+
+    .kc-button-light:hover {
+      background: var(--burgundy);
+      color: white;
     }
 
     .kc-menu-button {
       display: none;
       padding: 10px 14px;
-      background: var(--kc-burgundy);
+      background: var(--burgundy);
       color: white;
-      border: 0;
+      border: none;
       border-radius: 5px;
       font-weight: 800;
+      cursor: pointer;
     }
 
     .kc-hero {
-      min-height: min(730px, 82vh);
+      min-height: 700px;
       display: flex;
       align-items: center;
-      position: relative;
-      overflow: hidden;
       color: white;
-      background-color: var(--kc-dark);
+      background-color: var(--dark-burgundy);
       background-image:
-        linear-gradient(90deg,
-          rgba(42, 8, 23, .91) 0%,
-          rgba(66, 13, 34, .77) 45%,
-          rgba(66, 13, 34, .20) 100%),
+        linear-gradient(
+          90deg,
+          rgba(42, 8, 23, 0.92),
+          rgba(66, 13, 34, 0.75),
+          rgba(66, 13, 34, 0.2)
+        ),
         url("https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=2000&q=85");
       background-position: center;
       background-size: cover;
@@ -171,22 +202,24 @@
     }
 
     .kc-eyebrow {
-      margin: 0 0 20px;
-      color: #e9c88e;
+      margin: 0 0 18px;
+      color: var(--gold);
       font-size: 13px;
       font-weight: 800;
       letter-spacing: 3px;
       text-transform: uppercase;
     }
 
+    .kc-hero .kc-eyebrow {
+      color: #e9c88e;
+    }
+
     .kc-hero h1 {
       max-width: 850px;
       margin: 0;
       font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(45px, 7vw, 88px);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -.8px;
+      font-size: clamp(42px, 7vw, 82px);
+      line-height: 1.1;
       text-transform: uppercase;
     }
 
@@ -197,52 +230,31 @@
 
     .kc-hero-copy {
       max-width: 630px;
-      margin: 27px 0;
+      margin: 25px 0 30px;
       color: #fff5ed;
-      font-size: clamp(17px, 2vw, 21px);
-      line-height: 1.8;
+      font-size: 19px;
     }
 
-    .kc-button {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      min-height: 60px;
-      padding: 17px 30px;
-      border: 2px solid var(--kc-burgundy);
-      border-radius: 5px;
-      background: var(--kc-burgundy);
-      color: white;
-      text-align: center;
-      text-decoration: none;
-      text-transform: uppercase;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: .7px;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
-      transition: transform .2s, background .2s;
+    .kc-explore-button {
+      min-width: 340px;
+      min-height: 76px;
+      padding: 20px 28px;
+      background: #f5e6d0;
+      color: var(--burgundy);
+      border: 3px solid var(--gold);
+      font-size: 17px;
+      letter-spacing: 0.7px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
     }
 
-    .kc-button:hover {
-      transform: translateY(-2px);
-      background: var(--kc-dark);
-    }
-
-    .kc-button-light {
-      background: var(--kc-cream);
-      color: var(--kc-burgundy);
-      border-color: var(--kc-cream);
-    }
-
-    .kc-button-light:hover {
+    .kc-explore-button:hover {
       background: white;
-      color: var(--kc-dark);
+      color: var(--dark-burgundy);
     }
 
     .kc-section {
-      padding: 90px 6%;
-      scroll-margin-top: 95px;
+      padding: 85px 6%;
+      scroll-margin-top: 100px;
     }
 
     .kc-section-inner {
@@ -252,17 +264,16 @@
 
     .kc-section-heading {
       margin: 0 0 16px;
-      color: var(--kc-burgundy);
+      color: var(--burgundy);
       font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(34px, 5vw, 53px);
-      font-weight: 800;
+      font-size: clamp(32px, 5vw, 52px);
       line-height: 1.2;
     }
 
     .kc-section-intro {
       max-width: 760px;
-      margin: 0 0 35px;
-      color: var(--kc-muted);
+      margin: 0 0 30px;
+      color: var(--muted);
       font-size: 18px;
     }
 
@@ -270,7 +281,7 @@
       width: 78px;
       height: 4px;
       margin: 20px 0 25px;
-      background: var(--kc-gold);
+      background: var(--gold);
     }
 
     .kc-about {
@@ -281,25 +292,24 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       align-items: center;
-      gap: 55px;
+      gap: 50px;
     }
 
     .kc-about-photo {
       min-height: 400px;
       border-radius: 8px;
-      background:
-        linear-gradient(0deg, rgba(62, 16, 35, .10), rgba(62, 16, 35, .02)),
-        url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1100&q=85")
-        center/cover;
+      background-image: url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1100&q=85");
+      background-position: center;
+      background-size: cover;
     }
 
     .kc-about-copy {
-      color: var(--kc-muted);
+      color: var(--muted);
       font-size: 17px;
     }
 
     .kc-gallery {
-      background: var(--kc-cream);
+      background: var(--cream);
     }
 
     .kc-gallery-top {
@@ -316,7 +326,7 @@
       border: 1px solid #d9c4c5;
       border-radius: 5px;
       background: white;
-      color: var(--kc-dark);
+      color: var(--dark-burgundy);
       font-weight: 700;
     }
 
@@ -324,7 +334,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 24px;
-      margin-top: 35px;
+      margin-top: 30px;
     }
 
     .customer-product-card {
@@ -332,7 +342,7 @@
       border: 1px solid #eadbd5;
       border-radius: 8px;
       background: white;
-      box-shadow: 0 8px 25px rgba(62, 16, 35, .05);
+      box-shadow: 0 8px 25px rgba(62, 16, 35, 0.05);
     }
 
     .customer-product-image {
@@ -348,14 +358,14 @@
     }
 
     .customer-product-details h3 {
-      color: var(--kc-burgundy);
+      color: var(--burgundy);
       font-family: "Playfair Display", Georgia, serif;
       font-size: 23px;
       line-height: 1.3;
     }
 
     .customer-product-price {
-      color: var(--kc-burgundy);
+      color: var(--burgundy);
       font-size: 20px;
       font-weight: 800;
     }
@@ -370,7 +380,7 @@
 
     #catalogue-message {
       margin-top: 20px;
-      color: var(--kc-muted);
+      color: var(--muted);
       font-weight: 700;
     }
 
@@ -380,18 +390,18 @@
 
     .kc-contact-layout {
       display: grid;
-      grid-template-columns: .9fr 1.1fr;
-      gap: 50px;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 45px;
     }
 
     .kc-contact-card {
       padding: 30px;
       border-radius: 8px;
-      background: var(--kc-cream);
+      background: var(--cream);
     }
 
     .kc-contact-card h3 {
-      color: var(--kc-burgundy);
+      color: var(--burgundy);
       font-family: "Playfair Display", Georgia, serif;
       font-size: 27px;
     }
@@ -407,11 +417,10 @@
     }
 
     .kc-field label {
-      color: var(--kc-dark);
-      font-weight: 800;
-      text-transform: uppercase;
+      color: var(--dark-burgundy);
       font-size: 13px;
-      letter-spacing: .5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
     }
 
     .kc-field input,
@@ -421,7 +430,7 @@
       border: 1px solid #d9c8c4;
       border-radius: 5px;
       background: white;
-      color: var(--kc-ink);
+      color: var(--ink);
     }
 
     .kc-field textarea {
@@ -430,7 +439,7 @@
     }
 
     .kc-footer {
-      background: var(--kc-dark);
+      background: var(--dark-burgundy);
       color: white;
     }
 
@@ -457,45 +466,54 @@
       font-weight: 700;
     }
 
-    .kc-footer-nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-    }
-
-    .kc-footer-nav a {
-      color: white;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .kc-footer-nav a:hover {
-      color: #e9c88e;
-    }
-
     .kc-copyright {
       padding: 18px 6%;
-      border-top: 1px solid rgba(255,255,255,.15);
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
       color: #e8d8d9;
       text-align: center;
       font-size: 13px;
     }
 
     @media (max-width: 950px) {
-      .kc-header-inner { gap: 15px; }
-      .kc-nav { gap: 2px; }
-      .kc-nav a { padding: 11px 10px; font-size: 13px; }
-      .kc-brand-tagline { letter-spacing: 1px; }
-      .kc-about-layout, .kc-contact-layout { gap: 30px; }
-      #customer-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kc-nav {
+        gap: 2px;
+      }
+
+      .kc-nav a {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+
+      #customer-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 700px) {
-      .kc-header-inner { min-height: 82px; padding: 12px 5%; }
-      .kc-monogram { width: 46px; height: 46px; font-size: 20px; }
-      .kc-brand-name { font-size: 18px; }
-      .kc-brand-tagline { font-size: 9px; }
-      .kc-menu-button { display: block; }
+      .kc-header-inner {
+        min-height: 82px;
+        padding: 12px 5%;
+      }
+
+      .kc-monogram {
+        width: 46px;
+        height: 46px;
+        font-size: 20px;
+      }
+
+      .kc-brand-name {
+        font-size: 18px;
+      }
+
+      .kc-brand-tagline {
+        font-size: 9px;
+        letter-spacing: 1px;
+      }
+
+      .kc-menu-button {
+        display: block;
+      }
+
       .kc-nav {
         display: none;
         position: absolute;
@@ -503,65 +521,82 @@
         left: 0;
         right: 0;
         padding: 15px 5% 20px;
-        background: var(--kc-cream);
+        background: var(--cream);
         border-bottom: 1px solid #e8d9d1;
-        box-shadow: 0 10px 15px rgba(62, 16, 35, .08);
+        box-shadow: 0 10px 15px rgba(62, 16, 35, 0.08);
         align-items: stretch;
         flex-direction: column;
       }
-      .kc-nav.customer-navigation-open { display: flex; }
-      .kc-nav a { padding: 13px 15px; font-size: 15px; }
-      .kc-hero { min-height: 650px; background-position: 58% center; }
-      .kc-hero-inner { padding: 65px 6%; }
-      .kc-hero h1 { font-size: clamp(40px, 11vw, 62px); }
-      .kc-section { padding: 65px 6%; }
-      .kc-about-layout, .kc-contact-layout { grid-template-columns: 1fr; }
-      .kc-about-photo { min-height: 300px; }
-      .kc-gallery-top { align-items: stretch; }
-      #customer-products { grid-template-columns: 1fr; }
-      .customer-product-image { height: 340px; }
-      .kc-footer-main { align-items: flex-start; flex-direction: column; }
+
+      .kc-nav.customer-navigation-open {
+        display: flex;
+      }
+
+      .kc-nav a {
+        padding: 13px 15px;
+        font-size: 15px;
+      }
+
+      .kc-nav .kc-button {
+        width: 100%;
+      }
+
+      .kc-hero {
+        min-height: 650px;
+        background-position: 58% center;
+      }
+
+      .kc-hero-inner {
+        padding: 65px 6%;
+      }
+
+      .kc-hero h1 {
+        font-size: clamp(40px, 11vw, 62px);
+      }
+
+      .kc-section {
+        padding: 65px 6%;
+      }
+
+      .kc-about-layout,
+      .kc-contact-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .kc-about-photo {
+        min-height: 300px;
+      }
+
+      #customer-products {
+        grid-template-columns: 1fr;
+      }
+
+      .customer-product-image {
+        height: 340px;
+      }
+
+      .kc-footer-main {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
-    .kc-explore-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  min-width: 340px;
-  min-height: 76px;
-  padding: 22px 32px;
-  background: #f5e6d0;
-  color: #701b39;
-  border: 3px solid #c49a58;
-  border-radius: 6px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
-}
 
-.kc-explore-button:hover {
-  background: #ffffff;
-  color: #451024;
-  transform: translateY(-3px);
-}
-
-@media (max-width: 480px) {
-  .kc-explore-button {
-    width: 100%;
-    min-width: 9;
-    min-height: 70px;
-    padding: 18px;
-    font-size: 15px;
-  }
-}
+    @media (max-width: 480px) {
+      .kc-explore-button {
+        width: 100%;
+        min-width: 0;
+        min-height: 70px;
+        padding: 18px;
+        font-size: 15px;
+      }
+    }
   </style>
 </head>
 
 <body>
   <header class="kc-header">
     <div class="kc-header-inner">
+
       <a class="kc-brand" href="#home" aria-label="Kelsiy's Closet home">
         <div class="kc-monogram">KC</div>
         <div>
@@ -584,73 +619,101 @@
         <a href="#about">ABOUT</a>
         <a href="#gallery">GALLERY</a>
         <a href="#contacts">CONTACTS</a>
+
+        <button
+          type="button"
+          id="customer-signout"
+          class="kc-button kc-button-light">
+          SIGN OUT
+        </button>
       </nav>
+
     </div>
   </header>
 
   <main>
+    <!-- HOME SECTION -->
     <section class="kc-hero" id="home">
       <div class="kc-hero-inner">
         <p class="kc-eyebrow">WELCOME TO KELSIY'S CLOSET</p>
+
         <h1>
           STYLE THAT SPEAKS.
           <span>FASHION THAT DEFINES YOU.</span>
         </h1>
+
         <p class="kc-hero-copy">
           Discover your style with our collection of clothing, shoes and
           accessories. Find pieces that express your personality and make
           every outfit feel special.
         </p>
+
         <a class="kc-button kc-explore-button" href="#gallery">
-        EXPLORE OUR COLLECTION <span aria-hidden="true">→</span>
-     </a>
+          EXPLORE OUR COLLECTION <span aria-hidden="true">→</span>
+        </a>
       </div>
     </section>
 
+    <!-- ABOUT SECTION -->
     <section class="kc-section kc-about" id="about">
       <div class="kc-section-inner kc-about-layout">
-        <div class="kc-about-photo" role="img"
-          aria-label="Fashion clothing and accessories arranged for a boutique display"></div>
+
+        <div
+          class="kc-about-photo"
+          role="img"
+          aria-label="Fashion clothing and accessories arranged for a boutique display">
+        </div>
 
         <div>
           <p class="kc-eyebrow">OUR FASHION HOUSE</p>
           <h2 class="kc-section-heading">ABOUT KELSIY'S CLOSET</h2>
           <div class="kc-gold-line"></div>
+
           <div class="kc-about-copy">
             <p>
               Welcome to Kelsiy's Closet, where personal style meets
               confidence, creativity and elegance.
             </p>
+
             <p>
               Our fashion house brings together women's clothing, men's
               clothing, shoes and accessories to help customers discover
               pieces that suit their style.
             </p>
+
             <p>
               We want shopping to be simple and convenient. Explore our
               collection, check prices and available sizes, and find the
               pieces that speak to you.
             </p>
           </div>
-          <a class="kc-button" href="#gallery">DISCOVER OUR COLLECTION →</a>
+
+          <a class="kc-button" href="#gallery">
+            DISCOVER OUR COLLECTION →
+          </a>
         </div>
+
       </div>
     </section>
 
+    <!-- PRODUCT GALLERY -->
     <section class="kc-section kc-gallery" id="gallery">
       <div class="kc-section-inner">
+
         <div class="kc-gallery-top">
           <div>
             <p class="kc-eyebrow">CURATED FOR YOUR STYLE</p>
             <h2 class="kc-section-heading">OUR COLLECTION</h2>
+
             <p class="kc-section-intro">
-              Explore our available pieces, discover your favorites,
-              and check prices, sizes, colors and stock.
+              Explore our available pieces, discover your favorites, and
+              check prices, sizes, colors and stock.
             </p>
           </div>
 
-          <label>
+          <label for="category-filter">
             <span class="kc-eyebrow">SHOP BY CATEGORY</span><br>
+
             <select id="category-filter" class="kc-filter">
               <option value="all">ALL COLLECTIONS</option>
               <option value="women">WOMEN</option>
@@ -662,67 +725,95 @@
           </label>
         </div>
 
-        <p id="catalogue-message" role="status">Loading our collection...</p>
+        <p id="catalogue-message" role="status" aria-live="polite">
+          Loading our collection...
+        </p>
+
+        <!-- Products from Supabase will appear inside this container. -->
         <div id="customer-products"></div>
+
       </div>
     </section>
 
+    <!-- CONTACTS SECTION -->
     <section class="kc-section kc-contact" id="contacts">
       <div class="kc-section-inner">
+
         <p class="kc-eyebrow">WE WOULD LOVE TO HEAR FROM YOU</p>
         <h2 class="kc-section-heading">LET'S TALK STYLE.</h2>
+
         <p class="kc-section-intro">
           Have a question about a product, size, color or availability?
           Send us a message.
         </p>
 
         <div class="kc-contact-layout">
+
           <div class="kc-contact-card">
             <h3>KELSIY'S CLOSET</h3>
-            <p>
-              Style that speaks. Fashion that defines you.
-            </p>
+            <p>Style that speaks. Fashion that defines you.</p>
             <div class="kc-gold-line"></div>
+
             <p>
               Browse our collection and contact us for help choosing
               your next favorite piece.
             </p>
+
             <p><strong>FASHION · STYLE · ELEGANCE</strong></p>
           </div>
 
           <form class="kc-form" id="customer-contact-form">
             <div class="kc-field">
               <label for="contact-name">YOUR NAME</label>
-              <input id="contact-name" name="name" type="text"
-                autocomplete="name" required>
+              <input
+                id="contact-name"
+                name="name"
+                type="text"
+                autocomplete="name"
+                required>
             </div>
 
             <div class="kc-field">
               <label for="contact-email">EMAIL ADDRESS</label>
-              <input id="contact-email" name="email" type="email"
-                autocomplete="email" required>
+              <input
+                id="contact-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required>
             </div>
 
             <div class="kc-field">
               <label for="contact-phone">PHONE NUMBER (OPTIONAL)</label>
-              <input id="contact-phone" name="phone" type="tel"
+              <input
+                id="contact-phone"
+                name="phone"
+                type="tel"
                 autocomplete="tel">
             </div>
 
             <div class="kc-field">
               <label for="contact-message">YOUR MESSAGE</label>
-              <textarea id="contact-message" name="message"
-                required placeholder="Tell us how we can help..."></textarea>
+              <textarea
+                id="contact-message"
+                name="message"
+                required
+                placeholder="Tell us how we can help..."></textarea>
             </div>
 
-            <button class="kc-button" type="submit">SEND YOUR MESSAGE →</button>
-            <p id="contact-status" role="status"></p>
+            <button class="kc-button" type="submit">
+              SEND YOUR MESSAGE →
+            </button>
+
+            <p id="contact-status" role="status" aria-live="polite"></p>
           </form>
+
         </div>
       </div>
     </section>
   </main>
 
+  <!-- FOOTER: duplicate navigation links have been removed -->
   <footer class="kc-footer">
     <div class="kc-footer-main">
       <div>
@@ -730,13 +821,6 @@
         <div class="kc-footer-tagline">FASHION, STYLE &amp; ELEGANCE</div>
         <p>Style that speaks. Fashion that defines you.</p>
       </div>
-
-      <nav class="kc-footer-nav" aria-label="Footer navigation">
-        <a href="#home">HOME</a>
-        <a href="#about">ABOUT</a>
-        <a href="#gallery">GALLERY</a>
-        <a href="#contacts">CONTACTS</a>
-      </nav>
     </div>
 
     <div class="kc-copyright">
@@ -745,25 +829,41 @@
   </footer>
 
   <script>
-    document.getElementById("kc-year").textContent = new Date().getFullYear();
+    document.getElementById("kc-year").textContent =
+      new Date().getFullYear();
 
-    const customerMenuButton = document.getElementById("customer-menu-button");
-    const customerNavigation = document.getElementById("customer-navigation");
+    const customerMenuButton =
+      document.getElementById("customer-menu-button");
+
+    const customerNavigation =
+      document.getElementById("customer-navigation");
 
     customerMenuButton.addEventListener("click", function () {
-      const isOpen = customerNavigation.classList.toggle("customer-navigation-open");
-      customerMenuButton.setAttribute("aria-expanded", String(isOpen));
+      const isOpen =
+        customerNavigation.classList.toggle("customer-navigation-open");
+
+      customerMenuButton.setAttribute(
+        "aria-expanded",
+        String(isOpen)
+      );
     });
 
     customerNavigation.querySelectorAll("a").forEach(function (link) {
       link.addEventListener("click", function () {
         customerNavigation.classList.remove("customer-navigation-open");
-        customerMenuButton.setAttribute("aria-expanded", "false");
+
+        customerMenuButton.setAttribute(
+          "aria-expanded",
+          "false"
+        );
       });
     });
   </script>
 
+  <!-- Supabase library must load before customer.js -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- This separate file contains the product-loading and sign-out JavaScript -->
   <script src="customer.js" defer></script>
 </body>
 </html>
