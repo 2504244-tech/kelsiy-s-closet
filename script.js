@@ -1,466 +1,227 @@
-/* =========================================
+/* ==========================================
    KELSIY'S CLOSET
-   Login and Account Management
-   ========================================= */
+   Login and Account Role Management
+   ========================================== */
 
-// STEP 1: ENTER YOUR SUPABASE DETAILS HERE
-
+// 1. SUPABASE CONFIGURATION
 const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
 
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const SUPABASE_KEY =
+    "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-// STEP 2: CONNECT THE HTML ELEMENTS
-
+// 2. GET PAGE ELEMENTS
 const authView = document.getElementById("auth-view");
-const appView = document.getElementById("app-view");
 const authForm = document.getElementById("auth-form");
+const appView = document.getElementById("app-view");
+
+const ownerContent = document.getElementById("owner-content");
+const customerContent = document.getElementById("customer-content");
+
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
 const message = document.getElementById("message");
-const formTitle = document.getElementById("form-title");
-const submitButton = document.getElementById("submit-button");
+const welcomeTitle = document.getElementById("welcome-title");
+const roleMessage = document.getElementById("role-message");
+
+const signOutButton = document.getElementById("sign-out");
 const switchModeButton = document.getElementById("switch-mode");
 const switchPrompt = document.getElementById("switch-prompt");
+const formTitle = document.getElementById("form-title");
+const submitButton = document.getElementById("submit-button");
 
-let isSignUp = false;
-let supabaseClient = null;
+// 3. ACCOUNT MODE
+let isCreatingAccount = false;
 
+// 4. DISPLAY MESSAGES
+function showMessage(text, isError = false) {
+    if (!message) return;
 
-// STEP 3: CHECK SUPABASE CONFIGURATION
-
-function configurationReady() {
-    return (
-        SUPABASE_URL.startsWith("https://") &&
-        !SUPABASE_URL.includes("PASTE_") &&
-        SUPABASE_PUBLISHABLE_KEY.length > 20 &&
-        !SUPABASE_PUBLISHABLE_KEY.includes("PASTE_")
-    );
-}
-
-
-// STEP 4: DISPLAY MESSAGES
-
-function setMessage(text) {
     message.textContent = text;
+    message.style.color = isError ? "#b42318" : "#6d1835";
 }
 
-
-// STEP 5: SHOW THE LOGIN PAGE
-
-function showLogin(text = "") {
+// 5. SHOW THE LOGIN PAGE
+function showLogin() {
     authView.hidden = false;
     appView.hidden = true;
-    setMessage(text);
+
+    if (ownerContent) ownerContent.hidden = true;
+    if (customerContent) customerContent.hidden = true;
 }
 
-
-// STEP 6: SHOW THE CORRECT DASHBOARD
-
-function showDashboard(user, role) {
+// 6. SHOW THE CORRECT DASHBOARD
+function showDashboard(role) {
     authView.hidden = true;
     appView.hidden = false;
 
-    document.getElementById("welcome-title").textContent =
-        "Welcome, " + (user.email || "User");
+    ownerContent.hidden = role !== "owner";
+    customerContent.hidden = role !== "customer";
 
-    const isOwner = role === "owner";
-
-    document.getElementById("owner-content").hidden = !isOwner;
-    document.getElementById("customer-content").hidden = isOwner;
-
-    document.getElementById("role-message").textContent = isOwner
-        ? "You are signed in as the business owner."
-        : "You are signed in as a customer.";
+    if (role === "owner") {
+        welcomeTitle.textContent = "Welcome back, Kelsiy!";
+        roleMessage.textContent = "OWNER ACCOUNT";
+    } else {
+        welcomeTitle.textContent = "Welcome back, Customer!";
+        roleMessage.textContent = "CUSTOMER ACCOUNT";
+    }
 }
 
-
-// STEP 7: GET THE USER'S ROLE FROM SUPABASE
-
-async function getUserRole(user) {
-    const { data, error } = await supabaseClient
+// 7. CHECK THE USER'S ROLE IN SUPABASE
+async function checkUserRole(user) {
+    const { data: profile, error } = await supabaseClient
         .from("profiles")
-        .select("role")
+        .select("role, full_name")
         .eq("id", user.id)
         .maybeSingle();
 
     if (error) {
-        console.error("Role lookup error:", error);
-
-        throw new Error(
-            "You signed in, but your user role could not be loaded. " +
-            "Please check the profiles table and its permissions."
-        );
-    }
-
-    // Unknown or missing roles are treated as customer access.
-    return data && data.role === "owner"
-        ? "owner"
-        : "customer";
-}
-
-
-// STEP 8: SIGN IN OR CREATE AN ACCOUNT
-
-authForm.addEventListener("submit", async function(event) {
-    event.preventDefault();
-
-    if (!configurationReady() || !supabaseClient) {
-        setMessage(
-            "Please add your Supabase URL and publishable key in script.js."
+        console.error("Profile lookup failed:", error.message);
+        showLogin();
+        showMessage(
+            "We could not verify your account role. Please try again.",
+            true
         );
         return;
     }
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+    if (!profile) {
+        showLogin();
+        showMessage(
+            "Your account profile was not found. Please contact the owner.",
+            true
+        );
+        return;
+    }
+
+    const accountRole = String(profile.role || "")
+        .trim()
+        .toLowerCase();
+
+    if (accountRole === "owner" || accountRole === "admin") {
+        showDashboard("owner");
+    } else if (accountRole === "customer") {
+        showDashboard("customer");
+    } else {
+        showLogin();
+        showMessage(
+            "Your account role is not recognized. Please contact the owner.",
+            true
+        );
+    }
+}
+
+// 8. SIGN IN OR CREATE AN ACCOUNT
+authForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
     submitButton.disabled = true;
-    submitButton.textContent = isSignUp
-        ? "Creating account..."
-        : "Signing in...";
-
-    setMessage("");
+    submitButton.textContent = "Please wait...";
+    showMessage("");
 
     try {
-        if (isSignUp) {
-
-            // CREATE A NEW CUSTOMER ACCOUNT
+        if (isCreatingAccount) {
             const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password
             });
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
-            if (!data.session) {
-                setMessage(
-                    "Your account has been created. Check your email " +
-                    "to confirm it, then sign in."
-                );
+            if (data.session && data.user) {
+                await checkUserRole(data.user);
             } else {
-                setMessage(
-                    "Account created. Your profile needs to be configured " +
-                    "before role-based access can work."
+                showMessage(
+                    "Account created! Check your email to confirm your account, then sign in."
                 );
             }
-
         } else {
-
-            // SIGN IN TO AN EXISTING ACCOUNT
             const { data, error } =
                 await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
-            if (error) {
-                throw error;
+            if (error) throw error;
+
+            if (data.user) {
+                await checkUserRole(data.user);
             }
-
-            const role = await getUserRole(data.user);
-
-            showDashboard(data.user, role);
         }
-
     } catch (error) {
-        console.error("Authentication error:", error);
-
-        setMessage(
-            error.message || "Unable to sign in. Please try again."
-        );
-
+        showMessage(error.message, true);
     } finally {
         submitButton.disabled = false;
-        submitButton.textContent = isSignUp
+        submitButton.textContent = isCreatingAccount
             ? "Create Account"
             : "Sign In";
     }
 });
 
+// 9. SWITCH BETWEEN SIGN IN AND ACCOUNT CREATION
+switchModeButton.addEventListener("click", function () {
+    isCreatingAccount = !isCreatingAccount;
 
-// STEP 9: SWITCH BETWEEN SIGN IN AND CREATE ACCOUNT
-
-switchModeButton.addEventListener("click", function() {
-    isSignUp = !isSignUp;
-
-    formTitle.textContent = isSignUp
-        ? "Create Account"
+    formTitle.textContent = isCreatingAccount
+        ? "Create Your Account"
         : "Welcome Back";
 
-    submitButton.textContent = isSignUp
+    submitButton.textContent = isCreatingAccount
         ? "Create Account"
         : "Sign In";
 
-    switchPrompt.textContent = isSignUp
+    switchPrompt.textContent = isCreatingAccount
         ? "Already have an account?"
         : "Don't have an account?";
 
-    switchModeButton.textContent = isSignUp
+    switchModeButton.textContent = isCreatingAccount
         ? "Sign In"
         : "Create Account";
 
-    document.getElementById("password").autocomplete =
-        isSignUp ? "new-password" : "current-password";
-
-    setMessage("");
+    passwordInput.value = "";
+    showMessage("");
 });
 
-
-// STEP 10: SIGN OUT
-
-document.getElementById("sign-out").addEventListener("click", async function() {
-    if (!supabaseClient) {
-        return;
-    }
+// 10. SIGN OUT
+signOutButton.addEventListener("click", async function () {
+    signOutButton.disabled = true;
 
     const { error } = await supabaseClient.auth.signOut();
 
+    signOutButton.disabled = false;
+
     if (error) {
-        setMessage(error.message);
+        showMessage(error.message, true);
         return;
     }
 
-    showLogin("You have signed out successfully.");
+    showLogin();
+    authForm.reset();
+    showMessage("You have signed out successfully.");
 });
 
+// 11. RESTORE THE SESSION AFTER A PAGE REFRESH
+async function initializeApp() {
+    showLogin();
 
-// STEP 11: CONNECT TO SUPABASE
-
-if (configurationReady() && window.supabase) {
-    supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-    );
-
-    // Restore an existing login session if one exists.
-    supabaseClient.auth.onAuthStateChange(function(event, session) {
-        if (event === "SIGNED_OUT" || !session) {
-            showLogin();
-        }
-    });
-
-    supabaseClient.auth.getSession().then(async function(result) {
-        const session = result.data.session;
-
-        if (result.error) {
-            showLogin("Could not check your login session.");
-            return;
-        }
-
-        if (session) {
-            try {
-                const role = await getUserRole(session.user);
-                showDashboard(session.user, role);
-            } catch (error) {
-                showLogin(error.message);
-            }
-        }
-    });
-
-} else {
-    setMessage(
-        "Setup required: enter your Supabase URL and publishable key."
-    );
-}
-/* =========================================
-   KELSIY'S CLOSET — PRODUCT MANAGEMENT
-   ========================================= */
-
-// Load products from Supabase
-async function loadProducts() {
-    const ownerList = document.getElementById("owner-products-list");
-    const customerList = document.getElementById("customer-products");
-    const catalogueMessage = document.getElementById("catalogue-message");
-    const productMessage = document.getElementById("product-message");
-
-    if (!supabaseClient) return;
-
-    if (catalogueMessage) catalogueMessage.textContent = "Loading products...";
-    if (productMessage) productMessage.textContent = "";
-
-    const { data, error } = await supabaseClient
-        .from("products")
-        .select("id, name, category, description, size, colour, price, stock, image_url, active")
-        .order("created_at", { ascending: false });
+    const { data, error } = await supabaseClient.auth.getSession();
 
     if (error) {
-        console.error("Product loading error:", error);
-        if (catalogueMessage) catalogueMessage.textContent =
-            "Could not load products. Please check your Supabase permissions.";
-        if (productMessage) productMessage.textContent =
-            "Could not load inventory. Check your Supabase permissions.";
+        showMessage("Could not check your login session.", true);
         return;
     }
 
-    const products = data || [];
-    const ownerProducts = products.filter(product => product.active !== false);
-    const customerProducts = ownerProducts.filter(product => Number(product.stock) > 0);
-
-    if (ownerList) {
-        ownerList.replaceChildren();
-
-        if (ownerProducts.length === 0) {
-            ownerList.innerHTML =
-                '<tr><td colspan="5">No active products yet.</td></tr>';
-        } else {
-            ownerProducts.forEach(product => {
-                const row = document.createElement("tr");
-
-                [
-                    product.name || "",
-                    product.category || "",
-                    "KES " + Number(product.price || 0).toLocaleString(),
-                    String(product.stock ?? 0),
-                    Number(product.stock) > 0 ? "Available" : "Out of stock"
-                ].forEach(value => {
-                    const cell = document.createElement("td");
-                    cell.textContent = value;
-                    row.appendChild(cell);
-                });
-
-                ownerList.appendChild(row);
-            });
-        }
-    }
-
-    if (customerList) {
-        customerList.replaceChildren();
-
-        if (customerProducts.length === 0) {
-            customerList.textContent = "No products are currently available.";
-        } else {
-            customerProducts.forEach(product => {
-                const card = document.createElement("article");
-                card.className = "product-card";
-
-                if (product.image_url) {
-                    const image = document.createElement("img");
-                    image.src = product.image_url;
-                    image.alt = product.name || "Clothing product";
-                    image.loading = "lazy";
-                    card.appendChild(image);
-                }
-
-                const name = document.createElement("h3");
-                name.textContent = product.name || "Unnamed product";
-                card.appendChild(name);
-
-                const category = document.createElement("p");
-                category.textContent = "Category: " + (product.category || "N/A");
-                card.appendChild(category);
-
-                const price = document.createElement("p");
-                price.textContent =
-                    "Price: KES " + Number(product.price || 0).toLocaleString();
-                card.appendChild(price);
-
-                const details = document.createElement("p");
-                details.textContent =
-                    "Size: " + (product.size || "Not specified") +
-                    " | Colour: " + (product.colour || "Not specified");
-                card.appendChild(details);
-
-                const stock = document.createElement("p");
-                stock.textContent = "Available quantity: " + Number(product.stock || 0);
-                card.appendChild(stock);
-
-                if (product.description) {
-                    const description = document.createElement("p");
-                    description.textContent = product.description;
-                    card.appendChild(description);
-                }
-
-                customerList.appendChild(card);
-            });
-        }
-    }
-
-    const totalProducts = document.getElementById("total-products");
-    const totalStock = document.getElementById("total-stock");
-
-    if (totalProducts) totalProducts.textContent = String(ownerProducts.length);
-    if (totalStock) {
-        totalStock.textContent = String(
-            ownerProducts.reduce((sum, product) => sum + Number(product.stock || 0), 0)
-        );
+    if (data.session?.user) {
+        await checkUserRole(data.session.user);
     }
 }
 
-// Save a new product from the owner's form
-const productForm = document.getElementById("product-form");
-
-if (productForm) {
-    productForm.addEventListener("submit", async function(event) {
-        event.preventDefault();
-
-        if (!supabaseClient) return;
-
-        const saveButton = productForm.querySelector('button[type="submit"]');
-        const productMessage = document.getElementById("product-message");
-
-        const product = {
-            name: document.getElementById("product-name").value.trim(),
-            category: document.getElementById("product-category").value.trim(),
-            description: document.getElementById("product-description").value.trim(),
-            size: document.getElementById("product-size").value.trim(),
-            colour: document.getElementById("product-colour").value.trim(),
-            price: Number(document.getElementById("product-price").value),
-            stock: Number(document.getElementById("product-stock").value),
-            image_url: document.getElementById("product-image").value.trim() || null,
-            active: true
-        };
-
-        if (!product.name || !product.category ||
-            !Number.isFinite(product.price) || product.price < 0 ||
-            !Number.isInteger(product.stock) || product.stock < 0) {
-            productMessage.textContent =
-                "Enter a product name, category, valid price and whole-number stock.";
-            return;
-        }
-
-        if (saveButton) {
-            saveButton.disabled = true;
-            saveButton.textContent = "Saving...";
-        }
-
-        productMessage.textContent = "";
-
-        try {
-            const { error } = await supabaseClient
-                .from("products")
-                .insert([product]);
-
-            if (error) throw error;
-
-            productMessage.textContent = "Product saved successfully!";
-            productForm.reset();
-            await loadProducts();
-        } catch (error) {
-            console.error("Product saving error:", error);
-            productMessage.textContent =
-                "Product was not saved: " + error.message;
-        } finally {
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.textContent = "Save Product";
-            }
-        }
-    });
-}
-
-// Refresh inventory when the owner clicks the button
-const refreshProductsButton = document.getElementById("refresh-products");
-
-if (refreshProductsButton) {
-    refreshProductsButton.addEventListener("click", loadProducts);
-}
-
-// Load the correct data whenever a dashboard opens
-const originalShowDashboard = showDashboard;
-
-showDashboard = function(user, role) {
-    originalShowDashboard(user, role);
-    loadProducts();
-};
-
+initializeApp();
