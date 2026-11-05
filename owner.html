@@ -1,36 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard | Kelsiy's Closet</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelsiy's Closet | Owner Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --burgundy: #701b39;
+      --burgundy-dark: #451024;
+      --cream: #faf4eb;
+      --gold: #c49a58;
+      --ink: #292124;
+      --muted: #776b70;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .owner-header {
+      background: var(--burgundy-dark);
+      color: white;
+      padding: 18px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      padding: 10px;
+      font-size: 23px;
+      font-weight: 900;
+    }
+    .brand h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
+    .brand p { margin: 5px 0 0; color: #e9d5c7; letter-spacing: 2px; font-size: 11px; }
+    .signout, .primary-btn, .nav-btn {
+      border: 0;
+      border-radius: 5px;
+      font-weight: 800;
+      letter-spacing: .6px;
+      padding: 13px 18px;
+    }
+    .signout { background: var(--cream); color: var(--burgundy-dark); }
+    .primary-btn { background: var(--burgundy); color: white; }
+    .primary-btn:hover, .signout:hover { filter: brightness(1.1); }
+
+    .welcome {
+      min-height: 76vh;
+      padding: 70px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      background:
+        linear-gradient(90deg, rgba(48, 8, 25, .88), rgba(77, 15, 39, .53)),
+        url("https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1800&q=85")
+        center/cover;
+    }
+    .welcome-inner { max-width: 760px; }
+    .eyebrow { color: #edcc91; font-weight: 800; letter-spacing: 3px; }
+    .welcome h2 { font-size: clamp(38px, 6vw, 70px); margin: 18px 0; }
+    .welcome p { font-size: 18px; line-height: 1.7; }
+    .welcome .primary-btn { margin-top: 22px; padding: 18px 32px; font-size: 16px; }
+
+    .dashboard-layout { display: grid; grid-template-columns: 245px 1fr; min-height: 80vh; }
+    .sidebar { background: #fff; padding: 24px 16px; border-right: 1px solid #eadbd5; }
+    .sidebar h3 { color: var(--burgundy); padding: 0 10px; }
+    .nav-list { display: grid; gap: 9px; }
+    .nav-btn { background: transparent; color: var(--ink); text-align: left; }
+    .nav-btn:hover, .nav-btn.active { background: var(--burgundy); color: white; }
+    .main-content { padding: 30px; min-width: 0; }
+    .section-title { color: var(--burgundy); font-size: clamp(28px, 4vw, 42px); margin: 0 0 8px; }
+    .muted { color: var(--muted); line-height: 1.6; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 25px 0; }
+    .stat-card, .panel { background: white; border: 1px solid #eadbd5; border-radius: 10px; padding: 22px; }
+    .stat-card p { color: var(--muted); margin: 0 0 12px; }
+    .stat-card strong { color: var(--burgundy); font-size: 26px; }
+    .panel { margin-top: 20px; overflow-x: auto; }
+    .panel h3 { color: var(--burgundy); margin-top: 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: grid; gap: 7px; margin-bottom: 12px; }
+    .field label { font-weight: 700; }
+    .field input, .field select, .field textarea {
+      width: 100%; min-width: 0; padding: 12px;
+      border: 1px solid #d9c8c4; border-radius: 5px; background: #fffdfb;
+    }
+    .field textarea { min-height: 85px; resize: vertical; }
+    .wide { grid-column: 1 / -1; }
+    table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    th, td { padding: 12px; border-bottom: 1px solid #eee2dc; text-align: left; }
+    th { background: #f7eae7; color: var(--burgundy-dark); }
+    .table-action { border: 0; background: transparent; color: var(--burgundy); font-weight: 800; margin-right: 8px; }
+    .status { margin: 12px 0; font-weight: 700; }
+    .error { color: #a21b2d; }
+    .success { color: #22653c; }
+    .empty { padding: 18px 0; color: var(--muted); }
+    footer { text-align: center; padding: 24px; background: var(--burgundy-dark); color: white; }
+
+    @media (max-width: 760px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid #eadbd5; }
+      .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .main-content { padding: 18px; }
+      .stat-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+    }
+  </style>
 </head>
 <body>
-    <header class="dashboard-header">
-        <h1>Kelsiy's Closet</h1>
-        <p>Owner Dashboard</p>
-        <button id="logout-button" type="button">Log Out</button>
-    </header>
+  <header class="owner-header">
+    <div class="brand">
+      <div class="brand-mark">KC</div>
+      <div>
+        <h1>KELSIY'S CLOSET</h1>
+        <p>STYLE THAT SPEAKS</p>
+      </div>
+    </div>
+    <button class="signout" id="owner-signout">SIGN OUT</button>
+  </header>
 
-    <main class="dashboard-container">
-        <h2>Welcome to Your Dashboard</h2>
-        <p>Manage your fashion business from one place.</p>
+  <section class="welcome" id="owner-welcome" hidden>
+    <div class="welcome-inner">
+      <div class="eyebrow">THE OWNER'S PRIVATE SPACE</div>
+      <h2 id="owner-welcome-title">WELCOME BACK, KELSIY.</h2>
+      <p><strong>OWNER ACCOUNT</strong></p>
+      <p>Welcome to your business management system. Manage your collection, keep track of sales, and monitor your business in one place.</p>
+      <button class="primary-btn" id="open-dashboard">OPEN DASHBOARD →</button>
+    </div>
+  </section>
 
-        <nav class="dashboard-nav">
-            <button type="button" data-section="home">Home</button>
-            <button type="button" data-section="inventory">Inventory</button>
-            <button type="button" data-section="sales">Sales</button>
-            <button type="button" data-section="reports">Sales Reports</button>
-            <button type="button" data-section="contacts">Contacts</button>
-        </nav>
+  <div class="dashboard-layout" id="owner-dashboard" hidden>
+    <aside class="sidebar">
+      <h3>YOUR DASHBOARD</h3>
+      <nav class="nav-list" aria-label="Owner dashboard navigation">
+        <button class="nav-btn active" data-section="home">HOME</button>
+        <button class="nav-btn" data-section="inventory">INVENTORY</button>
+        <button class="nav-btn" data-section="sales">SALES</button>
+        <button class="nav-btn" data-section="reports">SALES REPORTS</button>
+        <button class="nav-btn" data-section="contacts">CONTACTS</button>
+      </nav>
+    </aside>
 
-        <section id="dashboard-content">
-            <h2>Home</h2>
-            <p>Your business dashboard will appear here.</p>
-        </section>
+    <main class="main-content">
+      <p class="eyebrow">KELSIY'S CLOSET · MANAGEMENT</p>
+      <h2 class="section-title" id="section-heading">BUSINESS OVERVIEW</h2>
+      <p class="muted" id="section-description">Your store at a glance.</p>
+      <p class="status" id="owner-status" role="status"></p>
+
+      <section data-panel="home">
+        <div class="stat-grid">
+          <div class="stat-card"><p>ACTIVE PRODUCTS</p><strong id="stat-products">—</strong></div>
+          <div class="stat-card"><p>UNITS IN STOCK</p><strong id="stat-stock">—</strong></div>
+          <div class="stat-card"><p>RECORDED SALES</p><strong id="stat-sales">—</strong></div>
+        </div>
+        <div class="panel">
+          <h3>RECENT SALES</h3>
+          <div id="recent-sales" class="empty">Loading sales…</div>
+        </div>
+      </section>
+
+      <section data-panel="inventory" hidden>
+        <div class="panel">
+          <h3 id="product-form-heading">ADD A PRODUCT</h3>
+          <form id="product-form">
+            <input type="hidden" id="product-id">
+            <div class="form-grid">
+              <div class="field"><label for="product-name">PRODUCT NAME</label><input id="product-name" required maxlength="120"></div>
+              <div class="field"><label for="product-category">CATEGORY</label>
+                <select id="product-category" required>
+                  <option value="Women">Women</option><option value="Men">Men</option>
+                  <option value="Shoes">Shoes</option><option value="Accessories">Accessories</option>
+                  <option value="Kids">Kids</option>
+                </select>
+              </div>
+              <div class="field"><label for="product-price">PRICE (KES)</label><input id="product-price" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label for="product-stock">QUANTITY IN STOCK</label><input id="product-stock" type="number" min="0" step="1" required></div>
+              <div class="field"><label for="product-size">SIZE</label><input id="product-size" maxlength="60"></div>
+              <div class="field"><label for="product-colour">COLOUR</label><input id="product-colour" maxlength="60"></div>
+              <div class="field wide"><label for="product-image">IMAGE URL</label><input id="product-image" type="url" placeholder="https://..."></div>
+              <div class="field wide"><label for="product-description">DESCRIPTION</label><textarea id="product-description"></textarea></div>
+            </div>
+            <button class="primary-btn" type="submit">SAVE PRODUCT</button>
+            <button class="signout" type="button" id="cancel-product-edit" hidden>CANCEL EDIT</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h3>YOUR INVENTORY</h3>
+          <div id="inventory-table" class="empty">Loading inventory…</div>
+        </div>
+      </section>
+
+      <section data-panel="sales" hidden>
+        <div class="panel">
+          <h3>RECORD A SALE</h3>
+          <form id="sale-form">
+            <div class="form-grid">
+              <div class="field wide"><label for="sale-product">PRODUCT</label><select id="sale-product" required></select></div>
+              <div class="field"><label for="sale-quantity">QUANTITY SOLD</label><input id="sale-quantity" type="number" min="1" step="1" value="1" required></div>
+              <div class="field"><label for="sale-customer">CUSTOMER NAME (OPTIONAL)</label><input id="sale-customer" maxlength="120"></div>
+              <div class="field"><label for="sale-phone">CUSTOMER PHONE (OPTIONAL)</label><input id="sale-phone" type="tel" maxlength="40"></div>
+              <div class="field"><label for="sale-payment">PAYMENT METHOD</label><select id="sale-payment" required><option value="Cash">Cash</option><option value="M-Pesa">M-Pesa</option></select></div>
+            </div>
+            <button class="primary-btn" type="submit">RECORD SALE</button>
+          </form>
+        </div>
+        <div class="panel"><h3>SALES HISTORY</h3><div id="sales-table" class="empty">Loading sales…</div></div>
+      </section>
+
+      <section data-panel="reports" hidden>
+        <div class="stat-grid">
+          <div class="stat-card"><p>TOTAL REVENUE</p><strong id="report-revenue">KES 0</strong></div>
+          <div class="stat-card"><p>TRANSACTIONS</p><strong id="report-count">0</strong></div>
+          <div class="stat-card"><p>UNITS SOLD</p><strong id="report-units">0</strong></div>
+        </div>
+        <div class="panel"><h3>REVENUE BY PAYMENT METHOD</h3><div id="payment-report" class="empty">Loading report…</div></div>
+        <div class="panel"><h3>ALL RECORDED SALES</h3><div id="report-table" class="empty">Loading report…</div></div>
+      </section>
+
+      <section data-panel="contacts" hidden>
+        <div class="panel">
+          <h3>CUSTOMER CONTACTS</h3>
+          <p class="muted">The contact form will display inquiries here once an inquiries table is configured in Supabase. This page will not invent or overwrite a database structure.</p>
+          <div id="contacts-content" class="empty">Customer inquiries are not connected yet.</div>
+        </div>
+      </section>
     </main>
+  </div>
 
-    <script src="script.js"></script>
+  <footer>KELSIY'S CLOSET · STYLE THAT SPEAKS</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="owner.js" defer></script>
 </body>
 </html>
