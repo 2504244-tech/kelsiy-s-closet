@@ -6,60 +6,51 @@ const customerDB = window.supabase.createClient(
   CUSTOMER_SUPABASE_KEY
 );
 
-const productContainer = document.getElementById("customer-products");
+const productsContainer = document.getElementById("customer-products");
 const catalogueMessage = document.getElementById("catalogue-message");
 const categoryFilter = document.getElementById("category-filter");
 
-let customerProducts = [];
+let allProducts = [];
 
-function formatPrice(price) {
+function priceKES(price) {
   return "KES " + Number(price || 0).toLocaleString("en-KE", {
     maximumFractionDigits: 2
   });
 }
 
-function addText(parent, tag, text, className) {
+function addProductText(parent, tag, text, className = "") {
   const element = document.createElement(tag);
   element.textContent = text;
 
-  if (className) {
-    element.className = className;
-  }
+  if (className) element.className = className;
 
   parent.appendChild(element);
   return element;
 }
 
 function displayProducts() {
-  if (!productContainer) return;
+  if (!productsContainer) return;
 
-  productContainer.replaceChildren();
+  productsContainer.replaceChildren();
 
-  const selectedCategory = categoryFilter
-    ? categoryFilter.value.toLowerCase()
-    : "all";
+  const selected = (categoryFilter?.value || "all").toLowerCase();
 
-  const filteredProducts = customerProducts.filter((product) => {
-    const category = String(product.category || "").toLowerCase();
-
-    if (selectedCategory === "all") return true;
-
-    return category === selectedCategory;
+  const products = allProducts.filter((product) => {
+    return selected === "all" ||
+      String(product.category || "").toLowerCase() === selected;
   });
 
-  if (filteredProducts.length === 0) {
-    catalogueMessage.textContent =
-      selectedCategory === "all"
-        ? "Our collection is being updated. Please check back soon."
-        : "There are currently no products in this category.";
-
+  if (!products.length) {
+    catalogueMessage.textContent = allProducts.length
+      ? "There are no products in this category yet."
+      : "No active products are available yet. Please check back soon.";
     return;
   }
 
-  catalogueMessage.textContent =
-    filteredProducts.length + " product(s) available in our collection.";
+  catalogueMessage.textContent = products.length +
+    (products.length === 1 ? " product available." : " products available.");
 
-  filteredProducts.forEach((product) => {
+  products.forEach((product) => {
     const card = document.createElement("article");
     card.className = "customer-product-card";
 
@@ -88,56 +79,51 @@ function displayProducts() {
     const details = document.createElement("div");
     details.className = "customer-product-details";
 
-    addText(details, "h3", product.name || "Fashion item");
+    addProductText(details, "h3", product.name || "Fashion item");
 
-    addText(
+    addProductText(
       details,
       "p",
-      formatPrice(product.price),
+      priceKES(product.price),
       "customer-product-price"
     );
 
     if (product.category) {
-      addText(details, "p", "Category: " + product.category);
+      addProductText(details, "p", "Category: " + product.category);
     }
 
     if (product.size) {
-      addText(details, "p", "Size: " + product.size);
+      addProductText(details, "p", "Size: " + product.size);
     }
 
     if (product.colour) {
-      addText(details, "p", "Colour: " + product.colour);
+      addProductText(details, "p", "Colour: " + product.colour);
     }
 
     if (product.description) {
-      addText(details, "p", product.description);
+      addProductText(details, "p", product.description);
     }
 
-    const stock = Number(product.stock) || 0;
+    const stock = Math.max(0, Number(product.stock) || 0);
 
-    if (stock > 0) {
-      addText(
-        details,
-        "p",
-        stock + (stock === 1 ? " item available" : " items available"),
-        "customer-product-stock"
-      );
-    } else {
-      addText(
-        details,
-        "p",
-        "OUT OF STOCK",
-        "customer-product-stock out-of-stock"
-      );
-    }
+    addProductText(
+      details,
+      "p",
+      stock > 0
+        ? stock + (stock === 1 ? " item available" : " items available")
+        : "OUT OF STOCK",
+      stock > 0
+        ? "customer-product-stock"
+        : "customer-product-stock out-of-stock"
+    );
 
     card.appendChild(details);
-    productContainer.appendChild(card);
+    productsContainer.appendChild(card);
   });
 }
 
 async function loadCustomerProducts() {
-  if (!productContainer || !catalogueMessage) return;
+  if (!productsContainer || !catalogueMessage) return;
 
   catalogueMessage.textContent = "Loading our collection...";
 
@@ -150,13 +136,13 @@ async function loadCustomerProducts() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Customer catalogue error:", error);
+    console.error("Could not load customer products:", error);
     catalogueMessage.textContent =
-      "We couldn't load the collection right now. Please refresh and try again.";
+      "Products could not load: " + error.message;
     return;
   }
 
-  customerProducts = data || [];
+  allProducts = data || [];
   displayProducts();
 }
 
@@ -164,16 +150,35 @@ if (categoryFilter) {
   categoryFilter.addEventListener("change", displayProducts);
 }
 
-// Load products when the customer page opens.
+// Customer sign-out button
+const customerSignOut = document.getElementById("customer-signout");
+
+if (customerSignOut) {
+  customerSignOut.addEventListener("click", async () => {
+    customerSignOut.disabled = true;
+    customerSignOut.textContent = "SIGNING OUT...";
+
+    const { error } = await customerDB.auth.signOut();
+
+    if (error) {
+      console.error("Sign-out error:", error);
+      customerSignOut.disabled = false;
+      customerSignOut.textContent = "SIGN OUT";
+      alert("We could not sign you out. Please try again.");
+      return;
+    }
+
+    window.location.replace("index.html");
+  });
+}
+
+// Load and refresh the catalogue
 loadCustomerProducts();
 
-// Refresh the catalogue when the customer returns to the page.
 window.addEventListener("focus", loadCustomerProducts);
 
-// Keep the catalogue updated periodically.
 window.setInterval(loadCustomerProducts, 30000);
 
-// Listen for live product changes when Supabase Realtime is enabled.
 customerDB
   .channel("customer-product-updates")
   .on(
@@ -183,8 +188,6 @@ customerDB
       schema: "public",
       table: "products"
     },
-    () => {
-      loadCustomerProducts();
-    }
+    () => loadCustomerProducts()
   )
   .subscribe();
