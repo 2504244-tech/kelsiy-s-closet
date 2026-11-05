@@ -1,173 +1,735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Customer Home | Kelsiy's Closet</title>
-    <link rel="stylesheet" href="style.css">
+  <title>Kelsiy's Closet | Style That Speaks</title>
+  <meta name="description" content="Discover fashionable clothing, shoes and accessories at Kelsiy's Closet. Style that speaks, fashion that defines you.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    :root {
+      --kc-burgundy: #701b39;
+      --kc-dark: #3e1023;
+      --kc-cream: #faf5ed;
+      --kc-gold: #c49a58;
+      --kc-blush: #ead2d1;
+      --kc-ink: #292126;
+      --kc-muted: #70636a;
+      --kc-white: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      color: var(--kc-ink);
+      background: var(--kc-cream);
+      font-family: "DM Sans", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a { color: inherit; }
+
+    .kc-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(250, 245, 237, .98);
+      border-bottom: 1px solid #e8d9d1;
+      box-shadow: 0 4px 18px rgba(62, 16, 35, .06);
+    }
+
+    .kc-header-inner {
+      max-width: 1450px;
+      min-height: 100px;
+      margin: auto;
+      padding: 15px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+    }
+
+    .kc-brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .kc-monogram {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--kc-gold);
+      color: var(--kc-burgundy);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .kc-brand-name {
+      margin: 0;
+      color: var(--kc-burgundy);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(19px, 2vw, 27px);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: .5px;
+    }
+
+    .kc-brand-tagline {
+      margin: 6px 0 0;
+      color: #8b6744;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+
+    .kc-nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .kc-nav a {
+      padding: 13px 17px;
+      border-radius: 6px;
+      color: var(--kc-dark);
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      transition: background .2s, color .2s;
+    }
+
+    .kc-nav a:hover,
+    .kc-nav a:focus-visible {
+      background: var(--kc-burgundy);
+      color: var(--kc-white);
+    }
+
+    .kc-menu-button {
+      display: none;
+      padding: 10px 14px;
+      background: var(--kc-burgundy);
+      color: white;
+      border: 0;
+      border-radius: 5px;
+      font-weight: 800;
+    }
+
+    .kc-hero {
+      min-height: min(730px, 82vh);
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      color: white;
+      background-color: var(--kc-dark);
+      background-image:
+        linear-gradient(90deg,
+          rgba(42, 8, 23, .91) 0%,
+          rgba(66, 13, 34, .77) 45%,
+          rgba(66, 13, 34, .20) 100%),
+        url("https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=2000&q=85");
+      background-position: center;
+      background-size: cover;
+    }
+
+    .kc-hero-inner {
+      width: 100%;
+      max-width: 1450px;
+      margin: auto;
+      padding: 80px 7%;
+    }
+
+    .kc-eyebrow {
+      margin: 0 0 20px;
+      color: #e9c88e;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .kc-hero h1 {
+      max-width: 850px;
+      margin: 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(45px, 7vw, 88px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -.8px;
+      text-transform: uppercase;
+    }
+
+    .kc-hero h1 span {
+      display: block;
+      color: #e9c88e;
+    }
+
+    .kc-hero-copy {
+      max-width: 630px;
+      margin: 27px 0;
+      color: #fff5ed;
+      font-size: clamp(17px, 2vw, 21px);
+      line-height: 1.8;
+    }
+
+    .kc-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      min-height: 60px;
+      padding: 17px 30px;
+      border: 2px solid var(--kc-burgundy);
+      border-radius: 5px;
+      background: var(--kc-burgundy);
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+      transition: transform .2s, background .2s;
+    }
+
+    .kc-button:hover {
+      transform: translateY(-2px);
+      background: var(--kc-dark);
+    }
+
+    .kc-button-light {
+      background: var(--kc-cream);
+      color: var(--kc-burgundy);
+      border-color: var(--kc-cream);
+    }
+
+    .kc-button-light:hover {
+      background: white;
+      color: var(--kc-dark);
+    }
+
+    .kc-section {
+      padding: 90px 6%;
+      scroll-margin-top: 95px;
+    }
+
+    .kc-section-inner {
+      max-width: 1250px;
+      margin: auto;
+    }
+
+    .kc-section-heading {
+      margin: 0 0 16px;
+      color: var(--kc-burgundy);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(34px, 5vw, 53px);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .kc-section-intro {
+      max-width: 760px;
+      margin: 0 0 35px;
+      color: var(--kc-muted);
+      font-size: 18px;
+    }
+
+    .kc-gold-line {
+      width: 78px;
+      height: 4px;
+      margin: 20px 0 25px;
+      background: var(--kc-gold);
+    }
+
+    .kc-about {
+      background: white;
+    }
+
+    .kc-about-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 55px;
+    }
+
+    .kc-about-photo {
+      min-height: 400px;
+      border-radius: 8px;
+      background:
+        linear-gradient(0deg, rgba(62, 16, 35, .10), rgba(62, 16, 35, .02)),
+        url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1100&q=85")
+        center/cover;
+    }
+
+    .kc-about-copy {
+      color: var(--kc-muted);
+      font-size: 17px;
+    }
+
+    .kc-gallery {
+      background: var(--kc-cream);
+    }
+
+    .kc-gallery-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .kc-filter {
+      max-width: 100%;
+      padding: 13px 15px;
+      border: 1px solid #d9c4c5;
+      border-radius: 5px;
+      background: white;
+      color: var(--kc-dark);
+      font-weight: 700;
+    }
+
+    #customer-products {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      margin-top: 35px;
+    }
+
+    .customer-product-card {
+      overflow: hidden;
+      border: 1px solid #eadbd5;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 8px 25px rgba(62, 16, 35, .05);
+    }
+
+    .customer-product-image {
+      display: block;
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      background: #eee3dc;
+    }
+
+    .customer-product-details {
+      padding: 20px;
+    }
+
+    .customer-product-details h3 {
+      color: var(--kc-burgundy);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 23px;
+      line-height: 1.3;
+    }
+
+    .customer-product-price {
+      color: var(--kc-burgundy);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .customer-product-stock {
+      font-weight: 700;
+    }
+
+    .out-of-stock {
+      color: #a21b2d;
+    }
+
+    #catalogue-message {
+      margin-top: 20px;
+      color: var(--kc-muted);
+      font-weight: 700;
+    }
+
+    .kc-contact {
+      background: white;
+    }
+
+    .kc-contact-layout {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 50px;
+    }
+
+    .kc-contact-card {
+      padding: 30px;
+      border-radius: 8px;
+      background: var(--kc-cream);
+    }
+
+    .kc-contact-card h3 {
+      color: var(--kc-burgundy);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 27px;
+    }
+
+    .kc-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .kc-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .kc-field label {
+      color: var(--kc-dark);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: .5px;
+    }
+
+    .kc-field input,
+    .kc-field textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #d9c8c4;
+      border-radius: 5px;
+      background: white;
+      color: var(--kc-ink);
+    }
+
+    .kc-field textarea {
+      min-height: 145px;
+      resize: vertical;
+    }
+
+    .kc-footer {
+      background: var(--kc-dark);
+      color: white;
+    }
+
+    .kc-footer-main {
+      max-width: 1350px;
+      margin: auto;
+      padding: 45px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 25px;
+    }
+
+    .kc-footer-brand {
+      color: white;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .kc-footer-tagline {
+      color: #e9c88e;
+      font-weight: 700;
+    }
+
+    .kc-footer-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+
+    .kc-footer-nav a {
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .kc-footer-nav a:hover {
+      color: #e9c88e;
+    }
+
+    .kc-copyright {
+      padding: 18px 6%;
+      border-top: 1px solid rgba(255,255,255,.15);
+      color: #e8d8d9;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    @media (max-width: 950px) {
+      .kc-header-inner { gap: 15px; }
+      .kc-nav { gap: 2px; }
+      .kc-nav a { padding: 11px 10px; font-size: 13px; }
+      .kc-brand-tagline { letter-spacing: 1px; }
+      .kc-about-layout, .kc-contact-layout { gap: 30px; }
+      #customer-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .kc-header-inner { min-height: 82px; padding: 12px 5%; }
+      .kc-monogram { width: 46px; height: 46px; font-size: 20px; }
+      .kc-brand-name { font-size: 18px; }
+      .kc-brand-tagline { font-size: 9px; }
+      .kc-menu-button { display: block; }
+      .kc-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        padding: 15px 5% 20px;
+        background: var(--kc-cream);
+        border-bottom: 1px solid #e8d9d1;
+        box-shadow: 0 10px 15px rgba(62, 16, 35, .08);
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .kc-nav.customer-navigation-open { display: flex; }
+      .kc-nav a { padding: 13px 15px; font-size: 15px; }
+      .kc-hero { min-height: 650px; background-position: 58% center; }
+      .kc-hero-inner { padding: 65px 6%; }
+      .kc-hero h1 { font-size: clamp(40px, 11vw, 62px); }
+      .kc-section { padding: 65px 6%; }
+      .kc-about-layout, .kc-contact-layout { grid-template-columns: 1fr; }
+      .kc-about-photo { min-height: 300px; }
+      .kc-gallery-top { align-items: stretch; }
+      #customer-products { grid-template-columns: 1fr; }
+      .customer-product-image { height: 340px; }
+      .kc-footer-main { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
 
-<body class="customer-page">
+<body>
+  <header class="kc-header">
+    <div class="kc-header-inner">
+      <a class="kc-brand" href="#home" aria-label="Kelsiy's Closet home">
+        <div class="kc-monogram">KC</div>
+        <div>
+          <h2 class="kc-brand-name">KELSIY'S CLOSET</h2>
+          <p class="kc-brand-tagline">Fashion, Style &amp; Elegance</p>
+        </div>
+      </a>
 
-    <header class="customer-header">
-        <a href="customer.html" class="customer-brand">
-            <span class="customer-logo">KC</span>
-            <span>
-                <strong>KELSIY'S CLOSET</strong>
-                <small>STYLE THAT SPEAKS</small>
-            </span>
+      <button
+        class="kc-menu-button"
+        id="customer-menu-button"
+        type="button"
+        aria-controls="customer-navigation"
+        aria-expanded="false">
+        MENU ☰
+      </button>
+
+      <nav class="kc-nav" id="customer-navigation" aria-label="Main navigation">
+        <a href="#home">HOME</a>
+        <a href="#about">ABOUT</a>
+        <a href="#gallery">GALLERY</a>
+        <a href="#contacts">CONTACTS</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="kc-hero" id="home">
+      <div class="kc-hero-inner">
+        <p class="kc-eyebrow">WELCOME TO KELSIY'S CLOSET</p>
+        <h1>
+          STYLE THAT SPEAKS.
+          <span>FASHION THAT DEFINES YOU.</span>
+        </h1>
+        <p class="kc-hero-copy">
+          Discover your style with our collection of clothing, shoes and
+          accessories. Find pieces that express your personality and make
+          every outfit feel special.
+        </p>
+        <a class="kc-button kc-button-light" href="#gallery">
+          EXPLORE OUR COLLECTION <span aria-hidden="true">→</span>
         </a>
+      </div>
+    </section>
 
-        <button type="button" id="customer-menu-button"
-            aria-label="Open navigation menu">
-            ☰
-        </button>
+    <section class="kc-section kc-about" id="about">
+      <div class="kc-section-inner kc-about-layout">
+        <div class="kc-about-photo" role="img"
+          aria-label="Fashion clothing and accessories arranged for a boutique display"></div>
 
-        <nav id="customer-navigation">
-            <a href="#home">Home</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#about">About</a>
-            <a href="#contacts">Contacts</a>
-            <button type="button" id="customer-logout">
-                Sign Out
-            </button>
-        </nav>
-    </header>
-
-    <main>
-
-        <!-- HOME SECTION -->
-        <section id="home" class="customer-hero">
-            <div class="customer-hero-content">
-                <p class="customer-eyebrow">WELCOME TO KELSIY'S CLOSET</p>
-
-                <h1>Style That Speaks.<br>
-                    Fashion That Defines You.</h1>
-
-                <p>
-                    Discover clothing, shoes and accessories that
-                    express your personality. Find your next favorite
-                    look at Kelsiy's Closet.
-                </p>
-
-                <a href="#gallery" class="customer-shop-button">
-                    Explore Our Collection
-                </a>
-            </div>
-        </section>
-
-        <!-- GALLERY SECTION -->
-        <section id="gallery" class="customer-section">
-            <div class="customer-section-heading">
-                <p class="customer-eyebrow">FIND YOUR STYLE</p>
-                <h2>Our Collection</h2>
-                <p>
-                    Explore our latest fashion pieces and check
-                    prices, sizes, colours and availability.
-                </p>
-            </div>
-
-            <div class="customer-filters">
-                <label for="category-filter">Category</label>
-                <select id="category-filter">
-                    <option value="all">All Products</option>
-                    <option value="women">Women's Clothing</option>
-                    <option value="men">Men's Clothing</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
-            </div>
-
-            <p id="catalogue-message" role="status">
-                Our collection will appear here.
+        <div>
+          <p class="kc-eyebrow">OUR FASHION HOUSE</p>
+          <h2 class="kc-section-heading">ABOUT KELSIY'S CLOSET</h2>
+          <div class="kc-gold-line"></div>
+          <div class="kc-about-copy">
+            <p>
+              Welcome to Kelsiy's Closet, where personal style meets
+              confidence, creativity and elegance.
             </p>
+            <p>
+              Our fashion house brings together women's clothing, men's
+              clothing, shoes and accessories to help customers discover
+              pieces that suit their style.
+            </p>
+            <p>
+              We want shopping to be simple and convenient. Explore our
+              collection, check prices and available sizes, and find the
+              pieces that speak to you.
+            </p>
+          </div>
+          <a class="kc-button" href="#gallery">DISCOVER OUR COLLECTION →</a>
+        </div>
+      </div>
+    </section>
 
-            <div id="customer-products" class="customer-products">
-                <!-- Products will be loaded from Supabase. -->
+    <section class="kc-section kc-gallery" id="gallery">
+      <div class="kc-section-inner">
+        <div class="kc-gallery-top">
+          <div>
+            <p class="kc-eyebrow">CURATED FOR YOUR STYLE</p>
+            <h2 class="kc-section-heading">OUR COLLECTION</h2>
+            <p class="kc-section-intro">
+              Explore our available pieces, discover your favorites,
+              and check prices, sizes, colors and stock.
+            </p>
+          </div>
+
+          <label>
+            <span class="kc-eyebrow">SHOP BY CATEGORY</span><br>
+            <select id="category-filter" class="kc-filter">
+              <option value="all">ALL COLLECTIONS</option>
+              <option value="women">WOMEN</option>
+              <option value="men">MEN</option>
+              <option value="shoes">SHOES</option>
+              <option value="accessories">ACCESSORIES</option>
+              <option value="kids">KIDS</option>
+            </select>
+          </label>
+        </div>
+
+        <p id="catalogue-message" role="status">Loading our collection...</p>
+        <div id="customer-products"></div>
+      </div>
+    </section>
+
+    <section class="kc-section kc-contact" id="contacts">
+      <div class="kc-section-inner">
+        <p class="kc-eyebrow">WE WOULD LOVE TO HEAR FROM YOU</p>
+        <h2 class="kc-section-heading">LET'S TALK STYLE.</h2>
+        <p class="kc-section-intro">
+          Have a question about a product, size, color or availability?
+          Send us a message.
+        </p>
+
+        <div class="kc-contact-layout">
+          <div class="kc-contact-card">
+            <h3>KELSIY'S CLOSET</h3>
+            <p>
+              Style that speaks. Fashion that defines you.
+            </p>
+            <div class="kc-gold-line"></div>
+            <p>
+              Browse our collection and contact us for help choosing
+              your next favorite piece.
+            </p>
+            <p><strong>FASHION · STYLE · ELEGANCE</strong></p>
+          </div>
+
+          <form class="kc-form" id="customer-contact-form">
+            <div class="kc-field">
+              <label for="contact-name">YOUR NAME</label>
+              <input id="contact-name" name="name" type="text"
+                autocomplete="name" required>
             </div>
-        </section>
 
-        <!-- ABOUT SECTION -->
-        <section id="about" class="customer-section customer-about">
-            <div class="customer-about-content">
-                <p class="customer-eyebrow">GET TO KNOW US</p>
-                <h2>About Kelsiy's Closet</h2>
-
-                <p>
-                    Kelsiy's Closet is a fashion business dedicated
-                    to helping customers express themselves through
-                    stylish and affordable fashion.
-                </p>
-
-                <p>
-                    Our collection includes women's clothing, men's
-                    clothing, shoes and accessories. We aim to make
-                    discovering products easier by allowing customers
-                    to check prices, sizes, colours and stock
-                    availability online.
-                </p>
-
-                <p>
-                    Our goal is to provide a convenient shopping
-                    experience where style, choice and customer
-                    satisfaction matter.
-                </p>
-            </div>
-        </section>
-
-        <!-- CONTACTS SECTION -->
-        <section id="contacts" class="customer-section">
-            <div class="customer-section-heading">
-                <p class="customer-eyebrow">WE'RE HERE TO HELP</p>
-                <h2>Contact Us</h2>
-                <p>
-                    Have a question about a product or want to
-                    enquire about an order? Send us a message.
-                </p>
+            <div class="kc-field">
+              <label for="contact-email">EMAIL ADDRESS</label>
+              <input id="contact-email" name="email" type="email"
+                autocomplete="email" required>
             </div>
 
-            <form id="customer-contact-form" class="customer-contact-form">
-                <div>
-                    <label for="contact-name">Your Name</label>
-                    <input id="contact-name" name="name"
-                        type="text" required>
-                </div>
+            <div class="kc-field">
+              <label for="contact-phone">PHONE NUMBER (OPTIONAL)</label>
+              <input id="contact-phone" name="phone" type="tel"
+                autocomplete="tel">
+            </div>
 
-                <div>
-                    <label for="contact-email">Email Address</label>
-                    <input id="contact-email" name="email"
-                        type="email" required>
-                </div>
+            <div class="kc-field">
+              <label for="contact-message">YOUR MESSAGE</label>
+              <textarea id="contact-message" name="message"
+                required placeholder="Tell us how we can help..."></textarea>
+            </div>
 
-                <div>
-                    <label for="contact-phone">Phone Number</label>
-                    <input id="contact-phone" name="phone"
-                        type="tel">
-                </div>
+            <button class="kc-button" type="submit">SEND YOUR MESSAGE →</button>
+            <p id="contact-status" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
 
-                <div>
-                    <label for="contact-message">Your Message</label>
-                    <textarea id="contact-message" name="message"
-                        rows="5" required></textarea>
-                </div>
+  <footer class="kc-footer">
+    <div class="kc-footer-main">
+      <div>
+        <div class="kc-footer-brand">KELSIY'S CLOSET</div>
+        <div class="kc-footer-tagline">FASHION, STYLE &amp; ELEGANCE</div>
+        <p>Style that speaks. Fashion that defines you.</p>
+      </div>
 
-                <button type="submit">Send Inquiry</button>
+      <nav class="kc-footer-nav" aria-label="Footer navigation">
+        <a href="#home">HOME</a>
+        <a href="#about">ABOUT</a>
+        <a href="#gallery">GALLERY</a>
+        <a href="#contacts">CONTACTS</a>
+      </nav>
+    </div>
 
-                <p id="contact-status" role="status"></p>
-            </form>
-        </section>
+    <div class="kc-copyright">
+      &copy; <span id="kc-year"></span> Kelsiy's Closet. All rights reserved.
+    </div>
+  </footer>
 
-    </main>
+  <script>
+    document.getElementById("kc-year").textContent = new Date().getFullYear();
 
-    <footer class="customer-footer">
-        <a href="#home">KELSIY'S CLOSET</a>
-        <p>STYLE THAT SPEAKS</p>
-        <p>© Kelsiy's Closet. All rights reserved.</p>
-    </footer>
+    const customerMenuButton = document.getElementById("customer-menu-button");
+    const customerNavigation = document.getElementById("customer-navigation");
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="customer.js" defer></script>
+    customerMenuButton.addEventListener("click", function () {
+      const isOpen = customerNavigation.classList.toggle("customer-navigation-open");
+      customerMenuButton.setAttribute("aria-expanded", String(isOpen));
+    });
 
+    customerNavigation.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        customerNavigation.classList.remove("customer-navigation-open");
+        customerMenuButton.setAttribute("aria-expanded", "false");
+      });
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="customer.js" defer></script>
 </body>
 </html>
