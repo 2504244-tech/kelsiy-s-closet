@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelsiy's Closet | Management System</title>
+    <title>Kelsiy's Closet | Login</title>
 
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,58 +12,128 @@
 <body>
     <main class="login-container">
 
-        <section class="login-card">
+        <section class="login-card" id="auth-view">
+
             <header class="brand">
                 <div class="logo">
                     <span class="logo-k">K</span>
                     <span class="logo-c">C</span>
                 </div>
+
                 <h1>KELSIY'S <span>CLOSET</span></h1>
                 <p class="tagline">STYLE THAT SPEAKS</p>
                 <div class="decorative-line"></div>
-                <p class="system-name">Inventory and Sales Management System</p>
+                <p class="system-name">
+                    Inventory and Sales Management System
+                </p>
             </header>
 
-            <section class="form-section" id="auth-view">
+            <section class="form-section">
                 <h2 id="form-title">Welcome Back</h2>
-                <p class="intro">Sign in to access your Kelsiy's Closet account.</p>
+                <p class="intro">
+                    Sign in to your account to continue.
+                </p>
 
                 <form id="auth-form">
                     <div class="input-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" autocomplete="email" required>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter your email address"
+                            autocomplete="email"
+                            required
+                        >
                     </div>
+
                     <div class="input-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password"
-                               autocomplete="current-password" minlength="6" required>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            minlength="6"
+                            required
+                        >
                     </div>
-                    <button type="submit" id="submit-button">Sign In</button>
+
+                    <button type="submit" id="submit-button">
+                        Sign In
+                    </button>
                 </form>
 
                 <p id="message" role="status" aria-live="polite"></p>
 
                 <div class="account-option">
-                    <span id="switch-prompt">Don't have an account?</span>
-                    <button type="button" id="switch-mode" class="text-button">
+                    <span id="switch-prompt">
+                        Don't have an account?
+                    </span>
+                    <button
+                        type="button"
+                        id="switch-mode"
+                        class="text-button"
+                    >
                         Create Account
                     </button>
                 </div>
-                <p class="security-note">Secure access for the business owner and customers.</p>
+
+                <p class="security-note">
+                    Secure access for the owner and customers.
+                </p>
             </section>
         </section>
 
         <section id="app-view" hidden>
             <header class="dashboard-heading">
                 <div>
-                    <p>YOUR ACCOUNT</p>
+                    <p>YOUR KELSIY'S CLOSET ACCOUNT</p>
                     <h2 id="welcome-title">Welcome</h2>
                     <p id="role-message"></p>
                 </div>
-                <button type="button" id="sign-out" class="sign-out-button">
+
+                <button
+                    type="button"
+                    id="sign-out"
+                    class="sign-out-button"
+                >
                     Sign Out
                 </button>
             </header>
-        
+
+            <section id="owner-content" hidden>
+                <h2>Owner Dashboard</h2>
+                <p>Welcome to your business management system.</p>
+
+                <div class="dashboard-nav">
+                    <a href="owner.html">Open Owner Dashboard</a>
+                </div>
+
+                <p>
+                    Manage your inventory, sales, reports and customer
+                    inquiries from your owner dashboard.
+                </p>
+            </section>
+
+            <section id="customer-content" hidden>
+                <h2>Customer Home</h2>
+                <p>
+                    Welcome to Kelsiy's Closet! Find a look that feels
+                    like you.
+                </p>
+
+                <div class="dashboard-nav">
+                    <a href="customer.html">Explore the Store</a>
+                </div>
+
+                <p>
+                    Browse our fashion collection and check product
+                    prices, sizes, colors and availability.
+                </p>
+            </section>
+        </section>
+
+    </main>
 </body>
-</html>
+</html>           
+           
