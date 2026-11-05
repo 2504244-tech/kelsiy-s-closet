@@ -1,173 +1,190 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+const CUSTOMER_SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const CUSTOMER_SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
-    <title>Customer Home | Kelsiy's Closet</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+const customerDB = window.supabase.createClient(
+  CUSTOMER_SUPABASE_URL,
+  CUSTOMER_SUPABASE_KEY
+);
 
-<body class="customer-page">
+const productContainer = document.getElementById("customer-products");
+const catalogueMessage = document.getElementById("catalogue-message");
+const categoryFilter = document.getElementById("category-filter");
 
-    <header class="customer-header">
-        <a href="customer.html" class="customer-brand">
-            <span class="customer-logo">KC</span>
-            <span>
-                <strong>KELSIY'S CLOSET</strong>
-                <small>STYLE THAT SPEAKS</small>
-            </span>
-        </a>
+let customerProducts = [];
 
-        <button type="button" id="customer-menu-button"
-            aria-label="Open navigation menu">
-            ☰
-        </button>
+function formatPrice(price) {
+  return "KES " + Number(price || 0).toLocaleString("en-KE", {
+    maximumFractionDigits: 2
+  });
+}
 
-        <nav id="customer-navigation">
-            <a href="#home">Home</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#about">About</a>
-            <a href="#contacts">Contacts</a>
-            <button type="button" id="customer-logout">
-                Sign Out
-            </button>
-        </nav>
-    </header>
+function addText(parent, tag, text, className) {
+  const element = document.createElement(tag);
+  element.textContent = text;
 
-    <main>
+  if (className) {
+    element.className = className;
+  }
 
-        <!-- HOME SECTION -->
-        <section id="home" class="customer-hero">
-            <div class="customer-hero-content">
-                <p class="customer-eyebrow">WELCOME TO KELSIY'S CLOSET</p>
+  parent.appendChild(element);
+  return element;
+}
 
-                <h1>Style That Speaks.<br>
-                    Fashion That Defines You.</h1>
+function displayProducts() {
+  if (!productContainer) return;
 
-                <p>
-                    Discover clothing, shoes and accessories that
-                    express your personality. Find your next favorite
-                    look at Kelsiy's Closet.
-                </p>
+  productContainer.replaceChildren();
 
-                <a href="#gallery" class="customer-shop-button">
-                    Explore Our Collection
-                </a>
-            </div>
-        </section>
+  const selectedCategory = categoryFilter
+    ? categoryFilter.value.toLowerCase()
+    : "all";
 
-        <!-- GALLERY SECTION -->
-        <section id="gallery" class="customer-section">
-            <div class="customer-section-heading">
-                <p class="customer-eyebrow">FIND YOUR STYLE</p>
-                <h2>Our Collection</h2>
-                <p>
-                    Explore our latest fashion pieces and check
-                    prices, sizes, colours and availability.
-                </p>
-            </div>
+  const filteredProducts = customerProducts.filter((product) => {
+    const category = String(product.category || "").toLowerCase();
 
-            <div class="customer-filters">
-                <label for="category-filter">Category</label>
-                <select id="category-filter">
-                    <option value="all">All Products</option>
-                    <option value="women">Women's Clothing</option>
-                    <option value="men">Men's Clothing</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
-            </div>
+    if (selectedCategory === "all") return true;
 
-            <p id="catalogue-message" role="status">
-                Our collection will appear here.
-            </p>
+    return category === selectedCategory;
+  });
 
-            <div id="customer-products" class="customer-products">
-                <!-- Products will be loaded from Supabase. -->
-            </div>
-        </section>
+  if (filteredProducts.length === 0) {
+    catalogueMessage.textContent =
+      selectedCategory === "all"
+        ? "Our collection is being updated. Please check back soon."
+        : "There are currently no products in this category.";
 
-        <!-- ABOUT SECTION -->
-        <section id="about" class="customer-section customer-about">
-            <div class="customer-about-content">
-                <p class="customer-eyebrow">GET TO KNOW US</p>
-                <h2>About Kelsiy's Closet</h2>
+    return;
+  }
 
-                <p>
-                    Kelsiy's Closet is a fashion business dedicated
-                    to helping customers express themselves through
-                    stylish and affordable fashion.
-                </p>
+  catalogueMessage.textContent =
+    filteredProducts.length + " product(s) available in our collection.";
 
-                <p>
-                    Our collection includes women's clothing, men's
-                    clothing, shoes and accessories. We aim to make
-                    discovering products easier by allowing customers
-                    to check prices, sizes, colours and stock
-                    availability online.
-                </p>
+  filteredProducts.forEach((product) => {
+    const card = document.createElement("article");
+    card.className = "customer-product-card";
 
-                <p>
-                    Our goal is to provide a convenient shopping
-                    experience where style, choice and customer
-                    satisfaction matter.
-                </p>
-            </div>
-        </section>
+    if (product.image_url) {
+      const image = document.createElement("img");
+      image.className = "customer-product-image";
+      image.src = product.image_url;
+      image.alt = product.name || "Fashion product";
+      image.loading = "lazy";
 
-        <!-- CONTACTS SECTION -->
-        <section id="contacts" class="customer-section">
-            <div class="customer-section-heading">
-                <p class="customer-eyebrow">WE'RE HERE TO HELP</p>
-                <h2>Contact Us</h2>
-                <p>
-                    Have a question about a product or want to
-                    enquire about an order? Send us a message.
-                </p>
-            </div>
+      image.onerror = () => {
+        image.removeAttribute("src");
+        image.alt = "Product image unavailable";
+      };
 
-            <form id="customer-contact-form" class="customer-contact-form">
-                <div>
-                    <label for="contact-name">Your Name</label>
-                    <input id="contact-name" name="name"
-                        type="text" required>
-                </div>
+      card.appendChild(image);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "customer-product-image";
+      placeholder.style.display = "grid";
+      placeholder.style.placeItems = "center";
+      placeholder.textContent = "KELSIY'S CLOSET";
+      card.appendChild(placeholder);
+    }
 
-                <div>
-                    <label for="contact-email">Email Address</label>
-                    <input id="contact-email" name="email"
-                        type="email" required>
-                </div>
+    const details = document.createElement("div");
+    details.className = "customer-product-details";
 
-                <div>
-                    <label for="contact-phone">Phone Number</label>
-                    <input id="contact-phone" name="phone"
-                        type="tel">
-                </div>
+    addText(details, "h3", product.name || "Fashion item");
 
-                <div>
-                    <label for="contact-message">Your Message</label>
-                    <textarea id="contact-message" name="message"
-                        rows="5" required></textarea>
-                </div>
+    addText(
+      details,
+      "p",
+      formatPrice(product.price),
+      "customer-product-price"
+    );
 
-                <button type="submit">Send Inquiry</button>
+    if (product.category) {
+      addText(details, "p", "Category: " + product.category);
+    }
 
-                <p id="contact-status" role="status"></p>
-            </form>
-        </section>
+    if (product.size) {
+      addText(details, "p", "Size: " + product.size);
+    }
 
-    </main>
+    if (product.colour) {
+      addText(details, "p", "Colour: " + product.colour);
+    }
 
-    <footer class="customer-footer">
-        <a href="#home">KELSIY'S CLOSET</a>
-        <p>STYLE THAT SPEAKS</p>
-        <p>© Kelsiy's Closet. All rights reserved.</p>
-    </footer>
+    if (product.description) {
+      addText(details, "p", product.description);
+    }
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="customer.js" defer></script>
+    const stock = Number(product.stock) || 0;
 
-</body>
-</html>
+    if (stock > 0) {
+      addText(
+        details,
+        "p",
+        stock + (stock === 1 ? " item available" : " items available"),
+        "customer-product-stock"
+      );
+    } else {
+      addText(
+        details,
+        "p",
+        "OUT OF STOCK",
+        "customer-product-stock out-of-stock"
+      );
+    }
+
+    card.appendChild(details);
+    productContainer.appendChild(card);
+  });
+}
+
+async function loadCustomerProducts() {
+  if (!productContainer || !catalogueMessage) return;
+
+  catalogueMessage.textContent = "Loading our collection...";
+
+  const { data, error } = await customerDB
+    .from("products")
+    .select(
+      "id,name,category,description,size,colour,price,stock,image_url,active,created_at"
+    )
+    .eq("active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Customer catalogue error:", error);
+    catalogueMessage.textContent =
+      "We couldn't load the collection right now. Please refresh and try again.";
+    return;
+  }
+
+  customerProducts = data || [];
+  displayProducts();
+}
+
+if (categoryFilter) {
+  categoryFilter.addEventListener("change", displayProducts);
+}
+
+// Load products when the customer page opens.
+loadCustomerProducts();
+
+// Refresh the catalogue when the customer returns to the page.
+window.addEventListener("focus", loadCustomerProducts);
+
+// Keep the catalogue updated periodically.
+window.setInterval(loadCustomerProducts, 30000);
+
+// Listen for live product changes when Supabase Realtime is enabled.
+customerDB
+  .channel("customer-product-updates")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "products"
+    },
+    () => {
+      loadCustomerProducts();
+    }
+  )
+  .subscribe();
