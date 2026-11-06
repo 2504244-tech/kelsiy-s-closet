@@ -96,8 +96,8 @@ function displayProducts() {
       addProductText(details, "p", "Size: " + product.size);
     }
 
-    if (product.colour) {
-      addProductText(details, "p", "Colour: " + product.colour);
+    if (product.color) {
+      addProductText(details, "p", "color: " + product.color);
     }
 
     if (product.description) {
@@ -130,7 +130,7 @@ async function loadCustomerProducts() {
   const { data, error } = await customerDB
     .from("products")
     .select(
-      "id,name,category,description,size,colour,price,stock,image_url,active,created_at"
+      "id,name,category,description,size,color,price,stock,image_url,active,created_at"
     )
     .eq("active", true)
     .order("created_at", { ascending: false });
