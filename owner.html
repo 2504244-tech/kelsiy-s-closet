@@ -1,915 +1,454 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Owner Dashboard | Kelsiy's Closet</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    :root {
-      --burgundy: #701b39;
-      --dark: #3e1023;
-      --cream: #faf5ed;
-      --gold: #c49a58;
-      --white: #ffffff;
-      --ink: #292126;
-      --muted: #70636a;
-      --border: #eadbd5;
-    }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      margin: 0;
-      background: var(--cream);
-      color: var(--ink);
-      font-family: "DM Sans", Arial, sans-serif;
-      line-height: 1.6;
-    }
-
-    button, input, select, textarea { font: inherit; }
-
-    button { cursor: pointer; }
-
-    .header {
-      background: var(--dark);
-      color: white;
-      border-bottom: 4px solid var(--gold);
-      padding: 18px 5%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .monogram {
-      width: 58px;
-      height: 58px;
-      border: 2px solid var(--gold);
-      display: grid;
-      place-items: center;
-      color: var(--gold);
-      font: 800 26px "Playfair Display", Georgia, serif;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font: 800 clamp(19px, 3vw, 28px) "Playfair Display", Georgia, serif;
-      letter-spacing: 1px;
-    }
-
-    .brand p {
-      margin: 4px 0 0;
-      color: #e9c88e;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 2px;
-    }
-
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 50px;
-      padding: 13px 23px;
-      border: 2px solid var(--gold);
-      border-radius: 5px;
-      background: var(--burgundy);
-      color: white;
-      font-weight: 900;
-      letter-spacing: .7px;
-      text-decoration: none;
-      transition: .2s ease;
-    }
-
-    .button:hover {
-      background: var(--dark);
-      transform: translateY(-2px);
-    }
-
-    .button-light {
-      background: var(--cream);
-      color: var(--dark);
-    }
-
-    .button-light:hover {
-      background: white;
-      color: var(--burgundy);
-    }
-
-    .hero {
-      min-height: 360px;
-      padding: 65px 7%;
-      display: flex;
-      align-items: center;
-      background:
-        linear-gradient(90deg, rgba(45, 7, 23, .90), rgba(62, 16, 35, .43)),
-        url("https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1800&q=85")
-        center/cover no-repeat;
-      color: white;
-    }
-
-    .hero-content { max-width: 800px; }
-
-    .eyebrow {
-      color: #e9c88e;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    .hero h2 {
-      margin: 12px 0;
-      font: 800 clamp(36px, 6vw, 65px)/1.1 "Playfair Display", Georgia, serif;
-    }
-
-    .hero p {
-      max-width: 600px;
-      margin-bottom: 25px;
-      font-size: 17px;
-    }
-
-    .page {
-      width: min(1400px, 92%);
-      margin: 40px auto 65px;
-    }
-
-    .section-heading {
-      margin-bottom: 25px;
-    }
-
-    .section-heading h2 {
-      margin: 0;
-      color: var(--burgundy);
-      font: 800 clamp(29px, 4vw, 42px) "Playfair Display", Georgia, serif;
-    }
-
-    .section-heading p { color: var(--muted); }
-
-    .dashboard-layout {
-      display: grid;
-      grid-template-columns: 235px minmax(0, 1fr);
-      gap: 25px;
-      align-items: start;
-    }
-
-    .sidebar {
-      position: sticky;
-      top: 20px;
-      padding: 18px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 8px 25px rgba(62, 16, 35, .06);
-    }
-
-    .sidebar h3 {
-      margin: 5px 8px 15px;
-      color: var(--burgundy);
-      font: 700 21px "Playfair Display", Georgia, serif;
-    }
-
-    .nav-button {
-      display: block;
-      width: 100%;
-      margin: 5px 0;
-      padding: 13px 12px;
-      border: 0;
-      border-radius: 5px;
-      background: transparent;
-      color: var(--dark);
-      text-align: left;
-      font-weight: 800;
-    }
-
-    .nav-button:hover,
-    .nav-button.active {
-      background: var(--burgundy);
-      color: white;
-    }
-
-    .panel {
-      min-width: 0;
-      padding: clamp(18px, 3vw, 30px);
-      margin-bottom: 24px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 8px 25px rgba(62, 16, 35, .05);
-    }
-
-    .panel h2 {
-      margin-top: 0;
-      color: var(--burgundy);
-      font: 800 27px "Playfair Display", Georgia, serif;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-
-    .stat {
-      padding: 22px;
-      background: #fffaf5;
-      border: 1px solid var(--border);
-      border-top: 4px solid var(--gold);
-      border-radius: 8px;
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .stat strong {
-      display: block;
-      margin-top: 8px;
-      color: var(--burgundy);
-      font-size: clamp(22px, 3vw, 32px);
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 17px;
-    }
-
-    .field {
-      display: grid;
-      gap: 7px;
-    }
-
-    .field.full { grid-column: 1 / -1; }
-
-    .field label {
-      color: var(--dark);
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      min-width: 0;
-      padding: 13px;
-      border: 1px solid #d9c8c4;
-      border-radius: 5px;
-      background: #fffdfb;
-      color: var(--ink);
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-      outline: 2px solid var(--gold);
-      outline-offset: 1px;
-    }
-
-    .field textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 22px;
-    }
-
-    .status {
-      min-height: 25px;
-      margin: 12px 0;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 580px;
-    }
-
-    th, td {
-      padding: 13px 12px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      vertical-align: middle;
-    }
-
-    th {
-      background: #f5e9e2;
-      color: var(--dark);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
-
-    td { font-size: 14px; }
-
-    .small-button {
-      padding: 8px 11px;
-      margin: 2px;
-      border: 1px solid var(--gold);
-      border-radius: 4px;
-      background: var(--cream);
-      color: var(--dark);
-      font-weight: 800;
-    }
-
-    .delete-button {
-      border-color: #b72d47;
-      color: #a21b2d;
-    }
-
-    .product-preview {
-      width: 55px;
-      height: 65px;
-      object-fit: cover;
-      border-radius: 4px;
-      background: #f1e5de;
-    }
-
-    .empty {
-      padding: 25px;
-      color: var(--muted);
-      text-align: center;
-    }
-
-    [hidden] { display: none !important; }
-
-    footer {
-      padding: 35px 5%;
-      background: var(--dark);
-      border-top: 4px solid var(--gold);
-      color: white;
-      text-align: center;
-    }
-
-    footer strong {
-      font: 800 25px "Playfair Display", Georgia, serif;
-      letter-spacing: 1px;
-    }
-
-    footer p { margin: 5px 0; }
-
-    footer .tagline {
-      color: #e9c88e;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-    }
-
-    @media (max-width: 850px) {
-      .dashboard-layout { grid-template-columns: 1fr; }
-      .sidebar { position: static; }
-      .sidebar nav {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 5px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .header { align-items: flex-start; }
-      .header .button { width: 100%; }
-      .hero { min-height: 330px; padding: 45px 6%; }
-      .stats { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      .field.full { grid-column: auto; }
-      .sidebar nav { grid-template-columns: 1fr; }
-      .form-actions .button { width: 100%; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner Dashboard | Kelsiy's Closet</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --burgundy:#701b39; --dark:#3e1023;
+  --cream:#faf5ed; --gold:#c49a58;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--cream); color:#292126;
+  font:16px Arial,sans-serif;
+}
+header,footer {
+  background:var(--dark); color:white; padding:22px 5%;
+  border-bottom:4px solid var(--gold);
+}
+header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+h1,h2 { color:var(--burgundy); }
+header h1 { color:white; margin:0; }
+header p { color:#e9c88e; margin:5px 0; }
+button {
+  cursor:pointer; padding:11px 16px; border:1px solid var(--gold);
+  border-radius:5px; background:var(--burgundy); color:white;
+  font-weight:bold;
+}
+button:hover { background:var(--dark); }
+main { width:94%; max-width:1250px; margin:30px auto; }
+#status,#product-status { font-weight:bold; overflow-wrap:anywhere; }
+.layout { display:grid; grid-template-columns:200px minmax(0,1fr); gap:20px; }
+nav,.panel {
+  background:white; padding:20px; border:1px solid #eadbd5;
+  border-radius:8px; margin-bottom:18px;
+}
+nav button { display:block; width:100%; margin:7px 0; text-align:left; }
+.panel[hidden] { display:none; }
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.stat { padding:18px; background:#fffaf5; border-top:4px solid var(--gold); }
+.stat strong { display:block; font-size:25px; color:var(--burgundy); margin-top:8px; }
+.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.field { display:grid; gap:6px; }
+.field.full { grid-column:1/-1; }
+label { font-weight:bold; color:var(--dark); }
+input,select,textarea {
+  width:100%; padding:12px; border:1px solid #d9c8c4;
+  border-radius:5px; font:inherit;
+}
+textarea { min-height:80px; }
+.actions { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0; }
+.table-wrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; min-width:580px; }
+th,td { padding:11px; border-bottom:1px solid #eadbd5; text-align:left; }
+th { background:#f5e9e2; }
+.photo { width:55px; height:65px; object-fit:cover; }
+.small { padding:7px; margin:2px; }
+.delete { background:#a21b2d; }
+footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
+@media(max-width:750px) {
+  .layout { grid-template-columns:1fr; }
+  nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  nav button { margin:0; }
+}
+@media(max-width:480px) {
+  .stats,.form-grid { grid-template-columns:1fr; }
+  .field.full { grid-column:auto; }
+}
+</style>
 </head>
 
 <body>
-  <header class="header">
-    <div class="brand">
-      <div class="monogram">KC</div>
-      <div>
-        <h1>KELSIY'S CLOSET</h1>
-        <p>STYLE THAT SPEAKS</p>
-      </div>
-    </div>
-    <button class="button button-light" id="sign-out-button" type="button">
-      SIGN OUT
-    </button>
-  </header>
+<header>
+  <div>
+    <h1>KELSIY'S CLOSET</h1>
+    <p>STYLE THAT SPEAKS</p>
+  </div>
+  <button id="sign-out" type="button">SIGN OUT</button>
+</header>
 
-  <section class="hero">
-    <div class="hero-content">
-      <div class="eyebrow">Your boutique · Your business</div>
-      <h2>Manage Your Fashion Empire.</h2>
-      <p>
-        Manage your products, set your prices, update stock and keep
-        your Kelsiy's Closet collection looking its best.
-      </p>
-      <a href="#dashboard" class="button button-light">OPEN DASHBOARD →</a>
-    </div>
-  </section>
+<main>
+  <h1>Owner's Dashboard</h1>
+  <p>Manage your boutique, products, prices and stock.</p>
+  <p id="status" role="status">Checking your account...</p>
 
-  <main class="page" id="dashboard">
-    <div class="section-heading">
-      <h2>Owner's Dashboard</h2>
-      <p>Welcome back. Your products and prices are managed here.</p>
-    </div>
+  <div class="layout">
+    <nav aria-label="Dashboard sections">
+      <button data-section="home">HOME</button>
+      <button data-section="inventory">INVENTORY</button>
+      <button data-section="sales">SALES</button>
+      <button data-section="reports">SALES REPORTS</button>
+      <button data-section="messages">MESSAGES</button>
+    </nav>
 
-    <div id="page-status" class="status" role="status" aria-live="polite">
-      Checking your owner account...
-    </div>
+    <div>
+      <section class="panel" data-panel="home">
+        <h2>Business Overview</h2>
+        <div class="stats">
+          <div class="stat">Active Products<strong id="stat-products">0</strong></div>
+          <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
+          <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
+        </div>
+        <button data-go="inventory">MANAGE INVENTORY</button>
+      </section>
 
-    <div class="dashboard-layout">
-      <aside class="sidebar">
-        <h3>Management</h3>
-        <nav>
-          <button class="nav-button active" data-section="home" type="button">HOME</button>
-          <button class="nav-button" data-section="inventory" type="button">INVENTORY</button>
-          <button class="nav-button" data-section="sales" type="button">SALES</button>
-          <button class="nav-button" data-section="reports" type="button">SALES REPORTS</button>
-          <button class="nav-button" data-section="contacts" type="button">MESSAGES</button>
-        </nav>
-      </aside>
+      <section class="panel" data-panel="inventory" hidden>
+        <h2>Product Inventory</h2>
+        <p>Add a product or select Edit to update it.</p>
 
-      <div>
-        <section class="panel" data-panel="home">
-          <h2>Business Overview</h2>
-          <div class="stats">
-            <div class="stat">
-              <span>Active Products</span>
-              <strong id="stat-products">0</strong>
+        <form id="product-form">
+          <input type="hidden" id="product-id">
+          <div class="form-grid">
+            <div class="field">
+              <label for="product-name">Product name *</label>
+              <input id="product-name" required maxlength="150">
             </div>
-            <div class="stat">
-              <span>Total Stock Units</span>
-              <strong id="stat-stock">0</strong>
+            <div class="field">
+              <label for="product-category">Category *</label>
+              <select id="product-category" required>
+                <option value="Women">Women's Clothing</option>
+                <option value="Men">Men's Clothing</option>
+                <option value="Shoes">Shoes</option>
+                <option value="Kids">Kids' Clothing</option>
+                <option value="Accessories">Accessories</option>
+              </select>
             </div>
-            <div class="stat">
-              <span>Products Out of Stock</span>
-              <strong id="stat-empty">0</strong>
+            <div class="field">
+              <label for="product-price">Price (KES) *</label>
+              <input id="product-price" type="number" min="0" step="0.01" required>
+            </div>
+            <div class="field">
+              <label for="product-stock">Quantity in stock *</label>
+              <input id="product-stock" type="number" min="0" step="1" required>
+            </div>
+            <div class="field">
+              <label for="product-size">Size</label>
+              <input id="product-size" placeholder="S, M, L, XL">
+            </div>
+            <div class="field">
+              <label for="product-colour">Color</label>
+              <input id="product-colour" placeholder="Black">
+            </div>
+            <div class="field full">
+              <label for="product-image">Product image (JPG/JPEG)</label>
+              <input id="product-image" type="text"
+                     placeholder="images/dress.jpg">
+              <small>Example: images/dress.jpg or images/jeans.jpeg</small>
+            </div>
+            <div class="field full">
+              <label for="product-description">Description</label>
+              <textarea id="product-description"></textarea>
             </div>
           </div>
-          <p>
-            Use Inventory to add products, upload product photo links,
-            set prices and change quantities.
-          </p>
-          <button class="button" type="button" data-go="inventory">
-            MANAGE INVENTORY →
-          </button>
-        </section>
-
-        <section class="panel" data-panel="inventory" hidden>
-          <h2>Product Inventory</h2>
-          <p>Add a new product or select Edit in the table to update it.</p>
-
-          <form id="product-form">
-            <input type="hidden" id="product-id">
-
-            <div class="form-grid">
-              <div class="field">
-                <label for="product-name">Product Name *</label>
-                <input id="product-name" required maxlength="150"
-                       placeholder="e.g. Long cardigan">
-              </div>
-
-              <div class="field">
-                <label for="product-category">Category *</label>
-                <select id="product-category" required>
-                  <option value="Women">Women's Clothing</option>
-                  <option value="Men">Men's Clothing</option>
-                  <option value="Shoes">Shoes</option>
-                  <option value="Kids">Kids' Clothing</option>
-                  <option value="Accessories">Accessories</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label for="product-price">Price (KES) *</label>
-                <input id="product-price" type="number" min="0" step="0.01"
-                       required placeholder="Enter your price">
-              </div>
-
-              <div class="field">
-                <label for="product-stock">Quantity in Stock *</label>
-                <input id="product-stock" type="number" min="0" step="1"
-                       required placeholder="Enter quantity">
-              </div>
-
-              <div class="field">
-                <label for="product-size">Size</label>
-                <input id="product-size" placeholder="e.g. S, M, L, XL">
-              </div>
-
-              <div class="field">
-                <label for="product-colour">Colour</label>
-                <input id="product-colour" placeholder="e.g. Black">
-              </div>
-
-              <div class="field full">
-                <label for="product-image">Product Image URL</label>
-                <input id="product-image" type="url"
-                       placeholder="Paste a direct image URL">
-              </div>
-
-              <div class="field full">
-                <label for="product-description">Description</label>
-                <textarea id="product-description"
-                          placeholder="Describe the product"></textarea>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button class="button" id="save-product-button" type="submit">
-                SAVE PRODUCT
-              </button>
-              <button class="button button-light" id="cancel-edit"
-                      type="button" hidden>
-                CANCEL EDIT
-              </button>
-            </div>
-          </form>
-
-          <div class="status" id="product-status" role="status" aria-live="polite"></div>
-
-          <h2>Saved Products</h2>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Photo</th>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="inventory-table">
-                <tr><td colspan="6" class="empty">Loading products...</td></tr>
-              </tbody>
-            </table>
+          <div class="actions">
+            <button id="save-button" type="submit">SAVE PRODUCT</button>
+            <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
           </div>
-        </section>
+        </form>
 
-        <section class="panel" data-panel="sales" hidden>
-          <h2>Sales</h2>
-          <p>
-            The sales recording form must be connected to your existing
-            sales and sales_items database structure before it can safely
-            record payments and reduce stock.
-          </p>
-          <p id="sales-status">
-            Your existing database has not been changed by this page.
-          </p>
-        </section>
+        <p id="product-status" role="status"></p>
+        <h2>Saved Products</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Photo</th><th>Product</th><th>Category</th>
+              <th>Price</th><th>Stock</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="inventory-table">
+              <tr><td colspan="6">Loading products...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-        <section class="panel" data-panel="reports" hidden>
-          <h2>Sales Reports</h2>
-          <p>
-            Sales totals and payment reports will appear here once the
-            sales-recording workflow is connected and tested.
-          </p>
-        </section>
+      <section class="panel" data-panel="sales" hidden>
+        <h2>Sales</h2>
+        <p id="sales-status">Sales recording will be connected to your existing database after the transaction and stock-update process is secured.</p>
+      </section>
 
-        <section class="panel" data-panel="contacts" hidden>
-          <h2>Customer Messages</h2>
-          <p>
-            The messages section is ready for its layout. Customer messages
-            will appear here after the contact form is connected to a
-            database table and its access policies.
-          </p>
-        </section>
-      </div>
+      <section class="panel" data-panel="reports" hidden>
+        <h2>Sales Reports</h2>
+        <p>Reports will appear here once sales recording is connected and tested.</p>
+      </section>
+
+      <section class="panel" data-panel="messages" hidden>
+        <h2>Customer Messages</h2>
+        <p>Customer messages will appear here after the contact form and database permissions are connected.</p>
+      </section>
     </div>
-  </main>
+  </div>
+</main>
 
-  <footer>
-    <strong>KELSIY'S CLOSET</strong>
-    <p class="tagline">STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
-    <p>© <span id="copyright-year"></span> Kelsiy's Closet. All rights reserved.</p>
-  </footer>
+<footer>
+  <strong>KELSIY'S CLOSET</strong>
+  <p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
+  <p>© <span id="year"></span> Kelsiy's Closet</p>
+</footer>
 
-  <script>
-    const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+<script>
+const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const el = id => document.getElementById(id);
+let products = [];
+let ownerUser = null;
 
-    const el = (id) => document.getElementById(id);
-    let products = [];
-    let ownerUser = null;
+el("year").textContent = new Date().getFullYear();
 
-    el("copyright-year").textContent = new Date().getFullYear();
+function message(id, text) {
+  el(id).textContent = text;
+}
 
-    function setStatus(id, message) {
-      el(id).textContent = message;
-    }
+function money(value) {
+  return "KES " + Number(value || 0).toLocaleString("en-KE", {
+    maximumFractionDigits: 2
+  });
+}
 
-    function formatKES(value) {
-      return "KES " + Number(value || 0).toLocaleString("en-KE", {
-        maximumFractionDigits: 2
-      });
-    }
+function showSection(name) {
+  document.querySelectorAll("[data-panel]").forEach(panel => {
+    panel.hidden = panel.dataset.panel !== name;
+  });
+  if (name === "inventory") loadProducts();
+}
 
-    function makeCell(row, value) {
-      const cell = document.createElement("td");
-      cell.textContent = value == null ? "" : String(value);
-      row.appendChild(cell);
-      return cell;
-    }
+document.querySelectorAll("[data-section]").forEach(button => {
+  button.addEventListener("click", () => showSection(button.dataset.section));
+});
+document.querySelectorAll("[data-go]").forEach(button => {
+  button.addEventListener("click", () => showSection(button.dataset.go));
+});
 
-    function showSection(name) {
-      document.querySelectorAll("[data-panel]").forEach((panel) => {
-        panel.hidden = panel.dataset.panel !== name;
-      });
+function updateStats() {
+  const active = products.filter(p => p.active !== false);
+  el("stat-products").textContent = active.length;
+  el("stat-stock").textContent = active.reduce(
+    (sum, p) => sum + Math.max(0, Number(p.stock) || 0), 0
+  );
+  el("stat-empty").textContent = active.filter(
+    p => Number(p.stock) <= 0
+  ).length;
+}
 
-      document.querySelectorAll(".nav-button").forEach((button) => {
-        button.classList.toggle("active", button.dataset.section === name);
-      });
+function clearForm() {
+  el("product-form").reset();
+  el("product-id").value = "";
+  el("save-button").textContent = "SAVE PRODUCT";
+  el("cancel-edit").hidden = true;
+}
+el("cancel-edit").addEventListener("click", clearForm);
 
-      if (name === "inventory") loadProducts();
-    }
+function cell(row, value) {
+  const td = document.createElement("td");
+  td.textContent = value == null ? "" : String(value);
+  row.appendChild(td);
+  return td;
+}
 
-    document.querySelectorAll(".nav-button").forEach((button) => {
-      button.addEventListener("click", () => showSection(button.dataset.section));
-    });
+async function loadProducts() {
+  message("product-status", "Loading products...");
 
-    document.querySelectorAll("[data-go]").forEach((button) => {
-      button.addEventListener("click", () => showSection(button.dataset.go));
-    });
+  const { data, error } = await db.from("products")
+    .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
+    .order("created_at", { ascending: false });
 
-    function updateStats() {
-      const active = products.filter((p) => p.active !== false);
-      el("stat-products").textContent = active.length;
-      el("stat-stock").textContent = active.reduce(
-        (sum, p) => sum + Math.max(0, Number(p.stock) || 0), 0
-      );
-      el("stat-empty").textContent = active.filter(
-        (p) => Number(p.stock) <= 0
-      ).length;
-    }
+  if (error) {
+    console.error(error);
+    message("product-status", "Could not load products: " + error.message);
+    return;
+  }
 
-    function clearProductForm() {
-      el("product-form").reset();
-      el("product-id").value = "";
-      el("save-product-button").textContent = "SAVE PRODUCT";
-      el("cancel-edit").hidden = true;
-      setStatus("product-status", "");
-    }
+  products = data || [];
+  updateStats();
 
-    el("cancel-edit").addEventListener("click", clearProductForm);
+  const tbody = el("inventory-table");
+  tbody.replaceChildren();
 
-    async function loadProducts() {
-      setStatus("product-status", "Loading products...");
+  if (!products.length) {
+    const row = document.createElement("tr");
+    const td = cell(row, "No products yet. Add your first product.");
+    td.colSpan = 6;
+    tbody.appendChild(row);
+  }
 
-      const { data, error } = await db
-        .from("products")
-        .select("id,name,category,description,size,colour,price,stock,image_url,active,created_at")
-        .order("created_at", { ascending: false });
+  products.forEach(product => {
+    const row = document.createElement("tr");
+    const photo = document.createElement("td");
 
-      if (error) {
-        console.error("Product loading error:", error);
-        setStatus(
-          "product-status",
-          "Could not load products. Check your Supabase connection and products-table permissions."
-        );
-        return;
-      }
-
-      products = data || [];
-      updateStats();
-
-      const tbody = el("inventory-table");
-      tbody.replaceChildren();
-
-      if (!products.length) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 6;
-        cell.className = "empty";
-        cell.textContent = "No products yet. Add your first product above.";
-        row.appendChild(cell);
-        tbody.appendChild(row);
-      } else {
-        products.forEach((product) => {
-          const row = document.createElement("tr");
-
-          const photoCell = document.createElement("td");
-          if (product.image_url) {
-            const img = document.createElement("img");
-            img.className = "product-preview";
-            img.src = product.image_url;
-            img.alt = product.name || "Product";
-            img.loading = "lazy";
-            img.onerror = () => {
-              img.alt = "Image unavailable";
-              img.removeAttribute("src");
-            };
-            photoCell.appendChild(img);
-          } else {
-            photoCell.textContent = "No photo";
-          }
-          row.appendChild(photoCell);
-
-          makeCell(row, product.name);
-          makeCell(row, product.category);
-          makeCell(row, formatKES(product.price));
-          makeCell(row, product.stock);
-
-          const actions = document.createElement("td");
-
-          const edit = document.createElement("button");
-          edit.type = "button";
-          edit.className = "small-button";
-          edit.textContent = "Edit";
-          edit.addEventListener("click", () => editProduct(product));
-          actions.appendChild(edit);
-
-          const remove = document.createElement("button");
-          remove.type = "button";
-          remove.className = "small-button delete-button";
-          remove.textContent = "Delete";
-          remove.addEventListener("click", () => deleteProduct(product));
-          actions.appendChild(remove);
-
-          row.appendChild(actions);
-          tbody.appendChild(row);
-        });
-      }
-
-      setStatus("product-status", "Products loaded: " + products.length);
-    }
-
-    function editProduct(product) {
-      el("product-id").value = product.id;
-      el("product-name").value = product.name || "";
-      el("product-category").value = product.category || "Women";
-      el("product-price").value = product.price ?? "";
-      el("product-stock").value = product.stock ?? 0;
-      el("product-size").value = product.size || "";
-      el("product-colour").value = product.colour || "";
-      el("product-image").value = product.image_url || "";
-      el("product-description").value = product.description || "";
-      el("save-product-button").textContent = "UPDATE PRODUCT";
-      el("cancel-edit").hidden = false;
-      setStatus("product-status", "Editing: " + (product.name || "product"));
-      el("product-form").scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    async function deleteProduct(product) {
-      if (!confirm('Delete "' + product.name + '" from your inventory?')) return;
-
-      setStatus("product-status", "Deleting product...");
-
-      const { error } = await db
-        .from("products")
-        .delete()
-        .eq("id", product.id);
-
-      if (error) {
-        console.error("Delete error:", error);
-        setStatus(
-          "product-status",
-          "Could not delete this product. Check the products-table permissions."
-        );
-        return;
-      }
-
-      setStatus("product-status", "Product deleted.");
-      await loadProducts();
-    }
-
-    el("product-form").addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      if (!ownerUser) {
-        setStatus("product-status", "Your owner session is not active. Please sign in again.");
-        return;
-      }
-
-      const price = Number(el("product-price").value);
-      const stock = Number(el("product-stock").value);
-
-      if (!Number.isFinite(price) || price < 0 ||
-          !Number.isInteger(stock) || stock < 0) {
-        setStatus("product-status", "Enter a valid non-negative price and whole-number stock quantity.");
-        return;
-      }
-
-      const product = {
-        name: el("product-name").value.trim(),
-        category: el("product-category").value,
-        price,
-        stock,
-        size: el("product-size").value.trim() || null,
-        colour: el("product-colour").value.trim() || null,
-        image_url: el("product-image").value.trim() || null,
-        description: el("product-description").value.trim() || null,
-        active: true
+    if (product.image_url) {
+      const img = document.createElement("img");
+      img.className = "photo";
+      img.src = product.image_url;
+      img.alt = product.name || "Product";
+      img.onerror = () => {
+        img.removeAttribute("src");
+        img.alt = "Image unavailable";
       };
-
-      if (!product.name) {
-        setStatus("product-status", "Please enter a product name.");
-        return;
-      }
-
-      const id = el("product-id").value;
-      el("save-product-button").disabled = true;
-      setStatus("product-status", id ? "Updating product..." : "Saving product...");
-
-      try {
-        let result;
-
-        if (id) {
-          result = await db.from("products").update(product).eq("id", id);
-        } else {
-          result = await db.from("products").insert(product);
-        }
-
-        if (result.error) throw result.error;
-
-        clearProductForm();
-        setStatus("product-status", id ? "Product updated successfully." : "Product saved successfully.");
-        await loadProducts();
-      } catch (error) {
-        console.error("Save product error:", error);
-        setStatus(
-          "product-status",
-          "Could not save the product: " + (error.message || "Please check Supabase permissions and column names.")
-        );
-      } finally {
-        el("save-product-button").disabled = false;
-      }
-    });
-
-    async function checkOwner() {
-      const { data, error } = await db.auth.getSession();
-
-      if (error || !data.session) {
-        setStatus("page-status", "Please sign in with your owner account.");
-        window.location.replace("index.html");
-        return false;
-      }
-
-      ownerUser = data.session.user;
-
-      const { data: profile, error: profileError } = await db
-        .from("profiles")
-        .select("role")
-        .eq("id", ownerUser.id)
-        .maybeSingle();
-
-      if (profileError || !profile || profile.role !== "owner") {
-        setStatus("page-status", "This page is only available to the owner account.");
-        await db.auth.signOut();
-        window.location.replace("index.html");
-        return false;
-      }
-
-      setStatus("page-status", "Signed in as owner: " + (ownerUser.email || ""));
-      await loadProducts();
-      return true;
+      photo.appendChild(img);
+    } else {
+      photo.textContent = "No photo";
     }
 
-    el("sign-out-button").addEventListener("click", async () => {
-      const { error } = await db.auth.signOut();
+    row.appendChild(photo);
+    cell(row, product.name);
+    cell(row, product.category);
+    cell(row, money(product.price));
+    cell(row, product.stock);
 
-      if (error) {
-        setStatus("page-status", "Sign out failed: " + error.message);
-        return;
-      }
+    const actions = document.createElement("td");
+    const edit = document.createElement("button");
+    edit.className = "small";
+    edit.type = "button";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => editProduct(product));
 
-      window.location.replace("index.html");
-    });
+    const remove = document.createElement("button");
+    remove.className = "small delete";
+    remove.type = "button";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", () => deleteProduct(product));
 
-    checkOwner();
-  </script>
+    actions.append(edit, remove);
+    row.appendChild(actions);
+    tbody.appendChild(row);
+  });
+
+  message("product-status", "Products loaded: " + products.length);
+}
+
+function editProduct(p) {
+  el("product-id").value = p.id;
+  el("product-name").value = p.name || "";
+  el("product-category").value = p.category || "Women";
+  el("product-price").value = p.price ?? "";
+  el("product-stock").value = p.stock ?? 0;
+  el("product-size").value = p.size || "";
+  el("product-colour").value = p.color || "";
+  el("product-image").value = p.image_url || "";
+  el("product-description").value = p.description || "";
+  el("save-button").textContent = "UPDATE PRODUCT";
+  el("cancel-edit").hidden = false;
+  el("product-form").scrollIntoView({ behavior: "smooth" });
+}
+
+async function deleteProduct(p) {
+  if (!confirm('Delete "' + p.name + '" from inventory?')) return;
+
+  const { error } = await db.from("products").delete().eq("id", p.id);
+  if (error) {
+    message("product-status", "Could not delete product: " + error.message);
+    return;
+  }
+  message("product-status", "Product deleted.");
+  await loadProducts();
+}
+
+el("product-form").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!ownerUser) {
+    message("product-status", "Owner session not active. Please sign in again.");
+    return;
+  }
+
+  const price = Number(el("product-price").value);
+  const stock = Number(el("product-stock").value);
+
+  if (!Number.isFinite(price) || price < 0 ||
+      !Number.isInteger(stock) || stock < 0) {
+    message("product-status", "Enter a valid price and whole-number stock quantity.");
+    return;
+  }
+
+  const product = {
+    name: el("product-name").value.trim(),
+    category: el("product-category").value,
+    price,
+    stock,
+    size: el("product-size").value.trim() || null,
+    color: el("product-colour").value.trim() || null,
+    image_url: el("product-image").value.trim() || null,
+    description: el("product-description").value.trim() || null,
+    active: true
+  };
+
+  if (!product.name) {
+    message("product-status", "Enter a product name.");
+    return;
+  }
+
+  const id = el("product-id").value;
+  el("save-button").disabled = true;
+  message("product-status", id ? "Updating product..." : "Saving product...");
+
+  try {
+    const result = id
+      ? await db.from("products").update(product).eq("id", id)
+      : await db.from("products").insert(product);
+
+    if (result.error) throw result.error;
+
+    clearForm();
+    message("product-status", id ? "Product updated." : "Product saved.");
+    await loadProducts();
+  } catch (error) {
+    console.error(error);
+    message("product-status", "Could not save product: " + error.message);
+  } finally {
+    el("save-button").disabled = false;
+  }
+});
+
+async function checkOwner() {
+  const { data, error } = await db.auth.getSession();
+
+  if (error || !data.session) {
+    message("status", "Please sign in with your owner account.");
+    window.location.replace("index.html");
+    return;
+  }
+
+  ownerUser = data.session.user;
+
+  const { data: profile, error: profileError } = await db
+    .from("profiles").select("role")
+    .eq("id", ownerUser.id).maybeSingle();
+
+  if (profileError || !profile || profile.role !== "owner") {
+    message("status", "This page is for the owner account only.");
+    await db.auth.signOut();
+    window.location.replace("index.html");
+    return;
+  }
+
+  message("status", "Signed in as owner: " + (ownerUser.email || ""));
+  await loadProducts();
+}
+
+el("sign-out").addEventListener("click", async () => {
+  const { error } = await db.auth.signOut();
+  if (error) {
+    message("status", "Could not sign out: " + error.message);
+    return;
+  }
+  window.location.replace("index.html");
+});
+
+checkOwner();
+</script>
 </body>
 </html>
