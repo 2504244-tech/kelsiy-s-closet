@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kelsiy's Closet | Owner Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
 *{box-sizing:border-box}
 body{margin:0;background:var(--c);color:#292126;font:16px Arial}
 header,footer{background:var(--d);color:white;padding:20px 5%;border-bottom:4px solid var(--g)}
 header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
-header h1{color:white;margin:0}header p{color:#e9c88e}
+header h1{color:white;margin:0}
+header p{color:#e9c88e}
 h1,h2{color:var(--b)}
 button{padding:11px 14px;background:var(--b);color:white;border:1px solid var(--g);border-radius:5px;cursor:pointer;font-weight:bold}
-button:disabled{opacity:.6}
+button:disabled{opacity:.6;cursor:wait}
 main{width:94%;max-width:1250px;margin:25px auto}
 .layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px}
 nav,.panel{background:white;padding:18px;border:1px solid #eadbd5;border-radius:8px;margin-bottom:16px}
@@ -31,17 +33,24 @@ textarea{min-height:75px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
 .table-wrap{overflow-x:auto}
 table{width:100%;min-width:500px;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left}
+th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
 th{background:#f5e9e2}
 .photo{width:50px;height:60px;object-fit:cover}
-.small{padding:7px;margin:2px}.delete{background:#a21b2d}
-#status,#product-status,#sales-status,#report-status{overflow-wrap:anywhere}
+.small{padding:7px;margin:2px}
+.delete{background:#a21b2d}
+#status,#product-status,#sales-status,#report-status,#messages-status{overflow-wrap:anywhere}
 #sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
 footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
-@media(max-width:700px){.layout{grid-template-columns:1fr}nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}nav button{margin:0}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+ .layout{grid-template-columns:1fr}
+ nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ nav button{margin:0}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media(max-width:450px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
+
 <body>
 <header>
  <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
@@ -50,7 +59,7 @@ footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
 
 <main>
 <h1>Owner's Dashboard</h1>
-<p>Manage products, stock and sales.</p>
+<p>Manage products, stock, sales and customer messages.</p>
 <p id="status">Checking account...</p>
 
 <div class="layout">
@@ -79,8 +88,9 @@ footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
 <input type="hidden" id="product-id">
 <div class="grid">
  <div class="field"><label>Product name *</label><input id="product-name" required></div>
- <div class="field"><label>Category *</label><select id="product-category">
- <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
+ <div class="field"><label>Category *</label>
+ <select id="product-category">
+  <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
  </select></div>
  <div class="field"><label>Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
  <div class="field"><label>Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
@@ -89,7 +99,10 @@ footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
  <div class="field"><label>Image path</label><input id="product-image" placeholder="images/dress.jpg"></div>
  <div class="field"><label>Description</label><textarea id="product-description"></textarea></div>
 </div>
-<div class="actions"><button id="save-button">SAVE PRODUCT</button><button id="cancel-edit" type="button" hidden>CANCEL EDIT</button></div>
+<div class="actions">
+ <button id="save-button">SAVE PRODUCT</button>
+ <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
+</div>
 </form>
 <p id="product-status" role="status"></p>
 <h2>Saved Products</h2>
@@ -130,7 +143,7 @@ footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
  <button id="clear-report-filter">SHOW ALL</button>
  <button id="refresh-report">REFRESH</button>
 </div>
-<p id="report-status" role="status">Loading reports when opened...</p>
+<p id="report-status" role="status">Open Sales Reports to load transactions.</p>
 <div class="stats">
  <div class="stat">Revenue<strong id="report-revenue">KES 0</strong></div>
  <div class="stat">Transactions<strong id="report-count">0</strong></div>
@@ -148,22 +161,40 @@ footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
 
 <section class="panel" data-panel="messages" hidden>
 <h2>Customer Messages</h2>
-<p>We will connect customer messages next.</p>
+<p>View and manage messages sent by your customers.</p>
+<div class="actions">
+ <button id="refresh-messages">REFRESH MESSAGES</button>
+</div>
+<p id="messages-status" role="status">Open Messages to load messages.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr><th>Customer</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+</thead>
+<tbody id="messages-table"></tbody>
+</table></div>
 </section>
 </div>
 </div>
 </main>
-<footer><strong>KELSIY'S CLOSET</strong><p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p><p>© <span id="year"></span></p></footer>
+
+<footer>
+<strong>KELSIY'S CLOSET</strong>
+<p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
+<p>© <span id="year"></span></p>
+</footer>
 
 <script>
 "use strict";
+
 const db=window.supabase.createClient(
  "https://zqvjaqpqtctnvylgtwjg.supabase.co",
  "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR"
 );
+
 const el=id=>document.getElementById(id);
 const say=(id,text)=>el(id).textContent=text;
 const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
+
 let products=[],ownerUser=null,cart=[],busy=false;
 
 el("year").textContent=new Date().getFullYear();
@@ -171,16 +202,26 @@ el("year").textContent=new Date().getFullYear();
 function cell(row,value){
  const td=document.createElement("td");
  td.textContent=value==null?"":String(value);
- row.appendChild(td);return td;
+ row.appendChild(td);
+ return td;
 }
+
 function showSection(name){
- document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==name);
+ document.querySelectorAll("[data-panel]").forEach(p=>{
+  p.hidden=p.dataset.panel!==name;
+ });
  if(name==="inventory")loadProducts();
  if(name==="sales")loadSalesProducts();
  if(name==="reports")loadReport();
+ if(name==="messages")loadMessages();
 }
-document.querySelectorAll("[data-section]").forEach(b=>b.onclick=()=>showSection(b.dataset.section));
-document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showSection(b.dataset.go));
+
+document.querySelectorAll("[data-section]").forEach(b=>{
+ b.onclick=()=>showSection(b.dataset.section);
+});
+document.querySelectorAll("[data-go]").forEach(b=>{
+ b.onclick=()=>showSection(b.dataset.go);
+});
 
 function updateStats(){
  const active=products.filter(p=>p.active!==false);
@@ -190,220 +231,408 @@ function updateStats(){
 }
 
 function clearForm(){
- el("product-form").reset();el("product-id").value="";
- el("save-button").textContent="SAVE PRODUCT";el("cancel-edit").hidden=true;
+ el("product-form").reset();
+ el("product-id").value="";
+ el("save-button").textContent="SAVE PRODUCT";
+ el("cancel-edit").hidden=true;
 }
 el("cancel-edit").onclick=clearForm;
 
 async function loadProducts(){
  say("product-status","Loading products...");
  const {data,error}=await db.from("products")
- .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
- .order("created_at",{ascending:false});
- if(error){say("product-status","Could not load products: "+error.message);return false}
- products=data||[];updateStats();
- const tbody=el("inventory-table");tbody.replaceChildren();
- if(!products.length){const r=tbody.insertRow();cell(r,"No products yet.").colSpan=6}
+  .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
+  .order("created_at",{ascending:false});
+
+ if(error){
+  say("product-status","Could not load products: "+error.message);
+  return false;
+ }
+
+ products=data||[];
+ updateStats();
+
+ const tbody=el("inventory-table");
+ tbody.replaceChildren();
+
+ if(!products.length){
+  const r=tbody.insertRow();
+  cell(r,"No products yet.").colSpan=6;
+ }
+
  products.forEach(p=>{
   const r=tbody.insertRow(),photo=cell(r,"");
-  if(p.image_url){const img=document.createElement("img");img.className="photo";img.src=p.image_url;img.alt=p.name;img.onerror=()=>img.remove();photo.appendChild(img)}
-  else photo.textContent="No photo";
-  cell(r,p.name);cell(r,p.category);cell(r,money(p.price));cell(r,p.stock);
+
+  if(p.image_url){
+   const img=document.createElement("img");
+   img.className="photo";
+   img.src=p.image_url;
+   img.alt=p.name;
+   img.onerror=()=>img.remove();
+   photo.appendChild(img);
+  }else photo.textContent="No photo";
+
+  cell(r,p.name);
+  cell(r,p.category);
+  cell(r,money(p.price));
+  cell(r,p.stock);
+
   const a=cell(r,"");
-  const edit=document.createElement("button");edit.className="small";edit.textContent="Edit";edit.onclick=()=>editProduct(p);
-  const del=document.createElement("button");del.className="small delete";del.textContent="Delete";del.onclick=()=>deleteProduct(p);
+  const edit=document.createElement("button");
+  edit.className="small";
+  edit.textContent="Edit";
+  edit.onclick=()=>editProduct(p);
+
+  const del=document.createElement("button");
+  del.className="small delete";
+  del.textContent="Delete";
+  del.onclick=()=>deleteProduct(p);
+
   a.append(edit,del);
  });
- say("product-status","Products loaded: "+products.length);return true;
+
+ say("product-status","Products loaded: "+products.length);
+ return true;
 }
 
 function populateProducts(){
- const s=el("sales-product");s.replaceChildren();
- const first=new Option("Choose a product","");
- s.add(first);
- products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>
-  s.add(new Option(`${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id))
- );
+ const s=el("sales-product");
+ s.replaceChildren();
+ s.add(new Option("Choose a product",""));
+
+ products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>{
+  s.add(new Option(`${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id));
+ });
 }
+
 async function loadSalesProducts(){
- if(!await loadProducts()){say("sales-status","Products could not load.");return}
- populateProducts();renderCart();say("sales-status","Products loaded.");
+ if(!await loadProducts()){
+  say("sales-status","Products could not load.");
+  return;
+ }
+ populateProducts();
+ renderCart();
+ say("sales-status","Products loaded.");
 }
+
 function renderCart(){
- const tbody=el("sales-cart-body");tbody.replaceChildren();let total=0;
- if(!cart.length){const r=tbody.insertRow();cell(r,"No items added.").colSpan=5}
+ const tbody=el("sales-cart-body");
+ tbody.replaceChildren();
+ let total=0;
+
+ if(!cart.length){
+  const r=tbody.insertRow();
+  cell(r,"No items added.").colSpan=5;
+ }
+
  cart.forEach(item=>{
-  const p=products.find(x=>x.id===item.product_id);if(!p)return;
-  const sub=Number(p.price)*item.quantity;total+=sub;
-  const r=tbody.insertRow();cell(r,p.name);cell(r,item.quantity);cell(r,money(p.price));cell(r,money(sub));
-  const a=cell(r,""),b=document.createElement("button");b.className="small delete";b.textContent="Remove";
-  b.onclick=()=>{cart=cart.filter(x=>x.product_id!==item.product_id);renderCart()};
+  const p=products.find(x=>x.id===item.product_id);
+  if(!p)return;
+
+  const sub=Number(p.price)*item.quantity;
+  total+=sub;
+
+  const r=tbody.insertRow();
+  cell(r,p.name);
+  cell(r,item.quantity);
+  cell(r,money(p.price));
+  cell(r,money(sub));
+
+  const a=cell(r,"");
+  const b=document.createElement("button");
+  b.className="small delete";
+  b.textContent="Remove";
+  b.onclick=()=>{
+   cart=cart.filter(x=>x.product_id!==item.product_id);
+   renderCart();
+  };
   a.appendChild(b);
  });
+
  el("sales-total").textContent=money(total);
 }
+
 el("add-sale-item").onclick=()=>{
- const id=el("sales-product").value,q=Number(el("sales-quantity").value);
+ const id=el("sales-product").value;
+ const q=Number(el("sales-quantity").value);
  const p=products.find(x=>x.id===id);
+
  if(!p||p.active===false)return say("sales-status","Choose an active product.");
  if(!Number.isInteger(q)||q<1)return say("sales-status","Enter a valid whole-number quantity.");
- const old=cart.find(x=>x.product_id===id),already=old?old.quantity:0;
+
+ const old=cart.find(x=>x.product_id===id);
+ const already=old?old.quantity:0;
+
  if(already+q>Number(p.stock))return say("sales-status","Not enough stock available.");
- if(old)old.quantity+=q;else cart.push({product_id:id,quantity:q});
- renderCart();say("sales-status",p.name+" added.");el("sales-quantity").value=1;
+
+ if(old)old.quantity+=q;
+ else cart.push({product_id:id,quantity:q});
+
+ renderCart();
+ say("sales-status",p.name+" added.");
+ el("sales-quantity").value=1;
 };
 
 el("record-sale-button").onclick=async()=>{
  if(busy)return;
  if(!ownerUser)return say("sales-status","Please sign in again.");
  if(!cart.length)return say("sales-status","Add products first.");
+
  const payment=el("sales-payment").value;
  if(!["cash","mpesa"].includes(payment))return say("sales-status","Choose Cash or M-Pesa.");
- busy=true;el("record-sale-button").disabled=true;say("sales-status","Recording sale...");
+
+ busy=true;
+ el("record-sale-button").disabled=true;
+ say("sales-status","Recording sale...");
+
  try{
   const {data,error}=await db.rpc("record_sale",{
    p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
    p_payment_method:payment
   });
+
   if(error)throw error;
   if(!data||data.receipt_number==null)throw Error("No receipt number returned. Check Supabase before retrying.");
-  cart=[];renderCart();
-  const box=el("sale-receipt");box.replaceChildren();box.hidden=false;
-  const h=document.createElement("h3");h.textContent="Sale recorded successfully";
-  [h,"Receipt number: "+data.receipt_number,"Total: "+money(data.total),
-   "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")].forEach(x=>{
-    if(typeof x==="string"){const p=document.createElement("p");p.textContent=x;box.appendChild(p)}
-    else box.appendChild(x);
-   });
+
+  cart=[];
+  renderCart();
+
+  const box=el("sale-receipt");
+  box.replaceChildren();
+  box.hidden=false;
+
+  const h=document.createElement("h3");
+  h.textContent="Sale recorded successfully";
+  box.appendChild(h);
+
+  [
+   "Receipt number: "+data.receipt_number,
+   "Total: "+money(data.total),
+   "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")
+  ].forEach(t=>{
+   const p=document.createElement("p");
+   p.textContent=t;
+   box.appendChild(p);
+  });
+
   say("sales-status","Sale saved. Stock updated.");
-  await loadProducts();populateProducts();
+  await loadProducts();
+  populateProducts();
  }catch(e){
-  console.error(e);say("sales-status","Sale was not confirmed: "+e.message+". Check Supabase before retrying.");
- }finally{busy=false;el("record-sale-button").disabled=false}
+  console.error(e);
+  say("sales-status","Sale was not confirmed: "+e.message+". Check Supabase before retrying.");
+ }finally{
+  busy=false;
+  el("record-sale-button").disabled=false;
+ }
 };
 
 function editProduct(p){
- el("product-id").value=p.id;el("product-name").value=p.name||"";
- el("product-category").value=p.category||"Women";el("product-price").value=p.price??"";
- el("product-stock").value=p.stock??0;el("product-size").value=p.size||"";
- el("product-colour").value=p.color||"";el("product-image").value=p.image_url||"";
+ el("product-id").value=p.id;
+ el("product-name").value=p.name||"";
+ el("product-category").value=p.category||"Women";
+ el("product-price").value=p.price??"";
+ el("product-stock").value=p.stock??0;
+ el("product-size").value=p.size||"";
+ el("product-colour").value=p.color||"";
+ el("product-image").value=p.image_url||"";
  el("product-description").value=p.description||"";
- el("save-button").textContent="UPDATE PRODUCT";el("cancel-edit").hidden=false;
+ el("save-button").textContent="UPDATE PRODUCT";
+ el("cancel-edit").hidden=false;
  el("product-form").scrollIntoView({behavior:"smooth"});
 }
+
 async function deleteProduct(p){
  if(!confirm('Delete "'+p.name+'" from inventory?'))return;
+
  const {error}=await db.from("products").delete().eq("id",p.id);
+
  if(error)return say("product-status","Could not delete: "+error.message);
- say("product-status","Product deleted.");await loadProducts();populateProducts();
+
+ say("product-status","Product deleted.");
+ await loadProducts();
+ populateProducts();
 }
+
 el("product-form").onsubmit=async e=>{
  e.preventDefault();
+
  if(!ownerUser)return say("product-status","Please sign in again.");
- const price=Number(el("product-price").value),stock=Number(el("product-stock").value);
+
+ const price=Number(el("product-price").value);
+ const stock=Number(el("product-stock").value);
+
  if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))
   return say("product-status","Enter a valid price and whole-number stock.");
+
  const p={
-  name:el("product-name").value.trim(),category:el("product-category").value,
-  price,stock,size:el("product-size").value.trim()||null,
+  name:el("product-name").value.trim(),
+  category:el("product-category").value,
+  price,stock,
+  size:el("product-size").value.trim()||null,
   color:el("product-colour").value.trim()||null,
   image_url:el("product-image").value.trim()||null,
-  description:el("product-description").value.trim()||null,active:true
+  description:el("product-description").value.trim()||null,
+  active:true
  };
+
  if(!p.name)return say("product-status","Enter a product name.");
- const id=el("product-id").value;el("save-button").disabled=true;
+
+ const id=el("product-id").value;
+ el("save-button").disabled=true;
+
  try{
-  const result=id?await db.from("products").update(p).eq("id",id):await db.from("products").insert(p);
+  const result=id
+   ?await db.from("products").update(p).eq("id",id)
+   :await db.from("products").insert(p);
+
   if(result.error)throw result.error;
-  clearForm();say("product-status",id?"Product updated.":"Product saved.");
-  await loadProducts();populateProducts();
- }catch(err){say("product-status","Could not save product: "+err.message)}
- finally{el("save-button").disabled=false}
+
+  clearForm();
+  say("product-status",id?"Product updated.":"Product saved.");
+  await loadProducts();
+  populateProducts();
+ }catch(err){
+  say("product-status","Could not save product: "+err.message);
+ }finally{
+  el("save-button").disabled=false;
+ }
 };
 
 /* SALES REPORTS */
+
 function localDateStart(value){
  if(!value)return null;
  return new Date(value+"T00:00:00").toISOString();
 }
+
 function localDateEndExclusive(value){
  if(!value)return null;
- const d=new Date(value+"T00:00:00");d.setDate(d.getDate()+1);
+ const d=new Date(value+"T00:00:00");
+ d.setDate(d.getDate()+1);
  return d.toISOString();
 }
+
 function formatDate(value){
  const d=new Date(value);
  return Number.isNaN(d.getTime())?String(value||""):d.toLocaleString();
 }
+
 async function loadReport(){
  if(!ownerUser)return;
- if(el("report-start").value&&el("report-end").value&&el("report-start").value>el("report-end").value)
+
+ if(el("report-start").value&&el("report-end").value&&
+    el("report-start").value>el("report-end").value){
   return say("report-status","Start date must not be after end date.");
+ }
+
  say("report-status","Loading sales report...");
  el("refresh-report").disabled=true;
+
  try{
   let query=db.from("sales")
    .select("receipt_number,total,payment_method,sale_date")
    .order("sale_date",{ascending:false}).limit(1000);
+
   const start=localDateStart(el("report-start").value);
   const end=localDateEndExclusive(el("report-end").value);
+
   if(start)query=query.gte("sale_date",start);
   if(end)query=query.lt("sale_date",end);
+
   const {data,error}=await query;
   if(error)throw error;
+
   const rows=data||[];
   let revenue=0,cash=0,mpesa=0,other=0;
+
   rows.forEach(s=>{
-   const total=Number(s.total)||0;revenue+=total;
+   const total=Number(s.total)||0;
+   revenue+=total;
    if(String(s.payment_method).toLowerCase()==="cash")cash+=total;
    else if(String(s.payment_method).toLowerCase()==="mpesa")mpesa+=total;
    else other+=total;
   });
+
   el("report-revenue").textContent=money(revenue);
   el("report-count").textContent=rows.length;
   el("report-average").textContent=money(rows.length?revenue/rows.length:0);
   el("report-cash").textContent=money(cash);
   el("report-mpesa").textContent=money(mpesa);
   el("report-other").textContent=money(other);
-  const tbody=el("report-table");tbody.replaceChildren();
-  if(!rows.length){const r=tbody.insertRow();cell(r,"No sales found for this period.").colSpan=4}
+
+  const tbody=el("report-table");
+  tbody.replaceChildren();
+
+  if(!rows.length){
+   const r=tbody.insertRow();
+   cell(r,"No sales found for this period.").colSpan=4;
+  }
+
   rows.forEach(s=>{
-   const r=tbody.insertRow();cell(r,s.receipt_number);cell(r,formatDate(s.sale_date));
-   cell(r,s.payment_method);cell(r,money(s.total));
+   const r=tbody.insertRow();
+   cell(r,s.receipt_number);
+   cell(r,formatDate(s.sale_date));
+   cell(r,s.payment_method);
+   cell(r,money(s.total));
   });
-  say("report-status","Report loaded: "+rows.length+" transaction(s)."+(rows.length===1000?" Showing up to 1,000 records.":""));
+
+  say("report-status","Report loaded: "+rows.length+" transaction(s)."+
+   (rows.length===1000?" Showing up to 1,000 records.":""));
  }catch(err){
   console.error("Report error:",err);
   say("report-status","Could not load report: "+err.message+". Check sales-table permissions.");
- }finally{el("refresh-report").disabled=false}
+ }finally{
+  el("refresh-report").disabled=false;
+ }
 }
+
 el("apply-report-filter").onclick=loadReport;
 el("refresh-report").onclick=loadReport;
 el("clear-report-filter").onclick=()=>{
- el("report-start").value="";el("report-end").value="";loadReport();
+ el("report-start").value="";
+ el("report-end").value="";
+ loadReport();
 };
 
-async function checkOwner(){
- const {data,error}=await db.auth.getSession();
- if(error||!data.session){
-  say("status","Please sign in with your owner account.");
-  window.location.replace("index.html");return;
+/* CUSTOMER MESSAGES */
+
+async function loadMessages(){
+ if(!ownerUser){
+  say("messages-status","Please sign in again.");
+  return;
  }
- ownerUser=data.session.user;
- const {data:profile,error:pe}=await db.from("profiles").select("role").eq("id",ownerUser.id).maybeSingle();
- if(pe||!profile||profile.role!=="owner"){
-  say("status","Owner account only.");await db.auth.signOut();
-  window.location.replace("index.html");return;
- }
- say("status","Signed in as owner: "+(ownerUser.email||""));
- await loadProducts();
-}
-el("sign-out").onclick=async()=>{
- const {error}=await db.auth.signOut();
- if(error)return say("status","Could not sign out: "+error.message);
- window.location.replace("index.html");
-};
-checkOwner();
-</script>
-</body>
-</html>
+
+ say("messages-status","Loading messages...");
+ el("refresh-messages").disabled=true;
+
+ try{
+  const {data,error}=await db.from("messages")
+   .select("id,customer_name,customer_email,subject,message,created_at,is_read")
+   .order("created_at",{ascending:false});
+
+  if(error)throw error;
+
+  const tbody=el("messages-table");
+  tbody.replaceChildren();
+  const rows=data||[];
+
+  if(!rows.length){
+   const r=tbody.insertRow();
+   cell(r,"No customer messages yet.").colSpan=5;
+  }
+
+  rows.forEach(m=>{
+   const r=tbody.insertRow();
+   cell(r,m.customer_name);
+
+   const details=cell(r,"");
+   const subject=document.createElement("strong");
+   subject.textContent=m.subject||"No subject";
+
+   const content=document.createElement("p");
+   content.textContent=m.message;
+   details.append(subject,content);
+
+   if(m.customer_email){
+    const email=document.createElement
