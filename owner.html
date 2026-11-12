@@ -2,857 +2,407 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Owner Dashboard | Kelsiy's Closet</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kelsiy's Closet | Owner Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-:root {
-  --burgundy: #701b39;
-  --dark: #3e1023;
-  --cream: #faf5ed;
-  --gold: #c49a58;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--cream);
-  color: #292126;
-  font: 16px Arial, sans-serif;
-}
-header, footer {
-  background: var(--dark);
-  color: white;
-  padding: 22px 5%;
-  border-bottom: 4px solid var(--gold);
-}
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-h1, h2 { color: var(--burgundy); }
-header h1 { color: white; margin: 0; }
-header p { color: #e9c88e; margin: 5px 0; }
-button {
-  cursor: pointer;
-  padding: 11px 16px;
-  border: 1px solid var(--gold);
-  border-radius: 5px;
-  background: var(--burgundy);
-  color: white;
-  font-weight: bold;
-}
-button:hover { background: var(--dark); }
-button:disabled { opacity: .6; cursor: not-allowed; }
-main { width: 94%; max-width: 1250px; margin: 30px auto; }
-#status, #product-status, #sales-status {
-  font-weight: bold;
-  overflow-wrap: anywhere;
-}
-.layout {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 20px;
-}
-nav, .panel {
-  background: white;
-  padding: 20px;
-  border: 1px solid #eadbd5;
-  border-radius: 8px;
-  margin-bottom: 18px;
-}
-nav button {
-  display: block;
-  width: 100%;
-  margin: 7px 0;
-  text-align: left;
-}
-.panel[hidden] { display: none; }
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.stat {
-  padding: 18px;
-  background: #fffaf5;
-  border-top: 4px solid var(--gold);
-}
-.stat strong {
-  display: block;
-  font-size: 25px;
-  color: var(--burgundy);
-  margin-top: 8px;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.field { display: grid; gap: 6px; }
-.field.full { grid-column: 1 / -1; }
-label { font-weight: bold; color: var(--dark); }
-input, select, textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d9c8c4;
-  border-radius: 5px;
-  font: inherit;
-}
-textarea { min-height: 80px; }
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 18px 0;
-}
-.table-wrap { overflow-x: auto; }
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 580px;
-}
-th, td {
-  padding: 11px;
-  border-bottom: 1px solid #eadbd5;
-  text-align: left;
-}
-th { background: #f5e9e2; }
-.photo {
-  width: 55px;
-  height: 65px;
-  object-fit: cover;
-}
-.small { padding: 7px; margin: 2px; }
-.delete { background: #a21b2d; }
-#sale-receipt {
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid var(--gold);
-  border-radius: 6px;
-  background: #fffaf5;
-  overflow-wrap: anywhere;
-}
-#sale-receipt h3 { color: var(--burgundy); }
-footer {
-  text-align: center;
-  border-top: 4px solid var(--gold);
-  border-bottom: 0;
-}
-@media(max-width: 750px) {
-  .layout { grid-template-columns: 1fr; }
-  nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
-  nav button { margin: 0; }
-}
-@media(max-width: 480px) {
-  .stats, .form-grid { grid-template-columns: 1fr; }
-  .field.full { grid-column: auto; }
-}
+:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
+*{box-sizing:border-box}
+body{margin:0;background:var(--c);color:#292126;font:16px Arial}
+header,footer{background:var(--d);color:white;padding:20px 5%;border-bottom:4px solid var(--g)}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+header h1{color:white;margin:0}header p{color:#e9c88e}
+h1,h2{color:var(--b)}
+button{padding:11px 14px;background:var(--b);color:white;border:1px solid var(--g);border-radius:5px;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6}
+main{width:94%;max-width:1250px;margin:25px auto}
+.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px}
+nav,.panel{background:white;padding:18px;border:1px solid #eadbd5;border-radius:8px;margin-bottom:16px}
+nav button{display:block;width:100%;text-align:left;margin:5px 0}
+[hidden]{display:none!important}
+.stats,.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stats{grid-template-columns:repeat(3,minmax(0,1fr));margin:15px 0}
+.stat{background:#fffaf5;border-top:4px solid var(--g);padding:14px;overflow-wrap:anywhere}
+.stat strong{display:block;color:var(--b);font-size:22px;margin-top:8px}
+.field{display:grid;gap:6px;margin:10px 0}
+label{font-weight:bold;color:var(--d)}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d9c8c4;border-radius:5px;font:inherit}
+textarea{min-height:75px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
+.table-wrap{overflow-x:auto}
+table{width:100%;min-width:500px;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left}
+th{background:#f5e9e2}
+.photo{width:50px;height:60px;object-fit:cover}
+.small{padding:7px;margin:2px}.delete{background:#a21b2d}
+#status,#product-status,#sales-status,#report-status{overflow-wrap:anywhere}
+#sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
+footer{text-align:center;border-top:4px solid var(--g);border-bottom:0}
+@media(max-width:700px){.layout{grid-template-columns:1fr}nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}nav button{margin:0}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:450px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
 <header>
-  <div>
-    <h1>KELSIY'S CLOSET</h1>
-    <p>STYLE THAT SPEAKS</p>
-  </div>
-  <button id="sign-out" type="button">SIGN OUT</button>
+ <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
+ <button id="sign-out">SIGN OUT</button>
 </header>
 
 <main>
-  <h1>Owner's Dashboard</h1>
-  <p>Manage your boutique, products, prices, stock and sales.</p>
-  <p id="status" role="status">Checking your account...</p>
+<h1>Owner's Dashboard</h1>
+<p>Manage products, stock and sales.</p>
+<p id="status">Checking account...</p>
 
-  <div class="layout">
-    <nav aria-label="Dashboard sections">
-      <button data-section="home" type="button">HOME</button>
-      <button data-section="inventory" type="button">INVENTORY</button>
-      <button data-section="sales" type="button">SALES</button>
-      <button data-section="reports" type="button">SALES REPORTS</button>
-      <button data-section="messages" type="button">MESSAGES</button>
-    </nav>
+<div class="layout">
+<nav>
+ <button data-section="home">HOME</button>
+ <button data-section="inventory">INVENTORY</button>
+ <button data-section="sales">SALES</button>
+ <button data-section="reports">SALES REPORTS</button>
+ <button data-section="messages">MESSAGES</button>
+</nav>
 
-    <div>
-      <section class="panel" data-panel="home">
-        <h2>Business Overview</h2>
-        <div class="stats">
-          <div class="stat">Active Products
-            <strong id="stat-products">0</strong>
-          </div>
-          <div class="stat">Total Stock
-            <strong id="stat-stock">0</strong>
-          </div>
-          <div class="stat">Out of Stock
-            <strong id="stat-empty">0</strong>
-          </div>
-        </div>
-        <button data-go="inventory" type="button">MANAGE INVENTORY</button>
-      </section>
+<div>
+<section class="panel" data-panel="home">
+ <h2>Business Overview</h2>
+ <div class="stats">
+  <div class="stat">Active Products<strong id="stat-products">0</strong></div>
+  <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
+  <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
+ </div>
+ <button data-go="inventory">MANAGE INVENTORY</button>
+</section>
 
-      <section class="panel" data-panel="inventory" hidden>
-        <h2>Product Inventory</h2>
-        <p>Add a product or select Edit to update it.</p>
+<section class="panel" data-panel="inventory" hidden>
+<h2>Product Inventory</h2>
+<form id="product-form">
+<input type="hidden" id="product-id">
+<div class="grid">
+ <div class="field"><label>Product name *</label><input id="product-name" required></div>
+ <div class="field"><label>Category *</label><select id="product-category">
+ <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
+ </select></div>
+ <div class="field"><label>Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
+ <div class="field"><label>Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
+ <div class="field"><label>Size</label><input id="product-size" placeholder="S, M, L, XL"></div>
+ <div class="field"><label>Color</label><input id="product-colour" placeholder="Black"></div>
+ <div class="field"><label>Image path</label><input id="product-image" placeholder="images/dress.jpg"></div>
+ <div class="field"><label>Description</label><textarea id="product-description"></textarea></div>
+</div>
+<div class="actions"><button id="save-button">SAVE PRODUCT</button><button id="cancel-edit" type="button" hidden>CANCEL EDIT</button></div>
+</form>
+<p id="product-status" role="status"></p>
+<h2>Saved Products</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Photo</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+<tbody id="inventory-table"></tbody>
+</table></div>
+</section>
 
-        <form id="product-form">
-          <input type="hidden" id="product-id">
+<section class="panel" data-panel="sales" hidden>
+<h2>Record a Sale</h2>
+<div class="grid">
+ <div class="field"><label>Product</label><select id="sales-product"></select></div>
+ <div class="field"><label>Quantity</label><input id="sales-quantity" type="number" min="1" step="1" value="1"></div>
+</div>
+<button id="add-sale-item">ADD TO SALE</button>
+<h2>Sale Items</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th><th>Action</th></tr></thead>
+<tbody id="sales-cart-body"></tbody>
+</table></div>
+<p><strong>Total: <span id="sales-total">KES 0</span></strong></p>
+<div class="field"><label>Payment method</label>
+<select id="sales-payment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select></div>
+<button id="record-sale-button">RECORD SALE</button>
+<p id="sales-status" role="status">Ready.</p>
+<div id="sale-receipt" hidden></div>
+</section>
 
-          <div class="form-grid">
-            <div class="field">
-              <label for="product-name">Product name *</label>
-              <input id="product-name" required maxlength="150">
-            </div>
+<section class="panel" data-panel="reports" hidden>
+<h2>Sales Reports</h2>
+<div class="grid">
+ <div class="field"><label>Start date</label><input id="report-start" type="date"></div>
+ <div class="field"><label>End date</label><input id="report-end" type="date"></div>
+</div>
+<div class="actions">
+ <button id="apply-report-filter">APPLY DATES</button>
+ <button id="clear-report-filter">SHOW ALL</button>
+ <button id="refresh-report">REFRESH</button>
+</div>
+<p id="report-status" role="status">Loading reports when opened...</p>
+<div class="stats">
+ <div class="stat">Revenue<strong id="report-revenue">KES 0</strong></div>
+ <div class="stat">Transactions<strong id="report-count">0</strong></div>
+ <div class="stat">Average Sale<strong id="report-average">KES 0</strong></div>
+ <div class="stat">Cash<strong id="report-cash">KES 0</strong></div>
+ <div class="stat">M-Pesa<strong id="report-mpesa">KES 0</strong></div>
+ <div class="stat">Other Payments<strong id="report-other">KES 0</strong></div>
+</div>
+<h2>Sales History</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Receipt</th><th>Date and Time</th><th>Payment</th><th>Total</th></tr></thead>
+<tbody id="report-table"></tbody>
+</table></div>
+</section>
 
-            <div class="field">
-              <label for="product-category">Category *</label>
-              <select id="product-category" required>
-                <option value="Women">Women's Clothing</option>
-                <option value="Men">Men's Clothing</option>
-                <option value="Shoes">Shoes</option>
-                <option value="Kids">Kids' Clothing</option>
-                <option value="Accessories">Accessories</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="product-price">Price (KES) *</label>
-              <input id="product-price" type="number"
-                     min="0" step="0.01" required>
-            </div>
-
-            <div class="field">
-              <label for="product-stock">Quantity in stock *</label>
-              <input id="product-stock" type="number"
-                     min="0" step="1" required>
-            </div>
-
-            <div class="field">
-              <label for="product-size">Size</label>
-              <input id="product-size" placeholder="S, M, L, XL">
-            </div>
-
-            <div class="field">
-              <label for="product-colour">Color</label>
-              <input id="product-colour" placeholder="Black">
-            </div>
-
-            <div class="field full">
-              <label for="product-image">Product image (JPG/JPEG)</label>
-              <input id="product-image" type="text"
-                     placeholder="images/dress.jpg">
-              <small>Enter the image path used by your existing website.</small>
-            </div>
-
-            <div class="field full">
-              <label for="product-description">Description</label>
-              <textarea id="product-description"></textarea>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button id="save-button" type="submit">SAVE PRODUCT</button>
-            <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
-          </div>
-        </form>
-
-        <p id="product-status" role="status"></p>
-
-        <h2>Saved Products</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Photo</th><th>Product</th><th>Category</th>
-                <th>Price</th><th>Stock</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="inventory-table">
-              <tr><td colspan="6">Loading products...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel" data-panel="sales" hidden>
-        <h2>Record a Sale</h2>
-        <p>Select products, enter quantities, and choose the payment method.</p>
-
-        <div class="form-grid">
-          <div class="field">
-            <label for="sales-product">Product *</label>
-            <select id="sales-product">
-              <option value="">Open Sales to load products</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="sales-quantity">Quantity *</label>
-            <input id="sales-quantity" type="number"
-                   min="1" step="1" value="1">
-          </div>
-        </div>
-
-        <div class="actions">
-          <button id="add-sale-item" type="button">ADD TO SALE</button>
-        </div>
-
-        <h2>Items in This Sale</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th><th>Quantity</th><th>Unit Price</th>
-                <th>Subtotal</th><th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="sales-cart-body">
-              <tr><td colspan="5">No items added yet.</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <p><strong>Estimated total:
-          <span id="sales-total">KES 0</span>
-        </strong></p>
-        <small>The database calculates the final total using saved prices.</small>
-
-        <div class="field" style="margin-top:18px">
-          <label for="sales-payment">Payment method *</label>
-          <select id="sales-payment" required>
-            <option value="cash">Cash</option>
-            <option value="mpesa">M-Pesa</option>
-          </select>
-        </div>
-
-        <div class="actions">
-          <button id="record-sale-button" type="button">RECORD SALE</button>
-        </div>
-
-        <p id="sales-status" role="status" aria-live="polite">
-          Ready to record a sale.
-        </p>
-        <div id="sale-receipt" hidden></div>
-      </section>
-
-      <section class="panel" data-panel="reports" hidden>
-        <h2>Sales Reports</h2>
-        <p>Sales reports have not been connected yet.</p>
-      </section>
-
-      <section class="panel" data-panel="messages" hidden>
-        <h2>Customer Messages</h2>
-        <p>Customer messages have not been connected yet.</p>
-      </section>
-    </div>
-  </div>
+<section class="panel" data-panel="messages" hidden>
+<h2>Customer Messages</h2>
+<p>We will connect customer messages next.</p>
+</section>
+</div>
+</div>
 </main>
-
-<footer>
-  <strong>KELSIY'S CLOSET</strong>
-  <p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
-  <p>© <span id="year"></span> Kelsiy's Closet</p>
-</footer>
+<footer><strong>KELSIY'S CLOSET</strong><p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p><p>© <span id="year"></span></p></footer>
 
 <script>
 "use strict";
+const db=window.supabase.createClient(
+ "https://zqvjaqpqtctnvylgtwjg.supabase.co",
+ "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR"
+);
+const el=id=>document.getElementById(id);
+const say=(id,text)=>el(id).textContent=text;
+const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
+let products=[],ownerUser=null,cart=[],busy=false;
 
-const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+el("year").textContent=new Date().getFullYear();
 
-const el = id => document.getElementById(id);
+function cell(row,value){
+ const td=document.createElement("td");
+ td.textContent=value==null?"":String(value);
+ row.appendChild(td);return td;
+}
+function showSection(name){
+ document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==name);
+ if(name==="inventory")loadProducts();
+ if(name==="sales")loadSalesProducts();
+ if(name==="reports")loadReport();
+}
+document.querySelectorAll("[data-section]").forEach(b=>b.onclick=()=>showSection(b.dataset.section));
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showSection(b.dataset.go));
 
-let products = [];
-let ownerUser = null;
-let salesCart = [];
-let salesLoading = false;
-let recordingSale = false;
-
-el("year").textContent = new Date().getFullYear();
-
-function message(id, text) {
-  el(id).textContent = text;
+function updateStats(){
+ const active=products.filter(p=>p.active!==false);
+ el("stat-products").textContent=active.length;
+ el("stat-stock").textContent=active.reduce((s,p)=>s+Number(p.stock||0),0);
+ el("stat-empty").textContent=active.filter(p=>Number(p.stock)<=0).length;
 }
 
-function money(value) {
-  return "KES " + Number(value || 0).toLocaleString("en-KE", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
+function clearForm(){
+ el("product-form").reset();el("product-id").value="";
+ el("save-button").textContent="SAVE PRODUCT";el("cancel-edit").hidden=true;
+}
+el("cancel-edit").onclick=clearForm;
+
+async function loadProducts(){
+ say("product-status","Loading products...");
+ const {data,error}=await db.from("products")
+ .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
+ .order("created_at",{ascending:false});
+ if(error){say("product-status","Could not load products: "+error.message);return false}
+ products=data||[];updateStats();
+ const tbody=el("inventory-table");tbody.replaceChildren();
+ if(!products.length){const r=tbody.insertRow();cell(r,"No products yet.").colSpan=6}
+ products.forEach(p=>{
+  const r=tbody.insertRow(),photo=cell(r,"");
+  if(p.image_url){const img=document.createElement("img");img.className="photo";img.src=p.image_url;img.alt=p.name;img.onerror=()=>img.remove();photo.appendChild(img)}
+  else photo.textContent="No photo";
+  cell(r,p.name);cell(r,p.category);cell(r,money(p.price));cell(r,p.stock);
+  const a=cell(r,"");
+  const edit=document.createElement("button");edit.className="small";edit.textContent="Edit";edit.onclick=()=>editProduct(p);
+  const del=document.createElement("button");del.className="small delete";del.textContent="Delete";del.onclick=()=>deleteProduct(p);
+  a.append(edit,del);
+ });
+ say("product-status","Products loaded: "+products.length);return true;
+}
+
+function populateProducts(){
+ const s=el("sales-product");s.replaceChildren();
+ const first=new Option("Choose a product","");
+ s.add(first);
+ products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>
+  s.add(new Option(`${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id))
+ );
+}
+async function loadSalesProducts(){
+ if(!await loadProducts()){say("sales-status","Products could not load.");return}
+ populateProducts();renderCart();say("sales-status","Products loaded.");
+}
+function renderCart(){
+ const tbody=el("sales-cart-body");tbody.replaceChildren();let total=0;
+ if(!cart.length){const r=tbody.insertRow();cell(r,"No items added.").colSpan=5}
+ cart.forEach(item=>{
+  const p=products.find(x=>x.id===item.product_id);if(!p)return;
+  const sub=Number(p.price)*item.quantity;total+=sub;
+  const r=tbody.insertRow();cell(r,p.name);cell(r,item.quantity);cell(r,money(p.price));cell(r,money(sub));
+  const a=cell(r,""),b=document.createElement("button");b.className="small delete";b.textContent="Remove";
+  b.onclick=()=>{cart=cart.filter(x=>x.product_id!==item.product_id);renderCart()};
+  a.appendChild(b);
+ });
+ el("sales-total").textContent=money(total);
+}
+el("add-sale-item").onclick=()=>{
+ const id=el("sales-product").value,q=Number(el("sales-quantity").value);
+ const p=products.find(x=>x.id===id);
+ if(!p||p.active===false)return say("sales-status","Choose an active product.");
+ if(!Number.isInteger(q)||q<1)return say("sales-status","Enter a valid whole-number quantity.");
+ const old=cart.find(x=>x.product_id===id),already=old?old.quantity:0;
+ if(already+q>Number(p.stock))return say("sales-status","Not enough stock available.");
+ if(old)old.quantity+=q;else cart.push({product_id:id,quantity:q});
+ renderCart();say("sales-status",p.name+" added.");el("sales-quantity").value=1;
+};
+
+el("record-sale-button").onclick=async()=>{
+ if(busy)return;
+ if(!ownerUser)return say("sales-status","Please sign in again.");
+ if(!cart.length)return say("sales-status","Add products first.");
+ const payment=el("sales-payment").value;
+ if(!["cash","mpesa"].includes(payment))return say("sales-status","Choose Cash or M-Pesa.");
+ busy=true;el("record-sale-button").disabled=true;say("sales-status","Recording sale...");
+ try{
+  const {data,error}=await db.rpc("record_sale",{
+   p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
+   p_payment_method:payment
   });
-}
+  if(error)throw error;
+  if(!data||data.receipt_number==null)throw Error("No receipt number returned. Check Supabase before retrying.");
+  cart=[];renderCart();
+  const box=el("sale-receipt");box.replaceChildren();box.hidden=false;
+  const h=document.createElement("h3");h.textContent="Sale recorded successfully";
+  [h,"Receipt number: "+data.receipt_number,"Total: "+money(data.total),
+   "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")].forEach(x=>{
+    if(typeof x==="string"){const p=document.createElement("p");p.textContent=x;box.appendChild(p)}
+    else box.appendChild(x);
+   });
+  say("sales-status","Sale saved. Stock updated.");
+  await loadProducts();populateProducts();
+ }catch(e){
+  console.error(e);say("sales-status","Sale was not confirmed: "+e.message+". Check Supabase before retrying.");
+ }finally{busy=false;el("record-sale-button").disabled=false}
+};
 
-function showSection(name) {
-  document.querySelectorAll("[data-panel]").forEach(panel => {
-    panel.hidden = panel.dataset.panel !== name;
+function editProduct(p){
+ el("product-id").value=p.id;el("product-name").value=p.name||"";
+ el("product-category").value=p.category||"Women";el("product-price").value=p.price??"";
+ el("product-stock").value=p.stock??0;el("product-size").value=p.size||"";
+ el("product-colour").value=p.color||"";el("product-image").value=p.image_url||"";
+ el("product-description").value=p.description||"";
+ el("save-button").textContent="UPDATE PRODUCT";el("cancel-edit").hidden=false;
+ el("product-form").scrollIntoView({behavior:"smooth"});
+}
+async function deleteProduct(p){
+ if(!confirm('Delete "'+p.name+'" from inventory?'))return;
+ const {error}=await db.from("products").delete().eq("id",p.id);
+ if(error)return say("product-status","Could not delete: "+error.message);
+ say("product-status","Product deleted.");await loadProducts();populateProducts();
+}
+el("product-form").onsubmit=async e=>{
+ e.preventDefault();
+ if(!ownerUser)return say("product-status","Please sign in again.");
+ const price=Number(el("product-price").value),stock=Number(el("product-stock").value);
+ if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))
+  return say("product-status","Enter a valid price and whole-number stock.");
+ const p={
+  name:el("product-name").value.trim(),category:el("product-category").value,
+  price,stock,size:el("product-size").value.trim()||null,
+  color:el("product-colour").value.trim()||null,
+  image_url:el("product-image").value.trim()||null,
+  description:el("product-description").value.trim()||null,active:true
+ };
+ if(!p.name)return say("product-status","Enter a product name.");
+ const id=el("product-id").value;el("save-button").disabled=true;
+ try{
+  const result=id?await db.from("products").update(p).eq("id",id):await db.from("products").insert(p);
+  if(result.error)throw result.error;
+  clearForm();say("product-status",id?"Product updated.":"Product saved.");
+  await loadProducts();populateProducts();
+ }catch(err){say("product-status","Could not save product: "+err.message)}
+ finally{el("save-button").disabled=false}
+};
+
+/* SALES REPORTS */
+function localDateStart(value){
+ if(!value)return null;
+ return new Date(value+"T00:00:00").toISOString();
+}
+function localDateEndExclusive(value){
+ if(!value)return null;
+ const d=new Date(value+"T00:00:00");d.setDate(d.getDate()+1);
+ return d.toISOString();
+}
+function formatDate(value){
+ const d=new Date(value);
+ return Number.isNaN(d.getTime())?String(value||""):d.toLocaleString();
+}
+async function loadReport(){
+ if(!ownerUser)return;
+ if(el("report-start").value&&el("report-end").value&&el("report-start").value>el("report-end").value)
+  return say("report-status","Start date must not be after end date.");
+ say("report-status","Loading sales report...");
+ el("refresh-report").disabled=true;
+ try{
+  let query=db.from("sales")
+   .select("receipt_number,total,payment_method,sale_date")
+   .order("sale_date",{ascending:false}).limit(1000);
+  const start=localDateStart(el("report-start").value);
+  const end=localDateEndExclusive(el("report-end").value);
+  if(start)query=query.gte("sale_date",start);
+  if(end)query=query.lt("sale_date",end);
+  const {data,error}=await query;
+  if(error)throw error;
+  const rows=data||[];
+  let revenue=0,cash=0,mpesa=0,other=0;
+  rows.forEach(s=>{
+   const total=Number(s.total)||0;revenue+=total;
+   if(String(s.payment_method).toLowerCase()==="cash")cash+=total;
+   else if(String(s.payment_method).toLowerCase()==="mpesa")mpesa+=total;
+   else other+=total;
   });
-
-  if (name === "inventory") loadProducts();
-  if (name === "sales") loadSalesProducts();
-}
-
-document.querySelectorAll("[data-section]").forEach(button => {
-  button.addEventListener("click", () => showSection(button.dataset.section));
-});
-
-document.querySelectorAll("[data-go]").forEach(button => {
-  button.addEventListener("click", () => showSection(button.dataset.go));
-});
-
-function updateStats() {
-  const active = products.filter(p => p.active !== false);
-
-  el("stat-products").textContent = active.length;
-  el("stat-stock").textContent = active.reduce(
-    (sum, p) => sum + Math.max(0, Number(p.stock) || 0), 0
-  );
-  el("stat-empty").textContent = active.filter(
-    p => Number(p.stock) <= 0
-  ).length;
-}
-
-function clearForm() {
-  el("product-form").reset();
-  el("product-id").value = "";
-  el("save-button").textContent = "SAVE PRODUCT";
-  el("cancel-edit").hidden = true;
-}
-
-el("cancel-edit").addEventListener("click", clearForm);
-
-function cell(row, value) {
-  const td = document.createElement("td");
-  td.textContent = value == null ? "" : String(value);
-  row.appendChild(td);
-  return td;
-}
-
-async function loadProducts() {
-  message("product-status", "Loading products...");
-
-  const { data, error } = await db.from("products")
-    .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Load products error:", error);
-    message("product-status", "Could not load products: " + error.message);
-    return false;
-  }
-
-  products = data || [];
-  updateStats();
-
-  const tbody = el("inventory-table");
-  tbody.replaceChildren();
-
-  if (!products.length) {
-    const row = document.createElement("tr");
-    const td = cell(row, "No products yet. Add your first product.");
-    td.colSpan = 6;
-    tbody.appendChild(row);
-  }
-
-  products.forEach(product => {
-    const row = document.createElement("tr");
-    const photo = document.createElement("td");
-
-    if (product.image_url) {
-      const img = document.createElement("img");
-      img.className = "photo";
-      img.src = product.image_url;
-      img.alt = product.name || "Product";
-
-      img.onerror = () => {
-        img.removeAttribute("src");
-        img.alt = "Image unavailable";
-      };
-
-      photo.appendChild(img);
-    } else {
-      photo.textContent = "No photo";
-    }
-
-    row.appendChild(photo);
-    cell(row, product.name);
-    cell(row, product.category);
-    cell(row, money(product.price));
-    cell(row, product.stock);
-
-    const actions = document.createElement("td");
-
-    const edit = document.createElement("button");
-    edit.className = "small";
-    edit.type = "button";
-    edit.textContent = "Edit";
-    edit.addEventListener("click", () => editProduct(product));
-
-    const remove = document.createElement("button");
-    remove.className = "small delete";
-    remove.type = "button";
-    remove.textContent = "Delete";
-    remove.addEventListener("click", () => deleteProduct(product));
-
-    actions.append(edit, remove);
-    row.appendChild(actions);
-    tbody.appendChild(row);
+  el("report-revenue").textContent=money(revenue);
+  el("report-count").textContent=rows.length;
+  el("report-average").textContent=money(rows.length?revenue/rows.length:0);
+  el("report-cash").textContent=money(cash);
+  el("report-mpesa").textContent=money(mpesa);
+  el("report-other").textContent=money(other);
+  const tbody=el("report-table");tbody.replaceChildren();
+  if(!rows.length){const r=tbody.insertRow();cell(r,"No sales found for this period.").colSpan=4}
+  rows.forEach(s=>{
+   const r=tbody.insertRow();cell(r,s.receipt_number);cell(r,formatDate(s.sale_date));
+   cell(r,s.payment_method);cell(r,money(s.total));
   });
-
-  message("product-status", "Products loaded: " + products.length);
-  return true;
+  say("report-status","Report loaded: "+rows.length+" transaction(s)."+(rows.length===1000?" Showing up to 1,000 records.":""));
+ }catch(err){
+  console.error("Report error:",err);
+  say("report-status","Could not load report: "+err.message+". Check sales-table permissions.");
+ }finally{el("refresh-report").disabled=false}
 }
+el("apply-report-filter").onclick=loadReport;
+el("refresh-report").onclick=loadReport;
+el("clear-report-filter").onclick=()=>{
+ el("report-start").value="";el("report-end").value="";loadReport();
+};
 
-function populateSalesProductSelect() {
-  const select = el("sales-product");
-  select.replaceChildren();
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Choose a product";
-  select.appendChild(placeholder);
-
-  products
-    .filter(p => p.active !== false && Number(p.stock) > 0)
-    .forEach(p => {
-      const option = document.createElement("option");
-      option.value = p.id;
-      option.textContent =
-        `${p.name} — ${money(p.price)} (Stock: ${p.stock})`;
-      select.appendChild(option);
-    });
-
-  if (select.options.length === 1) {
-    placeholder.textContent = "No active products in stock";
-  }
+async function checkOwner(){
+ const {data,error}=await db.auth.getSession();
+ if(error||!data.session){
+  say("status","Please sign in with your owner account.");
+  window.location.replace("index.html");return;
+ }
+ ownerUser=data.session.user;
+ const {data:profile,error:pe}=await db.from("profiles").select("role").eq("id",ownerUser.id).maybeSingle();
+ if(pe||!profile||profile.role!=="owner"){
+  say("status","Owner account only.");await db.auth.signOut();
+  window.location.replace("index.html");return;
+ }
+ say("status","Signed in as owner: "+(ownerUser.email||""));
+ await loadProducts();
 }
-
-async function loadSalesProducts() {
-  if (salesLoading) return;
-
-  salesLoading = true;
-  message("sales-status", "Loading available products...");
-
-  try {
-    const loaded = await loadProducts();
-
-    if (!loaded) {
-      message("sales-status", "Products could not load. Please try again.");
-      return;
-    }
-
-    populateSalesProductSelect();
-    renderSalesCart();
-    message("sales-status", "Products loaded. Add items to begin.");
-  } finally {
-    salesLoading = false;
-  }
-}
-
-function renderSalesCart() {
-  const tbody = el("sales-cart-body");
-  tbody.replaceChildren();
-
-  let total = 0;
-
-  if (salesCart.length === 0) {
-    const row = document.createElement("tr");
-    const td = cell(row, "No items added yet.");
-    td.colSpan = 5;
-    tbody.appendChild(row);
-  }
-
-  salesCart.forEach(item => {
-    const product = products.find(p => p.id === item.product_id);
-    if (!product) return;
-
-    const subtotal = Number(product.price) * item.quantity;
-    total += subtotal;
-
-    const row = document.createElement("tr");
-    cell(row, product.name);
-    cell(row, item.quantity);
-    cell(row, money(product.price));
-    cell(row, money(subtotal));
-
-    const actionCell = document.createElement("td");
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "small delete";
-    remove.textContent = "Remove";
-
-    remove.addEventListener("click", () => {
-      salesCart = salesCart.filter(
-        entry => entry.product_id !== item.product_id
-      );
-      renderSalesCart();
-    });
-
-    actionCell.appendChild(remove);
-    row.appendChild(actionCell);
-    tbody.appendChild(row);
-  });
-
-  el("sales-total").textContent = money(total);
-}
-
-el("add-sale-item").addEventListener("click", () => {
-  const productId = el("sales-product").value;
-  const quantity = Number(el("sales-quantity").value);
-  const product = products.find(p => p.id === productId);
-
-  if (!product || product.active === false) {
-    message("sales-status", "Please select an active product.");
-    return;
-  }
-
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    message("sales-status", "Enter a whole-number quantity of at least 1.");
-    return;
-  }
-
-  const existing = salesCart.find(
-    item => item.product_id === productId
-  );
-  const alreadyAdded = existing ? existing.quantity : 0;
-
-  if (alreadyAdded + quantity > Number(product.stock)) {
-    message(
-      "sales-status",
-      `Only ${product.stock} units of ${product.name} are in stock.`
-    );
-    return;
-  }
-
-  if (existing) {
-    existing.quantity += quantity;
-  } else {
-    salesCart.push({
-      product_id: productId,
-      quantity
-    });
-  }
-
-  renderSalesCart();
-  message("sales-status", product.name + " added to the sale.");
-  el("sales-quantity").value = "1";
-});
-
-el("record-sale-button").addEventListener("click", async () => {
-  if (recordingSale) return;
-
-  if (!ownerUser) {
-    message("sales-status", "Owner session not active. Please sign in again.");
-    return;
-  }
-
-  if (salesCart.length === 0) {
-    message("sales-status", "Add at least one product before recording the sale.");
-    return;
-  }
-
-  const paymentMethod = el("sales-payment").value;
-
-  if (!["cash", "mpesa"].includes(paymentMethod)) {
-    message("sales-status", "Choose Cash or M-Pesa.");
-    return;
-  }
-
-  const button = el("record-sale-button");
-  recordingSale = true;
-  button.disabled = true;
-  message("sales-status", "Recording sale...");
-
-  try {
-    const { data, error } = await db.rpc("record_sale", {
-      p_items: salesCart.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity
-      })),
-      p_payment_method: paymentMethod
-    });
-
-    if (error) throw error;
-
-    if (!data || data.receipt_number == null) {
-      throw new Error(
-        "The database did not return a receipt number. Check the sale in Supabase before retrying."
-      );
-    }
-
-    // The database has confirmed the sale. Clear the cart only now.
-    salesCart = [];
-    renderSalesCart();
-
-    const loaded = await loadProducts();
-    if (loaded) populateSalesProductSelect();
-
-    const receiptBox = el("sale-receipt");
-    receiptBox.replaceChildren();
-    receiptBox.hidden = false;
-
-    const heading = document.createElement("h3");
-    heading.textContent = "Sale recorded successfully";
-
-    const receiptText = document.createElement("p");
-    receiptText.textContent = "Receipt number: " + data.receipt_number;
-
-    const totalText = document.createElement("p");
-    totalText.textContent = "Total: " + money(data.total);
-
-    const paymentText = document.createElement("p");
-    paymentText.textContent =
-      "Payment: " + (paymentMethod === "mpesa" ? "M-Pesa" : "Cash");
-
-    receiptBox.append(heading, receiptText, totalText, paymentText);
-
-    message("sales-status", "Sale saved. Stock has been updated.");
-  } catch (error) {
-    console.error("Record sale error:", error);
-    message(
-      "sales-status",
-      "Sale was not confirmed: " + (error.message || "Unknown error") +
-      " Check Supabase before attempting the same sale again."
-    );
-  } finally {
-    recordingSale = false;
-    button.disabled = false;
-  }
-});
-
-function editProduct(p) {
-  el("product-id").value = p.id;
-  el("product-name").value = p.name || "";
-  el("product-category").value = p.category || "Women";
-  el("product-price").value = p.price ?? "";
-  el("product-stock").value = p.stock ?? 0;
-  el("product-size").value = p.size || "";
-  el("product-colour").value = p.color || "";
-  el("product-image").value = p.image_url || "";
-  el("product-description").value = p.description || "";
-  el("save-button").textContent = "UPDATE PRODUCT";
-  el("cancel-edit").hidden = false;
-  el("product-form").scrollIntoView({ behavior: "smooth" });
-}
-
-async function deleteProduct(p) {
-  if (!confirm('Delete "' + p.name + '" from inventory?')) return;
-
-  const { error } = await db.from("products").delete().eq("id", p.id);
-
-  if (error) {
-    message("product-status", "Could not delete product: " + error.message);
-    return;
-  }
-
-  message("product-status", "Product deleted.");
-  await loadProducts();
-  populateSalesProductSelect();
-}
-
-el("product-form").addEventListener("submit", async event => {
-  event.preventDefault();
-
-  if (!ownerUser) {
-    message("product-status", "Owner session not active. Please sign in again.");
-    return;
-  }
-
-  const price = Number(el("product-price").value);
-  const stock = Number(el("product-stock").value);
-
-  if (!Number.isFinite(price) || price < 0 ||
-      !Number.isInteger(stock) || stock < 0) {
-    message("product-status", "Enter a valid price and whole-number stock quantity.");
-    return;
-  }
-
-  const product = {
-    name: el("product-name").value.trim(),
-    category: el("product-category").value,
-    price,
-    stock,
-    size: el("product-size").value.trim() || null,
-    color: el("product-colour").value.trim() || null,
-    image_url: el("product-image").value.trim() || null,
-    description: el("product-description").value.trim() || null,
-    active: true
-  };
-
-  if (!product.name) {
-    message("product-status", "Enter a product name.");
-    return;
-  }
-
-  const id = el("product-id").value;
-  el("save-button").disabled = true;
-  message("product-status", id ? "Updating product..." : "Saving product...");
-
-  try {
-    const result = id
-      ? await db.from("products").update(product).eq("id", id)
-      : await db.from("products").insert(product);
-
-    if (result.error) throw result.error;
-
-    clearForm();
-    message("product-status", id ? "Product updated." : "Product saved.");
-
-    await loadProducts();
-    populateSalesProductSelect();
-  } catch (error) {
-    console.error(error);
-    message("product-status", "Could not save product: " + error.message);
-  } finally {
-    el("save-button").disabled = false;
-  }
-});
-
-async function checkOwner() {
-  const { data, error } = await db.auth.getSession();
-
-  if (error || !data.session) {
-    message("status", "Please sign in with your owner account.");
-    window.location.replace("index.html");
-    return;
-  }
-
-  ownerUser = data.session.user;
-
-  const { data: profile, error: profileError } = await db
-    .from("profiles")
-    .select("role")
-    .eq("id", ownerUser.id)
-    .maybeSingle();
-
-  if (profileError || !profile || profile.role !== "owner") {
-    message("status", "This page is for the owner account only.");
-    await db.auth.signOut();
-    window.location.replace("index.html");
-    return;
-  }
-
-  message("status", "Signed in as owner: " + (ownerUser.email || ""));
-  await loadProducts();
-}
-
-el("sign-out").addEventListener("click", async () => {
-  const { error } = await db.auth.signOut();
-
-  if (error) {
-    message("status", "Could not sign out: " + error.message);
-    return;
-  }
-
-  window.location.replace("index.html");
-});
-
+el("sign-out").onclick=async()=>{
+ const {error}=await db.auth.signOut();
+ if(error)return say("status","Could not sign out: "+error.message);
+ window.location.replace("index.html");
+};
 checkOwner();
 </script>
 </body>
