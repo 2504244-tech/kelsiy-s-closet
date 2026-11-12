@@ -5,68 +5,155 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Owner Dashboard | Kelsiy's Closet</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root {
-  --burgundy:#701b39; --dark:#3e1023;
-  --cream:#faf5ed; --gold:#c49a58;
+  --burgundy: #701b39;
+  --dark: #3e1023;
+  --cream: #faf5ed;
+  --gold: #c49a58;
 }
-* { box-sizing:border-box; }
+* { box-sizing: border-box; }
 body {
-  margin:0; background:var(--cream); color:#292126;
-  font:16px Arial,sans-serif;
+  margin: 0;
+  background: var(--cream);
+  color: #292126;
+  font: 16px Arial, sans-serif;
 }
-header,footer {
-  background:var(--dark); color:white; padding:22px 5%;
-  border-bottom:4px solid var(--gold);
+header, footer {
+  background: var(--dark);
+  color: white;
+  padding: 22px 5%;
+  border-bottom: 4px solid var(--gold);
 }
-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-h1,h2 { color:var(--burgundy); }
-header h1 { color:white; margin:0; }
-header p { color:#e9c88e; margin:5px 0; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+h1, h2 { color: var(--burgundy); }
+header h1 { color: white; margin: 0; }
+header p { color: #e9c88e; margin: 5px 0; }
 button {
-  cursor:pointer; padding:11px 16px; border:1px solid var(--gold);
-  border-radius:5px; background:var(--burgundy); color:white;
-  font-weight:bold;
+  cursor: pointer;
+  padding: 11px 16px;
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  background: var(--burgundy);
+  color: white;
+  font-weight: bold;
 }
-button:hover { background:var(--dark); }
-main { width:94%; max-width:1250px; margin:30px auto; }
-#status,#product-status { font-weight:bold; overflow-wrap:anywhere; }
-.layout { display:grid; grid-template-columns:200px minmax(0,1fr); gap:20px; }
-nav,.panel {
-  background:white; padding:20px; border:1px solid #eadbd5;
-  border-radius:8px; margin-bottom:18px;
+button:hover { background: var(--dark); }
+button:disabled { opacity: .6; cursor: not-allowed; }
+main { width: 94%; max-width: 1250px; margin: 30px auto; }
+#status, #product-status, #sales-status {
+  font-weight: bold;
+  overflow-wrap: anywhere;
 }
-nav button { display:block; width:100%; margin:7px 0; text-align:left; }
-.panel[hidden] { display:none; }
-.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-.stat { padding:18px; background:#fffaf5; border-top:4px solid var(--gold); }
-.stat strong { display:block; font-size:25px; color:var(--burgundy); margin-top:8px; }
-.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-.field { display:grid; gap:6px; }
-.field.full { grid-column:1/-1; }
-label { font-weight:bold; color:var(--dark); }
-input,select,textarea {
-  width:100%; padding:12px; border:1px solid #d9c8c4;
-  border-radius:5px; font:inherit;
+.layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 20px;
 }
-textarea { min-height:80px; }
-.actions { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0; }
-.table-wrap { overflow-x:auto; }
-table { border-collapse:collapse; width:100%; min-width:580px; }
-th,td { padding:11px; border-bottom:1px solid #eadbd5; text-align:left; }
-th { background:#f5e9e2; }
-.photo { width:55px; height:65px; object-fit:cover; }
-.small { padding:7px; margin:2px; }
-.delete { background:#a21b2d; }
-footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
-@media(max-width:750px) {
-  .layout { grid-template-columns:1fr; }
-  nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
-  nav button { margin:0; }
+nav, .panel {
+  background: white;
+  padding: 20px;
+  border: 1px solid #eadbd5;
+  border-radius: 8px;
+  margin-bottom: 18px;
 }
-@media(max-width:480px) {
-  .stats,.form-grid { grid-template-columns:1fr; }
-  .field.full { grid-column:auto; }
+nav button {
+  display: block;
+  width: 100%;
+  margin: 7px 0;
+  text-align: left;
+}
+.panel[hidden] { display: none; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.stat {
+  padding: 18px;
+  background: #fffaf5;
+  border-top: 4px solid var(--gold);
+}
+.stat strong {
+  display: block;
+  font-size: 25px;
+  color: var(--burgundy);
+  margin-top: 8px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.field { display: grid; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+label { font-weight: bold; color: var(--dark); }
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d9c8c4;
+  border-radius: 5px;
+  font: inherit;
+}
+textarea { min-height: 80px; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+.table-wrap { overflow-x: auto; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 580px;
+}
+th, td {
+  padding: 11px;
+  border-bottom: 1px solid #eadbd5;
+  text-align: left;
+}
+th { background: #f5e9e2; }
+.photo {
+  width: 55px;
+  height: 65px;
+  object-fit: cover;
+}
+.small { padding: 7px; margin: 2px; }
+.delete { background: #a21b2d; }
+#sale-receipt {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: #fffaf5;
+  overflow-wrap: anywhere;
+}
+#sale-receipt h3 { color: var(--burgundy); }
+footer {
+  text-align: center;
+  border-top: 4px solid var(--gold);
+  border-bottom: 0;
+}
+@media(max-width: 750px) {
+  .layout { grid-template-columns: 1fr; }
+  nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  nav button { margin: 0; }
+}
+@media(max-width: 480px) {
+  .stats, .form-grid { grid-template-columns: 1fr; }
+  .field.full { grid-column: auto; }
 }
 </style>
 </head>
@@ -82,27 +169,33 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
 
 <main>
   <h1>Owner's Dashboard</h1>
-  <p>Manage your boutique, products, prices and stock.</p>
+  <p>Manage your boutique, products, prices, stock and sales.</p>
   <p id="status" role="status">Checking your account...</p>
 
   <div class="layout">
     <nav aria-label="Dashboard sections">
-      <button data-section="home">HOME</button>
-      <button data-section="inventory">INVENTORY</button>
-      <button data-section="sales">SALES</button>
-      <button data-section="reports">SALES REPORTS</button>
-      <button data-section="messages">MESSAGES</button>
+      <button data-section="home" type="button">HOME</button>
+      <button data-section="inventory" type="button">INVENTORY</button>
+      <button data-section="sales" type="button">SALES</button>
+      <button data-section="reports" type="button">SALES REPORTS</button>
+      <button data-section="messages" type="button">MESSAGES</button>
     </nav>
 
     <div>
       <section class="panel" data-panel="home">
         <h2>Business Overview</h2>
         <div class="stats">
-          <div class="stat">Active Products<strong id="stat-products">0</strong></div>
-          <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
-          <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
+          <div class="stat">Active Products
+            <strong id="stat-products">0</strong>
+          </div>
+          <div class="stat">Total Stock
+            <strong id="stat-stock">0</strong>
+          </div>
+          <div class="stat">Out of Stock
+            <strong id="stat-empty">0</strong>
+          </div>
         </div>
-        <button data-go="inventory">MANAGE INVENTORY</button>
+        <button data-go="inventory" type="button">MANAGE INVENTORY</button>
       </section>
 
       <section class="panel" data-panel="inventory" hidden>
@@ -111,11 +204,13 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
 
         <form id="product-form">
           <input type="hidden" id="product-id">
+
           <div class="form-grid">
             <div class="field">
               <label for="product-name">Product name *</label>
               <input id="product-name" required maxlength="150">
             </div>
+
             <div class="field">
               <label for="product-category">Category *</label>
               <select id="product-category" required>
@@ -126,33 +221,42 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
                 <option value="Accessories">Accessories</option>
               </select>
             </div>
+
             <div class="field">
               <label for="product-price">Price (KES) *</label>
-              <input id="product-price" type="number" min="0" step="0.01" required>
+              <input id="product-price" type="number"
+                     min="0" step="0.01" required>
             </div>
+
             <div class="field">
               <label for="product-stock">Quantity in stock *</label>
-              <input id="product-stock" type="number" min="0" step="1" required>
+              <input id="product-stock" type="number"
+                     min="0" step="1" required>
             </div>
+
             <div class="field">
               <label for="product-size">Size</label>
               <input id="product-size" placeholder="S, M, L, XL">
             </div>
+
             <div class="field">
               <label for="product-colour">Color</label>
               <input id="product-colour" placeholder="Black">
             </div>
+
             <div class="field full">
               <label for="product-image">Product image (JPG/JPEG)</label>
               <input id="product-image" type="text"
                      placeholder="images/dress.jpg">
-              <small>Example: images/dress.jpg or images/jeans.jpeg</small>
+              <small>Enter the image path used by your existing website.</small>
             </div>
+
             <div class="field full">
               <label for="product-description">Description</label>
               <textarea id="product-description"></textarea>
             </div>
           </div>
+
           <div class="actions">
             <button id="save-button" type="submit">SAVE PRODUCT</button>
             <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
@@ -160,12 +264,15 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
         </form>
 
         <p id="product-status" role="status"></p>
+
         <h2>Saved Products</h2>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Photo</th><th>Product</th><th>Category</th>
-              <th>Price</th><th>Stock</th><th>Actions</th></tr>
+              <tr>
+                <th>Photo</th><th>Product</th><th>Category</th>
+                <th>Price</th><th>Stock</th><th>Actions</th>
+              </tr>
             </thead>
             <tbody id="inventory-table">
               <tr><td colspan="6">Loading products...</td></tr>
@@ -175,18 +282,74 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
       </section>
 
       <section class="panel" data-panel="sales" hidden>
-        <h2>Sales</h2>
-        <p id="sales-status">Sales recording will be connected to your existing database after the transaction and stock-update process is secured.</p>
+        <h2>Record a Sale</h2>
+        <p>Select products, enter quantities, and choose the payment method.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="sales-product">Product *</label>
+            <select id="sales-product">
+              <option value="">Open Sales to load products</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="sales-quantity">Quantity *</label>
+            <input id="sales-quantity" type="number"
+                   min="1" step="1" value="1">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="add-sale-item" type="button">ADD TO SALE</button>
+        </div>
+
+        <h2>Items in This Sale</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th><th>Quantity</th><th>Unit Price</th>
+                <th>Subtotal</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="sales-cart-body">
+              <tr><td colspan="5">No items added yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p><strong>Estimated total:
+          <span id="sales-total">KES 0</span>
+        </strong></p>
+        <small>The database calculates the final total using saved prices.</small>
+
+        <div class="field" style="margin-top:18px">
+          <label for="sales-payment">Payment method *</label>
+          <select id="sales-payment" required>
+            <option value="cash">Cash</option>
+            <option value="mpesa">M-Pesa</option>
+          </select>
+        </div>
+
+        <div class="actions">
+          <button id="record-sale-button" type="button">RECORD SALE</button>
+        </div>
+
+        <p id="sales-status" role="status" aria-live="polite">
+          Ready to record a sale.
+        </p>
+        <div id="sale-receipt" hidden></div>
       </section>
 
       <section class="panel" data-panel="reports" hidden>
         <h2>Sales Reports</h2>
-        <p>Reports will appear here once sales recording is connected and tested.</p>
+        <p>Sales reports have not been connected yet.</p>
       </section>
 
       <section class="panel" data-panel="messages" hidden>
         <h2>Customer Messages</h2>
-        <p>Customer messages will appear here after the contact form and database permissions are connected.</p>
+        <p>Customer messages have not been connected yet.</p>
       </section>
     </div>
   </div>
@@ -199,13 +362,19 @@ footer { text-align:center; border-top:4px solid var(--gold); border-bottom:0; }
 </footer>
 
 <script>
+"use strict";
+
 const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const el = id => document.getElementById(id);
+
 let products = [];
 let ownerUser = null;
+let salesCart = [];
+let salesLoading = false;
+let recordingSale = false;
 
 el("year").textContent = new Date().getFullYear();
 
@@ -215,6 +384,7 @@ function message(id, text) {
 
 function money(value) {
   return "KES " + Number(value || 0).toLocaleString("en-KE", {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
 }
@@ -223,18 +393,22 @@ function showSection(name) {
   document.querySelectorAll("[data-panel]").forEach(panel => {
     panel.hidden = panel.dataset.panel !== name;
   });
+
   if (name === "inventory") loadProducts();
+  if (name === "sales") loadSalesProducts();
 }
 
 document.querySelectorAll("[data-section]").forEach(button => {
   button.addEventListener("click", () => showSection(button.dataset.section));
 });
+
 document.querySelectorAll("[data-go]").forEach(button => {
   button.addEventListener("click", () => showSection(button.dataset.go));
 });
 
 function updateStats() {
   const active = products.filter(p => p.active !== false);
+
   el("stat-products").textContent = active.length;
   el("stat-stock").textContent = active.reduce(
     (sum, p) => sum + Math.max(0, Number(p.stock) || 0), 0
@@ -250,6 +424,7 @@ function clearForm() {
   el("save-button").textContent = "SAVE PRODUCT";
   el("cancel-edit").hidden = true;
 }
+
 el("cancel-edit").addEventListener("click", clearForm);
 
 function cell(row, value) {
@@ -267,9 +442,9 @@ async function loadProducts() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error(error);
+    console.error("Load products error:", error);
     message("product-status", "Could not load products: " + error.message);
-    return;
+    return false;
   }
 
   products = data || [];
@@ -294,10 +469,12 @@ async function loadProducts() {
       img.className = "photo";
       img.src = product.image_url;
       img.alt = product.name || "Product";
+
       img.onerror = () => {
         img.removeAttribute("src");
         img.alt = "Image unavailable";
       };
+
       photo.appendChild(img);
     } else {
       photo.textContent = "No photo";
@@ -310,6 +487,7 @@ async function loadProducts() {
     cell(row, product.stock);
 
     const actions = document.createElement("td");
+
     const edit = document.createElement("button");
     edit.className = "small";
     edit.type = "button";
@@ -328,7 +506,225 @@ async function loadProducts() {
   });
 
   message("product-status", "Products loaded: " + products.length);
+  return true;
 }
+
+function populateSalesProductSelect() {
+  const select = el("sales-product");
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choose a product";
+  select.appendChild(placeholder);
+
+  products
+    .filter(p => p.active !== false && Number(p.stock) > 0)
+    .forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent =
+        `${p.name} — ${money(p.price)} (Stock: ${p.stock})`;
+      select.appendChild(option);
+    });
+
+  if (select.options.length === 1) {
+    placeholder.textContent = "No active products in stock";
+  }
+}
+
+async function loadSalesProducts() {
+  if (salesLoading) return;
+
+  salesLoading = true;
+  message("sales-status", "Loading available products...");
+
+  try {
+    const loaded = await loadProducts();
+
+    if (!loaded) {
+      message("sales-status", "Products could not load. Please try again.");
+      return;
+    }
+
+    populateSalesProductSelect();
+    renderSalesCart();
+    message("sales-status", "Products loaded. Add items to begin.");
+  } finally {
+    salesLoading = false;
+  }
+}
+
+function renderSalesCart() {
+  const tbody = el("sales-cart-body");
+  tbody.replaceChildren();
+
+  let total = 0;
+
+  if (salesCart.length === 0) {
+    const row = document.createElement("tr");
+    const td = cell(row, "No items added yet.");
+    td.colSpan = 5;
+    tbody.appendChild(row);
+  }
+
+  salesCart.forEach(item => {
+    const product = products.find(p => p.id === item.product_id);
+    if (!product) return;
+
+    const subtotal = Number(product.price) * item.quantity;
+    total += subtotal;
+
+    const row = document.createElement("tr");
+    cell(row, product.name);
+    cell(row, item.quantity);
+    cell(row, money(product.price));
+    cell(row, money(subtotal));
+
+    const actionCell = document.createElement("td");
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "small delete";
+    remove.textContent = "Remove";
+
+    remove.addEventListener("click", () => {
+      salesCart = salesCart.filter(
+        entry => entry.product_id !== item.product_id
+      );
+      renderSalesCart();
+    });
+
+    actionCell.appendChild(remove);
+    row.appendChild(actionCell);
+    tbody.appendChild(row);
+  });
+
+  el("sales-total").textContent = money(total);
+}
+
+el("add-sale-item").addEventListener("click", () => {
+  const productId = el("sales-product").value;
+  const quantity = Number(el("sales-quantity").value);
+  const product = products.find(p => p.id === productId);
+
+  if (!product || product.active === false) {
+    message("sales-status", "Please select an active product.");
+    return;
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    message("sales-status", "Enter a whole-number quantity of at least 1.");
+    return;
+  }
+
+  const existing = salesCart.find(
+    item => item.product_id === productId
+  );
+  const alreadyAdded = existing ? existing.quantity : 0;
+
+  if (alreadyAdded + quantity > Number(product.stock)) {
+    message(
+      "sales-status",
+      `Only ${product.stock} units of ${product.name} are in stock.`
+    );
+    return;
+  }
+
+  if (existing) {
+    existing.quantity += quantity;
+  } else {
+    salesCart.push({
+      product_id: productId,
+      quantity
+    });
+  }
+
+  renderSalesCart();
+  message("sales-status", product.name + " added to the sale.");
+  el("sales-quantity").value = "1";
+});
+
+el("record-sale-button").addEventListener("click", async () => {
+  if (recordingSale) return;
+
+  if (!ownerUser) {
+    message("sales-status", "Owner session not active. Please sign in again.");
+    return;
+  }
+
+  if (salesCart.length === 0) {
+    message("sales-status", "Add at least one product before recording the sale.");
+    return;
+  }
+
+  const paymentMethod = el("sales-payment").value;
+
+  if (!["cash", "mpesa"].includes(paymentMethod)) {
+    message("sales-status", "Choose Cash or M-Pesa.");
+    return;
+  }
+
+  const button = el("record-sale-button");
+  recordingSale = true;
+  button.disabled = true;
+  message("sales-status", "Recording sale...");
+
+  try {
+    const { data, error } = await db.rpc("record_sale", {
+      p_items: salesCart.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity
+      })),
+      p_payment_method: paymentMethod
+    });
+
+    if (error) throw error;
+
+    if (!data || data.receipt_number == null) {
+      throw new Error(
+        "The database did not return a receipt number. Check the sale in Supabase before retrying."
+      );
+    }
+
+    // The database has confirmed the sale. Clear the cart only now.
+    salesCart = [];
+    renderSalesCart();
+
+    const loaded = await loadProducts();
+    if (loaded) populateSalesProductSelect();
+
+    const receiptBox = el("sale-receipt");
+    receiptBox.replaceChildren();
+    receiptBox.hidden = false;
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Sale recorded successfully";
+
+    const receiptText = document.createElement("p");
+    receiptText.textContent = "Receipt number: " + data.receipt_number;
+
+    const totalText = document.createElement("p");
+    totalText.textContent = "Total: " + money(data.total);
+
+    const paymentText = document.createElement("p");
+    paymentText.textContent =
+      "Payment: " + (paymentMethod === "mpesa" ? "M-Pesa" : "Cash");
+
+    receiptBox.append(heading, receiptText, totalText, paymentText);
+
+    message("sales-status", "Sale saved. Stock has been updated.");
+  } catch (error) {
+    console.error("Record sale error:", error);
+    message(
+      "sales-status",
+      "Sale was not confirmed: " + (error.message || "Unknown error") +
+      " Check Supabase before attempting the same sale again."
+    );
+  } finally {
+    recordingSale = false;
+    button.disabled = false;
+  }
+});
 
 function editProduct(p) {
   el("product-id").value = p.id;
@@ -349,12 +745,15 @@ async function deleteProduct(p) {
   if (!confirm('Delete "' + p.name + '" from inventory?')) return;
 
   const { error } = await db.from("products").delete().eq("id", p.id);
+
   if (error) {
     message("product-status", "Could not delete product: " + error.message);
     return;
   }
+
   message("product-status", "Product deleted.");
   await loadProducts();
+  populateSalesProductSelect();
 }
 
 el("product-form").addEventListener("submit", async event => {
@@ -404,7 +803,9 @@ el("product-form").addEventListener("submit", async event => {
 
     clearForm();
     message("product-status", id ? "Product updated." : "Product saved.");
+
     await loadProducts();
+    populateSalesProductSelect();
   } catch (error) {
     console.error(error);
     message("product-status", "Could not save product: " + error.message);
@@ -425,8 +826,10 @@ async function checkOwner() {
   ownerUser = data.session.user;
 
   const { data: profile, error: profileError } = await db
-    .from("profiles").select("role")
-    .eq("id", ownerUser.id).maybeSingle();
+    .from("profiles")
+    .select("role")
+    .eq("id", ownerUser.id)
+    .maybeSingle();
 
   if (profileError || !profile || profile.role !== "owner") {
     message("status", "This page is for the owner account only.");
@@ -441,10 +844,12 @@ async function checkOwner() {
 
 el("sign-out").addEventListener("click", async () => {
   const { error } = await db.auth.signOut();
+
   if (error) {
     message("status", "Could not sign out: " + error.message);
     return;
   }
+
   window.location.replace("index.html");
 });
 
