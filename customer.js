@@ -6,16 +6,15 @@ const customerDB = window.supabase.createClient(
   CUSTOMER_SUPABASE_KEY
 );
 
+// Catalogue elements
 const productsContainer = document.getElementById("customer-products");
 const catalogueMessage = document.getElementById("catalogue-message");
 const categoryFilter = document.getElementById("category-filter");
 
 let allProducts = [];
+let currentCustomer = null;
 
-// --------------------
-// GENERAL HELPERS
-// --------------------
-
+// General helpers
 function priceKES(price) {
   return "KES " + Number(price || 0).toLocaleString("en-KE", {
     maximumFractionDigits: 2
@@ -26,18 +25,17 @@ function addProductText(parent, tag, text, className = "") {
   const element = document.createElement(tag);
   element.textContent = text;
 
-  if (className) element.className = className;
+  if (className) {
+    element.className = className;
+  }
 
   parent.appendChild(element);
   return element;
 }
 
-// --------------------
-// CUSTOMER PRODUCT CATALOGUE
-// --------------------
-
+// PRODUCT CATALOGUE
 function displayProducts() {
-  if (!productsContainer || !catalogueMessage) return;
+  if (!productsContainer) return;
 
   productsContainer.replaceChildren();
 
@@ -55,7 +53,8 @@ function displayProducts() {
     return;
   }
 
-  catalogueMessage.textContent = products.length +
+  catalogueMessage.textContent =
+    products.length +
     (products.length === 1
       ? " product available."
       : " products available.");
@@ -160,203 +159,266 @@ if (categoryFilter) {
   categoryFilter.addEventListener("change", displayProducts);
 }
 
-// --------------------
-// CUSTOMER MESSAGES
-// --------------------
+// CUSTOMER ACCOUNT
+async function loadCustomerAccount() {
+  const { data, error } = await customerDB.auth.getUser();
 
-// Create the messages section automatically, so you do not
-// have to add new HTML elements manually.
+  if (error || !data?.user) {
+    currentCustomer = null;
+    return null;
+  }
 
-function createMessagesSection() {
+  currentCustomer = data.user;
+  return currentCustomer;
+}
+
+// CUSTOMER MESSAGES AND OWNER REPLIES
+function createCustomerMessagesSection() {
   let section = document.getElementById("customer-messages-section");
 
-  if (section) {
-    return {
-      section,
-      status: document.getElementById("customer-messages-status"),
-      list: document.getElementById("customer-messages-list")
-    };
-  }
+  if (section) return section;
 
   section = document.createElement("section");
   section.id = "customer-messages-section";
-  section.style.cssText = `
-    margin: 25px 0;
-    padding: 20px;
-    border: 1px solid #e4d4d8;
-    border-radius: 12px;
-    background: #fffaf4;
-    color: #3e1023;
-  `;
+  section.className = "customer-messages-section";
+
+  section.style.margin = "24px 0";
+  section.style.padding = "20px";
+  section.style.borderRadius = "12px";
+  section.style.background = "#fffaf4";
+  section.style.color = "#481027";
 
   const heading = document.createElement("h2");
   heading.textContent = "My Messages";
-  heading.style.color = "#701b39";
 
   const description = document.createElement("p");
   description.textContent =
-    "View your messages and replies from Kelsiy's Closet.";
-
-  const status = document.createElement("p");
-  status.id = "customer-messages-status";
-  status.textContent = "Loading your messages...";
+    "View your enquiries and replies from Kelsiy's Closet.";
 
   const list = document.createElement("div");
   list.id = "customer-messages-list";
 
-  section.append(heading, description, status, list);
+  section.append(heading, description, list);
 
-  if (productsContainer?.parentElement) {
+  const contactForm = document.getElementById("customer-contact-form");
+
+  if (contactForm) {
+    contactForm.insertAdjacentElement("afterend", section);
+  } else if (productsContainer?.parentElement) {
     productsContainer.parentElement.insertBefore(section, productsContainer);
   } else {
     document.body.appendChild(section);
   }
 
-  return { section, status, list };
-}
-
-const customerMessagesUI = createMessagesSection();
-
-function formatMessageDate(dateValue) {
-  if (!dateValue) return "Date unavailable";
-
-  const date = new Date(dateValue);
-
-  if (Number.isNaN(date.getTime())) return "Date unavailable";
-
-  return date.toLocaleString("en-KE", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-}
-
-function displayCustomerMessages(messages) {
-  const { status, list } = customerMessagesUI;
-
-  if (!status || !list) return;
-
-  list.replaceChildren();
-
-  if (!messages.length) {
-    status.textContent = "You do not have any messages yet.";
-    return;
-  }
-
-  status.textContent = messages.length +
-    (messages.length === 1 ? " message found." : " messages found.");
-
-  messages.forEach((message) => {
-    const card = document.createElement("article");
-
-    card.style.cssText = `
-      margin-top: 15px;
-      padding: 16px;
-      border: 1px solid #e4d4d8;
-      border-radius: 10px;
-      background: white;
-    `;
-
-    addProductText(
-      card,
-      "h3",
-      message.subject || "Message to Kelsiy's Closet"
-    );
-
-    addProductText(
-      card,
-      "p",
-      "Sent: " + formatMessageDate(message.created_at)
-    );
-
-    addProductText(card, "p", "Your message:");
-
-    const originalMessage = document.createElement("p");
-    originalMessage.textContent = message.message || "";
-    originalMessage.style.whiteSpace = "pre-wrap";
-    card.appendChild(originalMessage);
-
-    const divider = document.createElement("hr");
-    divider.style.border = "0";
-    divider.style.borderTop = "1px solid #e4d4d8";
-    card.appendChild(divider);
-
-    if (message.reply && message.reply.trim()) {
-      addProductText(card, "h4", "Reply from Kelsiy's Closet");
-
-      const reply = document.createElement("p");
-      reply.textContent = message.reply;
-      reply.style.whiteSpace = "pre-wrap";
-      reply.style.background = "#f8edf1";
-      reply.style.padding = "12px";
-      reply.style.borderRadius = "8px";
-      card.appendChild(reply);
-
-      if (message.replied_at) {
-        addProductText(
-          card,
-          "small",
-          "Reply received: " + formatMessageDate(message.replied_at)
-        );
-      }
-    } else {
-      const waiting = addProductText(
-        card,
-        "p",
-        "Awaiting a reply from Kelsiy's Closet."
-      );
-
-      waiting.style.color = "#8a5b6c";
-      waiting.style.fontStyle = "italic";
-    }
-
-    list.appendChild(card);
-  });
+  return section;
 }
 
 async function loadCustomerMessages() {
-  const { status } = customerMessagesUI;
+  const section = createCustomerMessagesSection();
+  const list = document.getElementById("customer-messages-list");
 
-  if (!status) return;
+  if (!list) return;
 
-  const { data: userResult, error: userError } =
-    await customerDB.auth.getUser();
+  list.replaceChildren();
 
-  if (userError || !userResult?.user) {
-    status.textContent = "Please sign in to view your messages.";
+  const user = currentCustomer || await loadCustomerAccount();
+
+  if (!user || !user.email) {
+    addProductText(
+      list,
+      "p",
+      "Please sign in to your customer account to view your messages."
+    );
     return;
   }
 
-  const email = userResult.user.email;
-
-  if (!email) {
-    status.textContent = "Your account email could not be found.";
-    return;
-  }
-
-  status.textContent = "Loading your messages...";
+  addProductText(list, "p", "Loading your messages...");
 
   const { data, error } = await customerDB
     .from("messages")
     .select(
       "id,customer_name,customer_email,subject,message,created_at,reply,replied_at"
     )
-    .eq("customer_email", email)
+    .eq("customer_email", user.email)
     .order("created_at", { ascending: false });
+
+  list.replaceChildren();
 
   if (error) {
     console.error("Could not load customer messages:", error);
-    status.textContent =
-      "Messages could not load. Please check the messages table permissions.";
+
+    addProductText(
+      list,
+      "p",
+      "Your messages could not load. Please refresh the page and try again."
+    );
     return;
   }
 
-  displayCustomerMessages(data || []);
+  if (!data || data.length === 0) {
+    addProductText(
+      list,
+      "p",
+      "You have not sent any messages yet. Your enquiries and replies will appear here."
+    );
+    return;
+  }
+
+  data.forEach((message) => {
+    const card = document.createElement("article");
+
+    card.style.padding = "16px";
+    card.style.margin = "14px 0";
+    card.style.border = "1px solid #e5d4d9";
+    card.style.borderRadius = "10px";
+    card.style.background = "#ffffff";
+
+    addProductText(
+      card,
+      "h3",
+      message.subject || "Customer enquiry"
+    );
+
+    addProductText(
+      card,
+      "p",
+      "Sent: " + (
+        message.created_at
+          ? new Date(message.created_at).toLocaleString("en-KE")
+          : "Date unavailable"
+      )
+    );
+
+    addProductText(card, "p", "Your message:");
+    addProductText(card, "p", message.message || "");
+
+    const replyHeading = document.createElement("h4");
+    replyHeading.textContent = "Reply from Kelsiy's Closet";
+    replyHeading.style.marginTop = "16px";
+    card.appendChild(replyHeading);
+
+    if (message.reply && message.reply.trim()) {
+      addProductText(card, "p", message.reply);
+
+      if (message.replied_at) {
+        addProductText(
+          card,
+          "small",
+          "Replied: " +
+            new Date(message.replied_at).toLocaleString("en-KE")
+        );
+      }
+    } else {
+      addProductText(card, "p", "Awaiting a reply from the owner.");
+    }
+
+    list.appendChild(card);
+  });
 }
 
-// --------------------
-// CUSTOMER SIGN OUT
-// --------------------
+// CONTACT FORM SUBMISSION
+const customerContactForm =
+  document.getElementById("customer-contact-form");
 
+const contactStatus = document.getElementById("contact-status");
+
+if (customerContactForm) {
+  customerContactForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const submitButton = customerContactForm.querySelector(
+      'button[type="submit"], input[type="submit"]'
+    );
+
+    const name = document.getElementById("contact-name")?.value.trim();
+    const typedEmail = document.getElementById("contact-email")?.value.trim();
+    const message = document.getElementById("contact-message")?.value.trim();
+
+    if (contactStatus) {
+      contactStatus.textContent = "";
+    }
+
+    if (!name || !typedEmail || !message) {
+      if (contactStatus) {
+        contactStatus.textContent =
+          "Please enter your name, email and message.";
+      }
+      return;
+    }
+
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
+    if (contactStatus) {
+      contactStatus.textContent = "Sending your message...";
+    }
+
+    try {
+      const user = currentCustomer || await loadCustomerAccount();
+
+      if (!user || !user.email) {
+        throw new Error(
+          "Please sign in to your customer account before sending a message."
+        );
+      }
+
+      if (typedEmail.toLowerCase() !== user.email.toLowerCase()) {
+        throw new Error(
+          "Please use the email address linked to your customer account."
+        );
+      }
+
+      const { error } = await customerDB
+        .from("messages")
+        .insert({
+          customer_name: name,
+          customer_email: user.email,
+          subject: "Customer enquiry",
+          message: message
+        });
+
+      if (error) throw error;
+
+      customerContactForm.reset();
+
+      const emailInput = document.getElementById("contact-email");
+      if (emailInput) {
+        emailInput.value = user.email;
+      }
+
+      if (contactStatus) {
+        contactStatus.textContent =
+          "Your message was sent successfully!";
+      }
+
+      await loadCustomerMessages();
+    } catch (error) {
+      console.error("Could not send customer message:", error);
+
+      if (contactStatus) {
+        contactStatus.textContent =
+          error.message || "Your message could not be sent. Please try again.";
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
+    }
+  });
+}
+
+// Keep the form email matched to the signed-in customer account.
+async function prepareContactForm() {
+  const user = await loadCustomerAccount();
+  const emailInput = document.getElementById("contact-email");
+
+  if (emailInput && user?.email) {
+    emailInput.value = user.email;
+  }
+}
+
+// CUSTOMER SIGN-OUT
 const customerSignOut = document.getElementById("customer-signout");
 
 if (customerSignOut) {
@@ -370,6 +432,7 @@ if (customerSignOut) {
       console.error("Sign-out error:", error);
       customerSignOut.disabled = false;
       customerSignOut.textContent = "SIGN OUT";
+
       alert("We could not sign you out. Please try again.");
       return;
     }
@@ -378,12 +441,15 @@ if (customerSignOut) {
   });
 }
 
-// --------------------
-// LOAD AND REFRESH
-// --------------------
+// INITIAL LOAD AND REFRESH
+async function loadCustomerPage() {
+  await loadCustomerAccount();
+  await prepareContactForm();
+  await loadCustomerProducts();
+  await loadCustomerMessages();
+}
 
-loadCustomerProducts();
-loadCustomerMessages();
+loadCustomerPage();
 
 window.addEventListener("focus", () => {
   loadCustomerProducts();
