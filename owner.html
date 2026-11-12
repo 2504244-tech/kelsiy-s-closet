@@ -35,7 +35,7 @@ table{width:100%;min-width:500px;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
 th{background:#f5e9e2}
 .photo{width:50px;height:60px;object-fit:cover}
-.small{padding:7px;margin:2px}
+.small{padding:7px;margin:2px;font-size:13px}
 .delete{background:#a21b2d}
 .status{overflow-wrap:anywhere;white-space:pre-wrap}
 #sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
@@ -50,10 +50,9 @@ footer{text-align:center;border-top:4px solid var(--g)}
 </style>
 </head>
 <body>
-
 <header>
  <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
- <button id="sign-out">SIGN OUT</button>
+ <button id="sign-out" type="button">SIGN OUT</button>
 </header>
 
 <main>
@@ -63,11 +62,11 @@ footer{text-align:center;border-top:4px solid var(--g)}
 
 <div class="layout">
 <nav>
- <button data-section="home">HOME</button>
- <button data-section="inventory">INVENTORY</button>
- <button data-section="sales">SALES</button>
- <button data-section="reports">SALES REPORTS</button>
- <button data-section="messages">MESSAGES</button>
+ <button type="button" data-section="home">HOME</button>
+ <button type="button" data-section="inventory">INVENTORY</button>
+ <button type="button" data-section="sales">SALES</button>
+ <button type="button" data-section="reports">SALES REPORTS</button>
+ <button type="button" data-section="messages">MESSAGES</button>
 </nav>
 
 <div>
@@ -78,7 +77,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
   <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
   <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
  </div>
- <button data-go="inventory">MANAGE INVENTORY</button>
+ <button type="button" data-go="inventory">MANAGE INVENTORY</button>
 </section>
 
 <section class="panel" data-panel="inventory" hidden>
@@ -89,7 +88,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <div class="field"><label for="product-name">Product name *</label><input id="product-name" required></div>
  <div class="field"><label for="product-category">Category *</label>
  <select id="product-category">
-  <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
+ <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
  </select></div>
  <div class="field"><label for="product-price">Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
  <div class="field"><label for="product-stock">Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
@@ -117,7 +116,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <div class="field"><label for="sales-product">Product</label><select id="sales-product"></select></div>
  <div class="field"><label for="sales-quantity">Quantity</label><input id="sales-quantity" type="number" min="1" step="1" value="1"></div>
 </div>
-<button id="add-sale-item">ADD TO SALE</button>
+<button id="add-sale-item" type="button">ADD TO SALE</button>
 <h2>Sale Items</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th><th>Action</th></tr></thead>
@@ -126,7 +125,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
 <p><strong>Total: <span id="sales-total">KES 0</span></strong></p>
 <div class="field"><label for="sales-payment">Payment method</label>
 <select id="sales-payment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select></div>
-<button id="record-sale-button">RECORD SALE</button>
+<button id="record-sale-button" type="button">RECORD SALE</button>
 <p id="sales-status" class="status" role="status">Ready.</p>
 <div id="sale-receipt" hidden></div>
 </section>
@@ -138,9 +137,9 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <div class="field"><label for="report-end">End date</label><input id="report-end" type="date"></div>
 </div>
 <div class="actions">
- <button id="apply-report-filter">APPLY DATES</button>
- <button id="clear-report-filter">SHOW ALL</button>
- <button id="refresh-report">REFRESH</button>
+ <button id="apply-report-filter" type="button">APPLY DATES</button>
+ <button id="clear-report-filter" type="button">SHOW ALL</button>
+ <button id="refresh-report" type="button">REFRESH</button>
 </div>
 <p id="report-status" class="status" role="status">Open Sales Reports to load transactions.</p>
 <div class="stats">
@@ -160,8 +159,8 @@ footer{text-align:center;border-top:4px solid var(--g)}
 
 <section class="panel" data-panel="messages" hidden>
 <h2>Customer Messages</h2>
-<p>View and manage messages sent by your customers.</p>
-<button id="refresh-messages">REFRESH MESSAGES</button>
+<p>View, reply to, and manage messages sent by your customers.</p>
+<button id="refresh-messages" type="button">REFRESH MESSAGES</button>
 <p id="messages-status" class="status" role="status">Open Messages to load messages.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Customer</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
@@ -189,7 +188,6 @@ const say=(id,message)=>{if(el(id))el(id).textContent=message};
 const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
 
 let db=null,ownerUser=null,products=[],cart=[],busy=false;
-
 el("year").textContent=new Date().getFullYear();
 
 function cell(row,value){
@@ -202,9 +200,9 @@ function cell(row,value){
 function withTimeout(promise,ms=15000){
  return Promise.race([
   promise,
-  new Promise((_,reject)=>setTimeout(
-   ()=>reject(new Error("Request timed out. Check your internet connection and Supabase status.")),ms
-  ))
+  new Promise((_,reject)=>setTimeout(()=>reject(
+   new Error("Request timed out. Check your internet connection and Supabase status.")
+  ),ms))
  ]);
 }
 
@@ -226,7 +224,7 @@ document.querySelectorAll("[data-go]").forEach(button=>{
 });
 
 el("sign-out").onclick=async()=>{
- try{if(db)await db.auth.signOut()}catch(e){console.error(e)}
+ try{if(db)await db.auth.signOut()}catch(error){console.error(error)}
  window.location.replace("index.html");
 };
 
@@ -266,22 +264,38 @@ async function loadProducts(){
   }
 
   products.forEach(p=>{
-   const r=tbody.insertRow(),photo=cell(r,"");
+   const r=tbody.insertRow();
+   const photo=cell(r,"");
+
    if(p.image_url){
     const img=document.createElement("img");
-    img.className="photo";img.src=p.image_url;img.alt=p.name;
+    img.className="photo";
+    img.src=p.image_url;
+    img.alt=p.name;
     img.onerror=()=>{img.remove();photo.textContent="No photo"};
     photo.appendChild(img);
-   }else photo.textContent="No photo";
+   }else{
+    photo.textContent="No photo";
+   }
 
-   cell(r,p.name);cell(r,p.category);cell(r,money(p.price));cell(r,p.stock);
+   cell(r,p.name);
+   cell(r,p.category);
+   cell(r,money(p.price));
+   cell(r,p.stock);
+
    const actions=cell(r,"");
    const edit=document.createElement("button");
-   edit.className="small";edit.textContent="Edit";
+   edit.type="button";
+   edit.className="small";
+   edit.textContent="Edit";
    edit.onclick=()=>editProduct(p);
+
    const del=document.createElement("button");
-   del.className="small delete";del.textContent="Delete";
+   del.type="button";
+   del.className="small delete";
+   del.textContent="Delete";
    del.onclick=()=>deleteProduct(p);
+
    actions.append(edit,del);
   });
 
@@ -297,10 +311,11 @@ function populateProducts(){
  const select=el("sales-product");
  select.replaceChildren();
  select.add(new Option("Choose a product",""));
- products.filter(p=>p.active!==false&&Number(p.stock)>0)
-  .forEach(p=>select.add(new Option(
+ products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>{
+  select.add(new Option(
    `${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id
-  )));
+  ));
+ });
 }
 
 async function loadSalesProducts(){
@@ -317,20 +332,30 @@ function renderCart(){
  const tbody=el("sales-cart-body");
  tbody.replaceChildren();
  let total=0;
+
  if(!cart.length){
   const r=tbody.insertRow();
   cell(r,"No items added.").colSpan=5;
  }
+
  cart.forEach(item=>{
   const p=products.find(x=>x.id===item.product_id);
   if(!p)return;
+
   const subtotal=Number(p.price)*item.quantity;
   total+=subtotal;
   const r=tbody.insertRow();
-  cell(r,p.name);cell(r,item.quantity);cell(r,money(p.price));cell(r,money(subtotal));
+
+  cell(r,p.name);
+  cell(r,item.quantity);
+  cell(r,money(p.price));
+  cell(r,money(subtotal));
+
   const action=cell(r,"");
   const remove=document.createElement("button");
-  remove.className="small delete";remove.textContent="Remove";
+  remove.type="button";
+  remove.className="small delete";
+  remove.textContent="Remove";
   remove.onclick=()=>{
    cart=cart.filter(x=>x.product_id!==item.product_id);
    renderCart();
@@ -344,13 +369,18 @@ el("add-sale-item").onclick=()=>{
  const id=el("sales-product").value;
  const quantity=Number(el("sales-quantity").value);
  const p=products.find(x=>x.id===id);
+
  if(!p||p.active===false)return say("sales-status","Choose an active product.");
- if(!Number.isInteger(quantity)||quantity<1)return say("sales-status","Enter a valid whole-number quantity.");
+ if(!Number.isInteger(quantity)||quantity<1)
+  return say("sales-status","Enter a valid whole-number quantity.");
+
  const old=cart.find(x=>x.product_id===id);
  if((old?old.quantity:0)+quantity>Number(p.stock))
   return say("sales-status","Not enough stock available.");
+
  if(old)old.quantity+=quantity;
  else cart.push({product_id:id,quantity});
+
  renderCart();
  say("sales-status",p.name+" added.");
  el("sales-quantity").value=1;
@@ -360,37 +390,55 @@ el("record-sale-button").onclick=async()=>{
  if(busy)return;
  if(!ownerUser)return say("sales-status","Please sign in again.");
  if(!cart.length)return say("sales-status","Add products first.");
+
  const payment=el("sales-payment").value;
- busy=true;el("record-sale-button").disabled=true;
+ busy=true;
+ el("record-sale-button").disabled=true;
  say("sales-status","Recording sale...");
+
  try{
-  const {data,error}=await withTimeout(db.rpc("record_sale",{
-   p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
-   p_payment_method:payment
-  }));
+  const {data,error}=await withTimeout(
+   db.rpc("record_sale",{
+    p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
+    p_payment_method:payment
+   })
+  );
+
   if(error)throw error;
   if(!data||data.receipt_number==null)
    throw new Error("No receipt number returned. Check Supabase before retrying.");
 
-  cart=[];renderCart();
+  cart=[];
+  renderCart();
+
   const box=el("sale-receipt");
-  box.replaceChildren();box.hidden=false;
+  box.replaceChildren();
+  box.hidden=false;
+
   const h=document.createElement("h3");
-  h.textContent="Sale recorded successfully";box.appendChild(h);
+  h.textContent="Sale recorded successfully";
+  box.appendChild(h);
+
   [
    "Receipt number: "+data.receipt_number,
    "Total: "+money(data.total),
    "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")
-  ].forEach(text=>{
-   const p=document.createElement("p");p.textContent=text;box.appendChild(p);
+  ].forEach(t=>{
+   const p=document.createElement("p");
+   p.textContent=t;
+   box.appendChild(p);
   });
+
   say("sales-status","Sale saved. Stock updated.");
-  await loadProducts();populateProducts();
+  await loadProducts();
+  populateProducts();
  }catch(error){
   console.error(error);
-  say("sales-status","Sale was not confirmed: "+error.message+". Check Supabase before retrying.");
+  say("sales-status","Sale was not confirmed: "+error.message+
+   ". Check Supabase before retrying.");
  }finally{
-  busy=false;el("record-sale-button").disabled=false;
+  busy=false;
+  el("record-sale-button").disabled=false;
  }
 };
 
@@ -411,10 +459,15 @@ function editProduct(p){
 
 async function deleteProduct(p){
  if(!confirm('Delete "'+p.name+'" from inventory?'))return;
- const {error}=await db.from("products").delete().eq("id",p.id);
- if(error)return say("product-status","Could not delete: "+error.message);
- say("product-status","Product deleted.");
- await loadProducts();populateProducts();
+ try{
+  const {error}=await db.from("products").delete().eq("id",p.id);
+  if(error)throw error;
+  say("product-status","Product deleted.");
+  await loadProducts();
+  populateProducts();
+ }catch(error){
+  say("product-status","Could not delete: "+error.message);
+ }
 }
 
 el("product-form").onsubmit=async event=>{
@@ -423,6 +476,7 @@ el("product-form").onsubmit=async event=>{
 
  const price=Number(el("product-price").value);
  const stock=Number(el("product-stock").value);
+
  if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))
   return say("product-status","Enter a valid price and whole-number stock.");
 
@@ -436,18 +490,23 @@ el("product-form").onsubmit=async event=>{
   description:el("product-description").value.trim()||null,
   active:true
  };
+
  if(!product.name)return say("product-status","Enter a product name.");
 
  const id=el("product-id").value;
  el("save-button").disabled=true;
+
  try{
   const result=id
    ?await db.from("products").update(product).eq("id",id)
    :await db.from("products").insert(product);
+
   if(result.error)throw result.error;
+
   clearForm();
   say("product-status",id?"Product updated.":"Product saved.");
-  await loadProducts();populateProducts();
+  await loadProducts();
+  populateProducts();
  }catch(error){
   say("product-status","Could not save product: "+error.message);
  }finally{
@@ -473,32 +532,41 @@ function formatDate(value){
 
 async function loadReport(){
  if(!ownerUser)return;
+
  const startValue=el("report-start").value;
  const endValue=el("report-end").value;
+
  if(startValue&&endValue&&startValue>endValue)
   return say("report-status","Start date must not be after end date.");
 
  say("report-status","Loading sales report...");
  el("refresh-report").disabled=true;
+
  try{
   let query=db.from("sales")
    .select("receipt_number,total,payment_method,sale_date")
    .order("sale_date",{ascending:false}).limit(1000);
-  const start=dateStart(startValue),end=dateEnd(endValue);
+
+  const start=dateStart(startValue);
+  const end=dateEnd(endValue);
   if(start)query=query.gte("sale_date",start);
   if(end)query=query.lt("sale_date",end);
+
   const {data,error}=await withTimeout(query);
   if(error)throw error;
 
   const rows=data||[];
   let revenue=0,cash=0,mpesa=0,other=0;
+
   rows.forEach(s=>{
-   const total=Number(s.total)||0;revenue+=total;
+   const total=Number(s.total)||0;
+   revenue+=total;
    const method=String(s.payment_method||"").toLowerCase();
    if(method==="cash")cash+=total;
    else if(method==="mpesa")mpesa+=total;
    else other+=total;
   });
+
   say("report-revenue",money(revenue));
   say("report-count",rows.length);
   say("report-average",money(rows.length?revenue/rows.length:0));
@@ -506,15 +574,22 @@ async function loadReport(){
   say("report-mpesa",money(mpesa));
   say("report-other",money(other));
 
-  const tbody=el("report-table");tbody.replaceChildren();
+  const tbody=el("report-table");
+  tbody.replaceChildren();
+
   if(!rows.length){
-   const r=tbody.insertRow();cell(r,"No sales found for this period.").colSpan=4;
+   const r=tbody.insertRow();
+   cell(r,"No sales found for this period.").colSpan=4;
   }
+
   rows.forEach(s=>{
    const r=tbody.insertRow();
-   cell(r,s.receipt_number);cell(r,formatDate(s.sale_date));
-   cell(r,s.payment_method);cell(r,money(s.total));
+   cell(r,s.receipt_number);
+   cell(r,formatDate(s.sale_date));
+   cell(r,s.payment_method);
+   cell(r,money(s.total));
   });
+
   say("report-status","Report loaded: "+rows.length+" transaction(s)."+
    (rows.length===1000?" Showing up to 1,000 records.":""));
  }catch(error){
@@ -524,6 +599,7 @@ async function loadReport(){
   el("refresh-report").disabled=false;
  }
 }
+
 el("apply-report-filter").onclick=loadReport;
 el("refresh-report").onclick=loadReport;
 el("clear-report-filter").onclick=()=>{
@@ -535,49 +611,131 @@ el("clear-report-filter").onclick=()=>{
 /* CUSTOMER MESSAGES */
 async function loadMessages(){
  if(!ownerUser)return say("messages-status","Please sign in again.");
+
  say("messages-status","Loading messages...");
  el("refresh-messages").disabled=true;
+
  try{
   const {data,error}=await withTimeout(
    db.from("messages")
-    .select("id,customer_name,customer_email,subject,message,created_at,is_read")
+    .select("id,customer_name,customer_email,subject,message,created_at,is_read,reply,replied_at")
     .order("created_at",{ascending:false})
   );
+
   if(error)throw error;
 
-  const tbody=el("messages-table");tbody.replaceChildren();
+  const tbody=el("messages-table");
+  tbody.replaceChildren();
   const rows=data||[];
+
   if(!rows.length){
-   const r=tbody.insertRow();cell(r,"No customer messages yet.").colSpan=5;
+   const r=tbody.insertRow();
+   cell(r,"No customer messages yet.").colSpan=5;
   }
 
   rows.forEach(m=>{
    const r=tbody.insertRow();
-   cell(r,m.customer_name);
+   cell(r,m.customer_name||"Customer");
+
    const details=cell(r,"");
    const subject=document.createElement("strong");
    subject.textContent=m.subject||"No subject";
-   const content=document.createElement("p");
-   content.textContent=m.message||"";
-   details.append(subject,content);
-   if(m.customer_email){
-    const email=document.createElement("p");
-    email.textContent=m.customer_email;details.appendChild(email);
-   }
+
+   const preview=document.createElement("p");
+   const full=m.message||"";
+   preview.textContent=full.length>80?full.slice(0,80)+"…":full;
+   details.append(subject,preview);
+
    cell(r,formatDate(m.created_at));
    cell(r,m.is_read?"Read":"Unread");
+
    const actions=cell(r,"");
-   if(!m.is_read){
-    const read=document.createElement("button");
-    read.className="small";read.textContent="Mark read";
-    read.onclick=()=>markMessageRead(m.id);
-    actions.appendChild(read);
+
+   function makeButton(label,fn,extraClass=""){
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="small "+extraClass;
+    button.textContent=label;
+    button.onclick=fn;
+    actions.appendChild(button);
+    return button;
    }
-   const del=document.createElement("button");
-   del.className="small delete";del.textContent="Delete";
-   del.onclick=()=>deleteMessage(m.id);
-   actions.appendChild(del);
+
+   // VIEW THE FULL MESSAGE
+   makeButton("View",()=>{
+    alert(
+     "CUSTOMER: "+(m.customer_name||"Customer")+
+     "\nEMAIL: "+(m.customer_email||"Not provided")+
+     "\nSUBJECT: "+(m.subject||"No subject")+
+     "\nDATE: "+formatDate(m.created_at)+
+     "\nSTATUS: "+(m.is_read?"Read":"Unread")+
+     "\n\nMESSAGE:\n"+full+
+     (m.reply?"\n\nYOUR SAVED REPLY:\n"+m.reply:"")
+    );
+   });
+
+   // SAVE OR EDIT YOUR REPLY
+   makeButton(m.reply?"Edit Reply":"Reply",async()=>{
+    const answer=prompt(
+     "Write your reply to "+(m.customer_name||"the customer")+":",
+     m.reply||""
+    );
+
+    if(answer===null)return;
+    if(!answer.trim())return say("messages-status","Please enter a reply.");
+
+    say("messages-status","Saving reply...");
+
+    try{
+     const {error}=await withTimeout(
+      db.from("messages").update({
+       reply:answer.trim(),
+       replied_at:new Date().toISOString()
+      }).eq("id",m.id)
+     );
+
+     if(error)throw error;
+
+     say("messages-status","Reply saved in the database. It has not been emailed to the customer.");
+     await loadMessages();
+    }catch(error){
+     say("messages-status","Could not save reply: "+error.message);
+    }
+   });
+
+   // MARK AS READ
+   if(!m.is_read){
+    makeButton("Mark Read",async()=>{
+     try{
+      const {error}=await withTimeout(
+       db.from("messages").update({is_read:true}).eq("id",m.id)
+      );
+      if(error)throw error;
+      say("messages-status","Message marked as read.");
+      await loadMessages();
+     }catch(error){
+      say("messages-status","Could not mark as read: "+error.message);
+     }
+    });
+   }
+
+   // DELETE MESSAGE
+   makeButton("Delete",async()=>{
+    if(!confirm("Are you sure you want to delete this customer message?"))return;
+
+    try{
+     const {error}=await withTimeout(
+      db.from("messages").delete().eq("id",m.id)
+     );
+     if(error)throw error;
+     say("messages-status","Message deleted.");
+     await loadMessages();
+    }catch(error){
+     say("messages-status","Could not delete message: "+error.message);
+    }
+   },"delete");
   });
+
   say("messages-status","Messages loaded: "+rows.length);
  }catch(error){
   console.error("Messages error:",error);
@@ -588,17 +746,6 @@ async function loadMessages(){
  }
 }
 
-async function markMessageRead(id){
- const {error}=await db.from("messages").update({is_read:true}).eq("id",id);
- if(error)return say("messages-status","Could not update message: "+error.message);
- await loadMessages();
-}
-async function deleteMessage(id){
- if(!confirm("Delete this customer message?"))return;
- const {error}=await db.from("messages").delete().eq("id",id);
- if(error)return say("messages-status","Could not delete message: "+error.message);
- await loadMessages();
-}
 el("refresh-messages").onclick=loadMessages;
 
 /* STARTUP AND LOGIN CHECK */
@@ -606,9 +753,8 @@ async function checkOwner(){
  try{
   say("status","Connecting to Supabase...");
 
-  if(!window.supabase){
+  if(!window.supabase)
    throw new Error("Supabase library did not load. Check your internet connection.");
-  }
 
   const {data,error}=await withTimeout(db.auth.getSession());
   if(error)throw error;
