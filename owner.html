@@ -1,872 +1,238 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kelsiy's Closet | Owner Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
-*{box-sizing:border-box}
-body{margin:0;background:var(--c);color:#292126;font:16px Arial,sans-serif}
-header,footer{background:var(--d);color:white;padding:20px 5%}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:4px solid var(--g)}
-header h1{margin:0;color:white}
-header p{color:#e9c88e;margin-bottom:0}
-h1,h2{color:var(--b)}
-button{padding:11px 14px;background:var(--b);color:white;border:1px solid var(--g);border-radius:5px;cursor:pointer;font-weight:bold}
-button:disabled{opacity:.6;cursor:wait}
-main{width:94%;max-width:1250px;margin:25px auto;min-height:60vh}
-.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px}
-nav,.panel{background:white;padding:18px;border:1px solid #eadbd5;border-radius:8px;margin-bottom:16px}
-nav button{display:block;width:100%;text-align:left;margin:5px 0}
-[hidden]{display:none!important}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
-.stat{background:#fffaf5;border-top:4px solid var(--g);padding:14px;overflow-wrap:anywhere}
-.stat strong{display:block;color:var(--b);font-size:22px;margin-top:8px}
-.field{display:grid;gap:6px;margin:10px 0}
-label{font-weight:bold;color:var(--d)}
-input,select,textarea{width:100%;padding:11px;border:1px solid #d9c8c4;border-radius:5px;font:inherit}
-textarea{min-height:75px}
-.actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
-.table-wrap{overflow-x:auto}
-table{width:100%;min-width:500px;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
-th{background:#f5e9e2}
-.photo{width:50px;height:60px;object-fit:cover}
-.small{padding:7px;margin:2px;font-size:13px}
-.delete{background:#a21b2d}
-.status{overflow-wrap:anywhere;white-space:pre-wrap}
-#sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
-footer{text-align:center;border-top:4px solid var(--g)}
-@media(max-width:700px){
- .layout{grid-template-columns:1fr}
- nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
- nav button{margin:0}
- .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:450px){.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<header>
- <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
- <button id="sign-out" type="button">SIGN OUT</button>
-</header>
-
-<main>
-<h1>Owner's Dashboard</h1>
-<p>Manage products, stock, sales and customer messages.</p>
-<p id="status" class="status" role="status">Connecting to Supabase...</p>
-
-<div class="layout">
-<nav>
- <button type="button" data-section="home">HOME</button>
- <button type="button" data-section="inventory">INVENTORY</button>
- <button type="button" data-section="sales">SALES</button>
- <button type="button" data-section="orders">CUSTOMER ORDERS</button>
- <button type="button" data-section="reports">SALES REPORTS</button>
- <button type="button" data-section="messages">MESSAGES</button>
-</nav>
-
-<div>
-<section class="panel" data-panel="home">
- <h2>Business Overview</h2>
- <div class="stats">
-  <div class="stat">Active Products<strong id="stat-products">0</strong></div>
-  <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
-  <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
- </div>
- <button type="button" data-go="inventory">MANAGE INVENTORY</button>
-</section>
-
-<section class="panel" data-panel="inventory" hidden>
-<h2>Product Inventory</h2>
-<form id="product-form">
-<input type="hidden" id="product-id">
-<div class="grid">
- <div class="field"><label for="product-name">Product name *</label><input id="product-name" required></div>
- <div class="field"><label for="product-category">Category *</label>
- <select id="product-category">
- <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
- </select></div>
- <div class="field"><label for="product-price">Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
- <div class="field"><label for="product-stock">Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
- <div class="field"><label for="product-size">Size</label><input id="product-size" placeholder="S, M, L, XL"></div>
- <div class="field"><label for="product-colour">Color</label><input id="product-colour" placeholder="Black"></div>
- <div class="field"><label for="product-image">Image URL or path</label><input id="product-image" placeholder="images/dress.jpg"></div>
- <div class="field"><label for="product-description">Description</label><textarea id="product-description"></textarea></div>
-</div>
-<div class="actions">
- <button id="save-button" type="submit">SAVE PRODUCT</button>
- <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
-</div>
-</form>
-<p id="product-status" class="status" role="status"></p>
-<h2>Saved Products</h2>
-<div class="table-wrap"><table>
-<thead><tr><th>Photo</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
-<tbody id="inventory-table"></tbody>
-</table></div>
-</section>
-
-<section class="panel" data-panel="sales" hidden>
-<h2>Record a Sale</h2>
-<div class="grid">
- <div class="field"><label for="sales-product">Product</label><select id="sales-product"></select></div>
- <div class="field"><label for="sales-quantity">Quantity</label><input id="sales-quantity" type="number" min="1" step="1" value="1"></div>
-</div>
-<button id="add-sale-item" type="button">ADD TO SALE</button>
-<h2>Sale Items</h2>
-<div class="table-wrap"><table>
-<thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th><th>Action</th></tr></thead>
-<tbody id="sales-cart-body"></tbody>
-</table></div>
-<p><strong>Total: <span id="sales-total">KES 0</span></strong></p>
-<div class="field"><label for="sales-payment">Payment method</label>
-<select id="sales-payment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select></div>
-<button id="record-sale-button" type="button">RECORD SALE</button>
-<p id="sales-status" class="status" role="status">Ready.</p>
-<div id="sale-receipt" hidden></div>
-</section>
-
-<section class="panel" data-panel="orders" hidden>
-<h2>Customer Orders</h2>
-<p>Review online orders and update order and payment status. Demo M-Pesa is simulated only.</p>
-<div class="actions"><button type="button" id="refresh-orders">REFRESH ORDERS</button></div>
-<p id="orders-status" class="status" role="status">Open Customer Orders to load orders.</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Order / Date</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead>
-<tbody id="orders-table"></tbody>
-</table></div>
-</section>
-
-<section class="panel" data-panel="reports" hidden>
-<h2>Sales Reports</h2>
-<div class="grid">
- <div class="field"><label for="report-start">Start date</label><input id="report-start" type="date"></div>
- <div class="field"><label for="report-end">End date</label><input id="report-end" type="date"></div>
-</div>
-<div class="actions">
- <button id="apply-report-filter" type="button">APPLY DATES</button>
- <button id="clear-report-filter" type="button">SHOW ALL</button>
- <button id="refresh-report" type="button">REFRESH</button>
-</div>
-<p id="report-status" class="status" role="status">Open Sales Reports to load transactions.</p>
-<div class="stats">
- <div class="stat">Revenue<strong id="report-revenue">KES 0</strong></div>
- <div class="stat">Transactions<strong id="report-count">0</strong></div>
- <div class="stat">Average Sale<strong id="report-average">KES 0</strong></div>
- <div class="stat">Cash<strong id="report-cash">KES 0</strong></div>
- <div class="stat">M-Pesa<strong id="report-mpesa">KES 0</strong></div>
- <div class="stat">Other Payments<strong id="report-other">KES 0</strong></div>
-</div>
-<h2>Sales History</h2>
-<div class="table-wrap"><table>
-<thead><tr><th>Receipt</th><th>Date and Time</th><th>Payment</th><th>Total</th></tr></thead>
-<tbody id="report-table"></tbody>
-</table></div>
-</section>
-
-<section class="panel" data-panel="messages" hidden>
-<h2>Customer Messages</h2>
-<p>View, reply to, and manage messages sent by your customers.</p>
-<button id="refresh-messages" type="button">REFRESH MESSAGES</button>
-<p id="messages-status" class="status" role="status">Open Messages to load messages.</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Customer</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
-<tbody id="messages-table"></tbody>
-</table></div>
-</section>
-</div>
-</div>
-</main>
-
-<footer>
-<strong>KELSIY'S CLOSET</strong>
-<p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
-<p>© <span id="year"></span></p>
-</footer>
-
-<script>
-"use strict";
-
-const SUPABASE_URL="https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY="sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
-
-const el=id=>document.getElementById(id);
-const say=(id,message)=>{if(el(id))el(id).textContent=message};
-const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
-
-let db=null,ownerUser=null,products=[],cart=[],busy=false;
-el("year").textContent=new Date().getFullYear();
-
-function cell(row,value){
- const td=document.createElement("td");
- td.textContent=value==null?"":String(value);
- row.appendChild(td);
- return td;
-}
-
-function withTimeout(promise,ms=15000){
- return Promise.race([
-  promise,
-  new Promise((_,reject)=>setTimeout(()=>reject(
-   new Error("Request timed out. Check your internet connection and Supabase status.")
-  ),ms))
- ]);
-}
-
-function showSection(name){
- document.querySelectorAll("[data-panel]").forEach(panel=>{
-  panel.hidden=panel.dataset.panel!==name;
- });
- if(name==="inventory")loadProducts();
- if(name==="sales")loadSalesProducts();
- if(name==="reports")loadReport();
- if(name==="messages")loadMessages();
- if(name==="orders")loadOrders();
-}
-
-document.querySelectorAll("[data-section]").forEach(button=>{
- button.addEventListener("click",()=>showSection(button.dataset.section));
-});
-document.querySelectorAll("[data-go]").forEach(button=>{
- button.addEventListener("click",()=>showSection(button.dataset.go));
-});
-
-el("sign-out").onclick=async()=>{
- try{if(db)await db.auth.signOut()}catch(error){console.error(error)}
- window.location.replace("index.html");
-};
-
-function updateStats(){
- const active=products.filter(p=>p.active!==false);
- say("stat-products",active.length);
- say("stat-stock",active.reduce((sum,p)=>sum+Number(p.stock||0),0));
- say("stat-empty",active.filter(p=>Number(p.stock)<=0).length);
-}
-
-function clearForm(){
- el("product-form").reset();
- el("product-id").value="";
- el("save-button").textContent="SAVE PRODUCT";
- el("cancel-edit").hidden=true;
-}
-el("cancel-edit").onclick=clearForm;
-
-async function loadProducts(){
- say("product-status","Loading products...");
- try{
-  const {data,error}=await withTimeout(
-   db.from("products")
-    .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
-    .order("created_at",{ascending:false})
-  );
-  if(error)throw error;
-  products=data||[];
-  updateStats();
-
-  const tbody=el("inventory-table");
-  tbody.replaceChildren();
-
-  if(!products.length){
-   const r=tbody.insertRow();
-   cell(r,"No products yet.").colSpan=6;
+async function loadOrders() {
+  const table = document.getElementById("orders-table");
+  if (!table) {
+    console.error("Could not find orders-table.");
+    return;
   }
 
-  products.forEach(p=>{
-   const r=tbody.insertRow();
-   const photo=cell(r,"");
-
-   if(p.image_url){
-    const img=document.createElement("img");
-    img.className="photo";
-    img.src=p.image_url;
-    img.alt=p.name;
-    img.onerror=()=>{img.remove();photo.textContent="No photo"};
-    photo.appendChild(img);
-   }else{
-    photo.textContent="No photo";
-   }
-
-   cell(r,p.name);
-   cell(r,p.category);
-   cell(r,money(p.price));
-   cell(r,p.stock);
-
-   const actions=cell(r,"");
-   const edit=document.createElement("button");
-   edit.type="button";
-   edit.className="small";
-   edit.textContent="Edit";
-   edit.onclick=()=>editProduct(p);
-
-   const del=document.createElement("button");
-   del.type="button";
-   del.className="small delete";
-   del.textContent="Delete";
-   del.onclick=()=>deleteProduct(p);
-
-   actions.append(edit,del);
-  });
-
-  say("product-status","Products loaded: "+products.length);
-  return true;
- }catch(error){
-  say("product-status","Could not load products: "+error.message);
-  return false;
- }
-}
-
-function populateProducts(){
- const select=el("sales-product");
- select.replaceChildren();
- select.add(new Option("Choose a product",""));
- products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>{
-  select.add(new Option(
-   `${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id
-  ));
- });
-}
-
-async function loadSalesProducts(){
- if(!await loadProducts()){
-  say("sales-status","Products could not load.");
-  return;
- }
- populateProducts();
- renderCart();
- say("sales-status","Products loaded.");
-}
-
-function renderCart(){
- const tbody=el("sales-cart-body");
- tbody.replaceChildren();
- let total=0;
-
- if(!cart.length){
-  const r=tbody.insertRow();
-  cell(r,"No items added.").colSpan=5;
- }
-
- cart.forEach(item=>{
-  const p=products.find(x=>x.id===item.product_id);
-  if(!p)return;
-
-  const subtotal=Number(p.price)*item.quantity;
-  total+=subtotal;
-  const r=tbody.insertRow();
-
-  cell(r,p.name);
-  cell(r,item.quantity);
-  cell(r,money(p.price));
-  cell(r,money(subtotal));
-
-  const action=cell(r,"");
-  const remove=document.createElement("button");
-  remove.type="button";
-  remove.className="small delete";
-  remove.textContent="Remove";
-  remove.onclick=()=>{
-   cart=cart.filter(x=>x.product_id!==item.product_id);
-   renderCart();
-  };
-  action.appendChild(remove);
- });
- say("sales-total",money(total));
-}
-
-el("add-sale-item").onclick=()=>{
- const id=el("sales-product").value;
- const quantity=Number(el("sales-quantity").value);
- const p=products.find(x=>x.id===id);
-
- if(!p||p.active===false)return say("sales-status","Choose an active product.");
- if(!Number.isInteger(quantity)||quantity<1)
-  return say("sales-status","Enter a valid whole-number quantity.");
-
- const old=cart.find(x=>x.product_id===id);
- if((old?old.quantity:0)+quantity>Number(p.stock))
-  return say("sales-status","Not enough stock available.");
-
- if(old)old.quantity+=quantity;
- else cart.push({product_id:id,quantity});
-
- renderCart();
- say("sales-status",p.name+" added.");
- el("sales-quantity").value=1;
-};
-
-el("record-sale-button").onclick=async()=>{
- if(busy)return;
- if(!ownerUser)return say("sales-status","Please sign in again.");
- if(!cart.length)return say("sales-status","Add products first.");
-
- const payment=el("sales-payment").value;
- busy=true;
- el("record-sale-button").disabled=true;
- say("sales-status","Recording sale...");
-
- try{
-  const {data,error}=await withTimeout(
-   db.rpc("record_sale",{
-    p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
-    p_payment_method:payment
-   })
-  );
-
-  if(error)throw error;
-  if(!data||data.receipt_number==null)
-   throw new Error("No receipt number returned. Check Supabase before retrying.");
-
-  cart=[];
-  renderCart();
-
-  const box=el("sale-receipt");
-  box.replaceChildren();
-  box.hidden=false;
-
-  const h=document.createElement("h3");
-  h.textContent="Sale recorded successfully";
-  box.appendChild(h);
-
-  [
-   "Receipt number: "+data.receipt_number,
-   "Total: "+money(data.total),
-   "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")
-  ].forEach(t=>{
-   const p=document.createElement("p");
-   p.textContent=t;
-   box.appendChild(p);
-  });
-
-  say("sales-status","Sale saved. Stock updated.");
-  await loadProducts();
-  populateProducts();
- }catch(error){
-  console.error(error);
-  say("sales-status","Sale was not confirmed: "+error.message+
-   ". Check Supabase before retrying.");
- }finally{
-  busy=false;
-  el("record-sale-button").disabled=false;
- }
-};
-
-function editProduct(p){
- el("product-id").value=p.id;
- el("product-name").value=p.name||"";
- el("product-category").value=p.category||"Women";
- el("product-price").value=p.price??"";
- el("product-stock").value=p.stock??0;
- el("product-size").value=p.size||"";
- el("product-colour").value=p.color||"";
- el("product-image").value=p.image_url||"";
- el("product-description").value=p.description||"";
- el("save-button").textContent="UPDATE PRODUCT";
- el("cancel-edit").hidden=false;
- el("product-form").scrollIntoView({behavior:"smooth"});
-}
-
-async function deleteProduct(p){
- if(!confirm('Delete "'+p.name+'" from inventory?'))return;
- try{
-  const {error}=await db.from("products").delete().eq("id",p.id);
-  if(error)throw error;
-  say("product-status","Product deleted.");
-  await loadProducts();
-  populateProducts();
- }catch(error){
-  say("product-status","Could not delete: "+error.message);
- }
-}
-
-el("product-form").onsubmit=async event=>{
- event.preventDefault();
- if(!ownerUser)return say("product-status","Please sign in again.");
-
- const price=Number(el("product-price").value);
- const stock=Number(el("product-stock").value);
-
- if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))
-  return say("product-status","Enter a valid price and whole-number stock.");
-
- const product={
-  name:el("product-name").value.trim(),
-  category:el("product-category").value,
-  price,stock,
-  size:el("product-size").value.trim()||null,
-  color:el("product-colour").value.trim()||null,
-  image_url:el("product-image").value.trim()||null,
-  description:el("product-description").value.trim()||null,
-  active:true
- };
-
- if(!product.name)return say("product-status","Enter a product name.");
-
- const id=el("product-id").value;
- el("save-button").disabled=true;
-
- try{
-  const result=id
-   ?await db.from("products").update(product).eq("id",id)
-   :await db.from("products").insert(product);
-
-  if(result.error)throw result.error;
-
-  clearForm();
-  say("product-status",id?"Product updated.":"Product saved.");
-  await loadProducts();
-  populateProducts();
- }catch(error){
-  say("product-status","Could not save product: "+error.message);
- }finally{
-  el("save-button").disabled=false;
- }
-};
-
-/* SALES REPORTS */
-function dateStart(value){
- if(!value)return null;
- return new Date(value+"T00:00:00").toISOString();
-}
-function dateEnd(value){
- if(!value)return null;
- const d=new Date(value+"T00:00:00");
- d.setDate(d.getDate()+1);
- return d.toISOString();
-}
-function formatDate(value){
- const d=new Date(value);
- return Number.isNaN(d.getTime())?String(value||""):d.toLocaleString();
-}
-
-async function loadReport(){
- if(!ownerUser)return;
-
- const startValue=el("report-start").value;
- const endValue=el("report-end").value;
-
- if(startValue&&endValue&&startValue>endValue)
-  return say("report-status","Start date must not be after end date.");
-
- say("report-status","Loading sales report...");
- el("refresh-report").disabled=true;
-
- try{
-  let query=db.from("sales")
-   .select("receipt_number,total,payment_method,sale_date")
-   .order("sale_date",{ascending:false}).limit(1000);
-
-  const start=dateStart(startValue);
-  const end=dateEnd(endValue);
-  if(start)query=query.gte("sale_date",start);
-  if(end)query=query.lt("sale_date",end);
-
-  const {data,error}=await withTimeout(query);
-  if(error)throw error;
-
-  const rows=data||[];
-  let revenue=0,cash=0,mpesa=0,other=0;
-
-  rows.forEach(s=>{
-   const total=Number(s.total)||0;
-   revenue+=total;
-   const method=String(s.payment_method||"").toLowerCase();
-   if(method==="cash")cash+=total;
-   else if(method==="mpesa")mpesa+=total;
-   else other+=total;
-  });
-
-  say("report-revenue",money(revenue));
-  say("report-count",rows.length);
-  say("report-average",money(rows.length?revenue/rows.length:0));
-  say("report-cash",money(cash));
-  say("report-mpesa",money(mpesa));
-  say("report-other",money(other));
-
-  const tbody=el("report-table");
-  tbody.replaceChildren();
-
-  if(!rows.length){
-   const r=tbody.insertRow();
-   cell(r,"No sales found for this period.").colSpan=4;
-  }
-
-  rows.forEach(s=>{
-   const r=tbody.insertRow();
-   cell(r,s.receipt_number);
-   cell(r,formatDate(s.sale_date));
-   cell(r,s.payment_method);
-   cell(r,money(s.total));
-  });
-
-  say("report-status","Report loaded: "+rows.length+" transaction(s)."+
-   (rows.length===1000?" Showing up to 1,000 records.":""));
- }catch(error){
-  console.error("Report error:",error);
-  say("report-status","Could not load report: "+error.message);
- }finally{
-  el("refresh-report").disabled=false;
- }
-}
-
-el("apply-report-filter").onclick=loadReport;
-el("refresh-report").onclick=loadReport;
-el("clear-report-filter").onclick=()=>{
- el("report-start").value="";
- el("report-end").value="";
- loadReport();
-};
-
-/* CUSTOMER ONLINE ORDERS */
-async function loadOrders(){
- if(!ownerUser)return say("orders-status","Please sign in again.");
- say("orders-status","Loading customer orders...");
- el("refresh-orders").disabled=true;
- try{
-  const {data:orders,error}=await withTimeout(db.from("orders").select("*").order("created_at",{ascending:false}).limit(300));
-  if(error)throw error;
-  const tbody=el("orders-table");tbody.replaceChildren();
-  if(!orders||!orders.length){const r=tbody.insertRow();cell(r,"No online orders yet.").colSpan=8;say("orders-status","No online orders found.");return;}
-  for(const o of orders){
-   const r=tbody.insertRow();
-   cell(r,String(o.id).slice(0,8).toUpperCase()+"\n"+formatDate(o.created_at));
-   cell(r,(o.customer_name||"Customer")+"\n"+(o.customer_email||"")+"\n"+(o.customer_phone||""));
-   const itemCell=cell(r,"Loading items...");
-   try{
-    const result=await withTimeout(db.from("order_items").select("product_name,colour,size,quantity,unit_price").eq("order_id",o.id));
-    if(result.error)throw result.error;
-    itemCell.textContent=(result.data||[]).map(i=>(i.product_name||"Item")+(i.colour?" ("+i.colour+")":"")+(i.size?" / "+i.size:"")+" × "+i.quantity+" — "+money(i.unit_price)).join("\n")||"No items";
-   }catch(e){itemCell.textContent="Could not load items: "+e.message;}
-   cell(r,(o.delivery_method==="pickup"?"Pickup":"Delivery")+"\n"+(o.delivery_location||"Shop pickup")+"\n"+(o.delivery_date||"")+" "+(o.delivery_time||"")+"\nFee: "+money(o.delivery_fee));
-   cell(r,money(o.total)+(o.delivery_area==="countrywide"?" (confirm fee)":""));
-   cell(r,(o.payment_method||"")+"\n"+(o.payment_status||""));
-   const statusCell=cell(r,o.order_status||"pending");
-   const actions=cell(r,"");
-   const feeLabel=document.createElement("label");feeLabel.textContent="Delivery fee (KES) ";
-   const feeInput=document.createElement("input");feeInput.type="number";feeInput.min="0";feeInput.step="50";feeInput.value=Number(o.delivery_fee||0);feeInput.style.maxWidth="105px";feeLabel.appendChild(feeInput);actions.appendChild(feeLabel);
-   const orderSelect=document.createElement("select");
-   ["pending","confirmed","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.order_status||"pending"))opt.selected=true;orderSelect.appendChild(opt);});
-   orderSelect.style.maxWidth="145px";
-   const paySelect=document.createElement("select");
-   ["unpaid","paid","paid_simulated","refunded"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.payment_status||"unpaid"))opt.selected=true;paySelect.appendChild(opt);});
-   paySelect.style.maxWidth="145px";
-   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";
-   save.onclick=async()=>{
-    if((o.payment_method==="cash_on_delivery"||o.payment_method==="cod")&&paySelect.value==="paid"&&!confirm("Only mark cash as paid after the owner has actually received the cash. Confirm cash was collected?"))return;
-    save.disabled=true;
-    try{
-     const newFee=Number(feeInput.value);
-     if(!Number.isFinite(newFee)||newFee<0)throw new Error("Enter a valid delivery fee.");
-     const newTotal=Math.max(0,Number(o.subtotal||0)-Number(o.discount_amount||0)+(o.delivery_method==="pickup"?0:newFee));
-     const {error}=await withTimeout(db.from("orders").update({order_status:orderSelect.value,payment_status:paySelect.value,delivery_fee:o.delivery_method==="pickup"?0:newFee,total:newTotal}).eq("id",o.id));
-     if(error)throw error;
-     say("orders-status","Order "+String(o.id).slice(0,8)+" updated.");
-     await loadOrders();
-    }catch(e){say("orders-status","Could not update order: "+e.message);}
-    finally{save.disabled=false;}
-   };
-   actions.append(orderSelect,document.createElement("br"),paySelect,document.createElement("br"),save);
-  }
-  say("orders-status","Loaded "+orders.length+" order(s).");
- }catch(error){console.error(error);say("orders-status","Could not load orders: "+error.message);}
- finally{el("refresh-orders").disabled=false;}
-}
-el("refresh-orders").onclick=loadOrders;
-
-/* CUSTOMER MESSAGES */
-async function loadMessages(){
- if(!ownerUser)return say("messages-status","Please sign in again.");
-
- say("messages-status","Loading messages...");
- el("refresh-messages").disabled=true;
-
- try{
-  const {data,error}=await withTimeout(
-   db.from("messages")
-    .select("id,customer_name,customer_email,subject,message,created_at,is_read,reply,replied_at")
-    .order("created_at",{ascending:false})
-  );
-
-  if(error)throw error;
-
-  const tbody=el("messages-table");
-  tbody.replaceChildren();
-  const rows=data||[];
-
-  if(!rows.length){
-   const r=tbody.insertRow();
-   cell(r,"No customer messages yet.").colSpan=5;
-  }
-
-  rows.forEach(m=>{
-   const r=tbody.insertRow();
-   cell(r,m.customer_name||"Customer");
-
-   const details=cell(r,"");
-   const subject=document.createElement("strong");
-   subject.textContent=m.subject||"No subject";
-
-   const preview=document.createElement("p");
-   const full=m.message||"";
-   preview.textContent=full.length>80?full.slice(0,80)+"…":full;
-   details.append(subject,preview);
-
-   cell(r,formatDate(m.created_at));
-   cell(r,m.is_read?"Read":"Unread");
-
-   const actions=cell(r,"");
-
-   function makeButton(label,fn,extraClass=""){
-    const button=document.createElement("button");
-    button.type="button";
-    button.className="small "+extraClass;
-    button.textContent=label;
-    button.onclick=fn;
-    actions.appendChild(button);
-    return button;
-   }
-
-   // VIEW THE FULL MESSAGE
-   makeButton("View",()=>{
-    alert(
-     "CUSTOMER: "+(m.customer_name||"Customer")+
-     "\nEMAIL: "+(m.customer_email||"Not provided")+
-     "\nSUBJECT: "+(m.subject||"No subject")+
-     "\nDATE: "+formatDate(m.created_at)+
-     "\nSTATUS: "+(m.is_read?"Read":"Unread")+
-     "\n\nMESSAGE:\n"+full+
-     (m.reply?"\n\nYOUR SAVED REPLY:\n"+m.reply:"")
-    );
-   });
-
-   // SAVE OR EDIT YOUR REPLY
-   makeButton(m.reply?"Edit Reply":"Reply",async()=>{
-    const answer=prompt(
-     "Write your reply to "+(m.customer_name||"the customer")+":",
-     m.reply||""
-    );
-
-    if(answer===null)return;
-    if(!answer.trim())return say("messages-status","Please enter a reply.");
-
-    say("messages-status","Saving reply...");
-
-    try{
-     const {error}=await withTimeout(
-      db.from("messages").update({
-       reply:answer.trim(),
-       replied_at:new Date().toISOString()
-      }).eq("id",m.id)
-     );
-
-     if(error)throw error;
-
-     say("messages-status","Reply saved in the database. It has not been emailed to the customer.");
-     await loadMessages();
-    }catch(error){
-     say("messages-status","Could not save reply: "+error.message);
+  const tbody = table.querySelector("tbody") || table;
+  tbody.innerHTML = `
+    <tr><td colspan="8">Loading customer orders...</td></tr>
+  `;
+
+  try {
+    const { data: orders, error } = await db
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+
+    if (error) throw error;
+
+    if (!orders || orders.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="8">No customer orders have been placed yet.</td></tr>
+      `;
+      return;
     }
-   });
 
-   // MARK AS READ
-   if(!m.is_read){
-    makeButton("Mark Read",async()=>{
-     try{
-      const {error}=await withTimeout(
-       db.from("messages").update({is_read:true}).eq("id",m.id)
-      );
-      if(error)throw error;
-      say("messages-status","Message marked as read.");
-      await loadMessages();
-     }catch(error){
-      say("messages-status","Could not mark as read: "+error.message);
-     }
+    const { data: items, error: itemsError } = await db
+      .from("order_items")
+      .select("order_id,product_name,color,size,quantity,unit_price,line_total");
+
+    if (itemsError) throw itemsError;
+
+    const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+
+    const money = value => "KSh " + Number(value || 0).toLocaleString("en-KE", {
+      maximumFractionDigits: 2
     });
-   }
 
-   // DELETE MESSAGE
-   makeButton("Delete",async()=>{
-    if(!confirm("Are you sure you want to delete this customer message?"))return;
+    const normalStatus = value => String(value || "pending").toLowerCase();
 
-    try{
-     const {error}=await withTimeout(
-      db.from("messages").delete().eq("id",m.id)
-     );
-     if(error)throw error;
-     say("messages-status","Message deleted.");
-     await loadMessages();
-    }catch(error){
-     say("messages-status","Could not delete message: "+error.message);
+    tbody.innerHTML = "";
+
+    for (const order of orders) {
+      const orderItems = (items || []).filter(item =>
+        item.order_id === order.id
+      );
+
+      const itemText = orderItems.length
+        ? orderItems.map(item =>
+            `${item.product_name} — ${item.color || "Colour not specified"}, ` +
+            `${item.size || "Size not specified"} × ${item.quantity} ` +
+            `(${money(item.line_total ?? item.unit_price * item.quantity)})`
+          ).join("<br>")
+        : "No item details found";
+
+      const fulfilment = order.fulfillment_type ||
+        order.customer_fulfillment_type ||
+        order.delivery_method || "delivery";
+
+      const address = [
+        order.delivery_address,
+        order.delivery_location,
+        order.town,
+        order.county,
+        order.delivery_area
+      ].filter((value, index, array) =>
+        value && array.indexOf(value) === index
+      ).join(", ");
+
+      const date = order.schedule_date || order.delivery_date || "Not scheduled";
+      const time = order.schedule_slot || order.delivery_time ||
+        order.fulfillment_time || "Not specified";
+
+      const orderStatus = normalStatus(order.order_status);
+      const paymentStatus = normalStatus(order.payment_status);
+
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>
+          <strong>${safe(String(order.id).slice(0, 8).toUpperCase())}</strong><br>
+          <small>${safe(order.created_at
+            ? new Date(order.created_at).toLocaleString()
+            : "")}</small>
+        </td>
+
+        <td>
+          <strong>${safe(order.customer_name || "Customer")}</strong><br>
+          ${safe(order.customer_phone_number || order.customer_phone || "")}<br>
+          <small>${safe(order.customer_email || "")}</small>
+        </td>
+
+        <td>${itemText}</td>
+
+        <td>
+          ${safe(fulfilment)}<br>
+          ${safe(address || "No address supplied")}<br>
+          <small>${safe(date)} · ${safe(time)}</small><br>
+          <small>Delivery fee: ${money(order.delivery_fee)}</small>
+          ${order.order_notes
+            ? `<br><small>Notes: ${safe(order.order_notes)}</small>`
+            : ""}
+        </td>
+
+        <td>
+          Subtotal: ${money(order.subtotal)}<br>
+          Discount: ${money(order.discount_amount)}<br>
+          <strong>Total: ${money(order.total)}</strong>
+        </td>
+
+        <td>
+          ${safe(order.payment_method || "Not specified")}<br>
+          Payment:
+          <strong>${safe(paymentStatus)}</strong>
+          ${order.mpesa_phone_number
+            ? `<br><small>M-Pesa: ${safe(order.mpesa_phone_number)}</small>`
+            : ""}
+        </td>
+
+        <td>
+          <label>Order status</label>
+          <select class="owner-order-status">
+            ${[
+              ["pending", "Pending"],
+              ["confirmed", "Confirmed"],
+              ["processing", "Processing"],
+              ["ready_for_pickup", "Ready for pickup"],
+              ["out_for_delivery", "Out for delivery"],
+              ["completed", "Completed"],
+              ["cancelled", "Cancelled"]
+            ].map(([value, label]) =>
+              `<option value="${value}" ${orderStatus === value ? "selected" : ""}>${label}</option>`
+            ).join("")}
+          </select>
+
+          <label>Payment status</label>
+          <select class="owner-payment-status">
+            ${[
+              ["pending", "Pending"],
+              ["successful", "Successful"],
+              ["refunded", "Refunded"]
+            ].map(([value, label]) => {
+              const selected = (
+                value === "successful" &&
+                ["paid", "success", "successful"].includes(paymentStatus)
+              ) || value === paymentStatus;
+
+              return `<option value="${value}" ${selected ? "selected" : ""}>${label}</option>`;
+            }).join("")}
+          </select>
+
+          <button type="button" class="owner-save-order">Save changes</button>
+          <small class="owner-order-message"></small>
+        </td>
+      `;
+
+      const orderSelect = row.querySelector(".owner-order-status");
+      const paymentSelect = row.querySelector(".owner-payment-status");
+      const saveButton = row.querySelector(".owner-save-order");
+      const statusMessage = row.querySelector(".owner-order-message");
+
+      saveButton.addEventListener("click", async () => {
+        const newOrderStatus = orderSelect.value;
+        const newPaymentStatus = paymentSelect.value;
+        const paymentMethod = String(order.payment_method || "").toLowerCase();
+
+        if (
+          newPaymentStatus === "successful" &&
+          ["cash_on_delivery", "cash on delivery", "cod", "cash", "cash_at_pickup"].includes(paymentMethod) &&
+          !["paid", "success", "successful"].includes(paymentStatus)
+        ) {
+          const confirmed = window.confirm(
+            "Confirm that you have actually received the customer's cash before marking this payment successful."
+          );
+
+          if (!confirmed) {
+            paymentSelect.value = "pending";
+            return;
+          }
+        }
+
+        if (
+          newPaymentStatus === "successful" &&
+          ["mpesa", "m-pesa", "demo_mpesa"].includes(paymentMethod) &&
+          !["paid", "success", "successful"].includes(paymentStatus)
+        ) {
+          const confirmed = window.confirm(
+            "Only mark M-Pesa successful after checking the actual payment in your M-Pesa account or transaction records. Have you verified receipt?"
+          );
+
+          if (!confirmed) {
+            paymentSelect.value = "pending";
+            return;
+          }
+        }
+
+        saveButton.disabled = true;
+        statusMessage.textContent = "Saving...";
+
+        try {
+          const update = {
+            order_status: newOrderStatus,
+            payment_status: newPaymentStatus
+          };
+
+          const { error: updateError } = await db
+            .from("orders")
+            .update(update)
+            .eq("id", order.id);
+
+          if (updateError) throw updateError;
+
+          statusMessage.textContent = "Saved.";
+          await loadOrders();
+        } catch (error) {
+          console.error("Order update error:", error);
+          statusMessage.textContent = "Could not save: " + error.message;
+          saveButton.disabled = false;
+        }
+      });
+
+      tbody.appendChild(row);
     }
-   },"delete");
-  });
-
-  say("messages-status","Messages loaded: "+rows.length);
- }catch(error){
-  console.error("Messages error:",error);
-  say("messages-status","Could not load messages: "+error.message+
-   ". Check the messages table and its permissions.");
- }finally{
-  el("refresh-messages").disabled=false;
- }
-}
-
-el("refresh-messages").onclick=loadMessages;
-
-/* STARTUP AND LOGIN CHECK */
-async function checkOwner(){
- try{
-  say("status","Connecting to Supabase...");
-
-  if(!window.supabase)
-   throw new Error("Supabase library did not load. Check your internet connection.");
-
-  const {data,error}=await withTimeout(db.auth.getSession());
-  if(error)throw error;
-
-  if(!data.session){
-   say("status","No active session. Returning to sign-in...");
-   window.location.replace("index.html");
-   return;
+  } catch (error) {
+    console.error("Loading orders failed:", error);
+    tbody.innerHTML = `
+      <tr><td colspan="8">Could not load orders: ${String(error.message || error)}</td></tr>
+    `;
   }
-
-  ownerUser=data.session.user;
-  say("status","Checking owner permissions...");
-
-  const result=await withTimeout(
-   db.from("profiles").select("role").eq("id",ownerUser.id).maybeSingle()
-  );
-  if(result.error)throw result.error;
-
-  if(!result.data||result.data.role!=="owner"){
-   say("status","Owner access not found. Please sign in with the owner account.");
-   await db.auth.signOut();
-   window.location.replace("index.html");
-   return;
-  }
-
-  say("status","Connected! Loading your dashboard...");
-  await loadProducts();
-  showSection("home");
-  say("status","Signed in as owner: "+(ownerUser.email||""));
-
- }catch(error){
-  console.error("Dashboard startup error:",error);
-  say("status","Dashboard startup error: "+error.message);
- }
 }
-
-try{
- db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
- checkOwner();
-}catch(error){
- console.error(error);
- say("status","Could not start Supabase: "+error.message);
-}
-</script>
-</body>
-</html>
