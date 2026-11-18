@@ -65,6 +65,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <button type="button" data-section="home">HOME</button>
  <button type="button" data-section="inventory">INVENTORY</button>
  <button type="button" data-section="sales">SALES</button>
+ <button type="button" data-section="orders">CUSTOMER ORDERS</button>
  <button type="button" data-section="reports">SALES REPORTS</button>
  <button type="button" data-section="messages">MESSAGES</button>
 </nav>
@@ -128,6 +129,17 @@ footer{text-align:center;border-top:4px solid var(--g)}
 <button id="record-sale-button" type="button">RECORD SALE</button>
 <p id="sales-status" class="status" role="status">Ready.</p>
 <div id="sale-receipt" hidden></div>
+</section>
+
+<section class="panel" data-panel="orders" hidden>
+<h2>Customer Orders</h2>
+<p>Review online orders and update order and payment status. Demo M-Pesa is simulated only.</p>
+<div class="actions"><button type="button" id="refresh-orders">REFRESH ORDERS</button></div>
+<p id="orders-status" class="status" role="status">Open Customer Orders to load orders.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Order / Date</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead>
+<tbody id="orders-table"></tbody>
+</table></div>
 </section>
 
 <section class="panel" data-panel="reports" hidden>
@@ -214,6 +226,7 @@ function showSection(name){
  if(name==="sales")loadSalesProducts();
  if(name==="reports")loadReport();
  if(name==="messages")loadMessages();
+ if(name==="orders")loadOrders();
 }
 
 document.querySelectorAll("[data-section]").forEach(button=>{
@@ -607,6 +620,62 @@ el("clear-report-filter").onclick=()=>{
  el("report-end").value="";
  loadReport();
 };
+
+/* CUSTOMER ONLINE ORDERS */
+async function loadOrders(){
+ if(!ownerUser)return say("orders-status","Please sign in again.");
+ say("orders-status","Loading customer orders...");
+ el("refresh-orders").disabled=true;
+ try{
+  const {data:orders,error}=await withTimeout(db.from("orders").select("*").order("created_at",{ascending:false}).limit(300));
+  if(error)throw error;
+  const tbody=el("orders-table");tbody.replaceChildren();
+  if(!orders||!orders.length){const r=tbody.insertRow();cell(r,"No online orders yet.").colSpan=8;say("orders-status","No online orders found.");return;}
+  for(const o of orders){
+   const r=tbody.insertRow();
+   cell(r,String(o.id).slice(0,8).toUpperCase()+"\n"+formatDate(o.created_at));
+   cell(r,(o.customer_name||"Customer")+"\n"+(o.customer_email||"")+"\n"+(o.customer_phone||""));
+   const itemCell=cell(r,"Loading items...");
+   try{
+    const result=await withTimeout(db.from("order_items").select("product_name,colour,size,quantity,unit_price").eq("order_id",o.id));
+    if(result.error)throw result.error;
+    itemCell.textContent=(result.data||[]).map(i=>(i.product_name||"Item")+(i.colour?" ("+i.colour+")":"")+(i.size?" / "+i.size:"")+" × "+i.quantity+" — "+money(i.unit_price)).join("\n")||"No items";
+   }catch(e){itemCell.textContent="Could not load items: "+e.message;}
+   cell(r,(o.delivery_method==="pickup"?"Pickup":"Delivery")+"\n"+(o.delivery_location||"Shop pickup")+"\n"+(o.delivery_date||"")+" "+(o.delivery_time||"")+"\nFee: "+money(o.delivery_fee));
+   cell(r,money(o.total)+(o.delivery_area==="countrywide"?" (confirm fee)":""));
+   cell(r,(o.payment_method||"")+"\n"+(o.payment_status||""));
+   const statusCell=cell(r,o.order_status||"pending");
+   const actions=cell(r,"");
+   const feeLabel=document.createElement("label");feeLabel.textContent="Delivery fee (KES) ";
+   const feeInput=document.createElement("input");feeInput.type="number";feeInput.min="0";feeInput.step="50";feeInput.value=Number(o.delivery_fee||0);feeInput.style.maxWidth="105px";feeLabel.appendChild(feeInput);actions.appendChild(feeLabel);
+   const orderSelect=document.createElement("select");
+   ["pending","confirmed","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.order_status||"pending"))opt.selected=true;orderSelect.appendChild(opt);});
+   orderSelect.style.maxWidth="145px";
+   const paySelect=document.createElement("select");
+   ["unpaid","paid","paid_simulated","refunded"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.payment_status||"unpaid"))opt.selected=true;paySelect.appendChild(opt);});
+   paySelect.style.maxWidth="145px";
+   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";
+   save.onclick=async()=>{
+    if((o.payment_method==="cash_on_delivery"||o.payment_method==="cod")&&paySelect.value==="paid"&&!confirm("Only mark cash as paid after the owner has actually received the cash. Confirm cash was collected?"))return;
+    save.disabled=true;
+    try{
+     const newFee=Number(feeInput.value);
+     if(!Number.isFinite(newFee)||newFee<0)throw new Error("Enter a valid delivery fee.");
+     const newTotal=Math.max(0,Number(o.subtotal||0)-Number(o.discount_amount||0)+(o.delivery_method==="pickup"?0:newFee));
+     const {error}=await withTimeout(db.from("orders").update({order_status:orderSelect.value,payment_status:paySelect.value,delivery_fee:o.delivery_method==="pickup"?0:newFee,total:newTotal}).eq("id",o.id));
+     if(error)throw error;
+     say("orders-status","Order "+String(o.id).slice(0,8)+" updated.");
+     await loadOrders();
+    }catch(e){say("orders-status","Could not update order: "+e.message);}
+    finally{save.disabled=false;}
+   };
+   actions.append(orderSelect,document.createElement("br"),paySelect,document.createElement("br"),save);
+  }
+  say("orders-status","Loaded "+orders.length+" order(s).");
+ }catch(error){console.error(error);say("orders-status","Could not load orders: "+error.message);}
+ finally{el("refresh-orders").disabled=false;}
+}
+el("refresh-orders").onclick=loadOrders;
 
 /* CUSTOMER MESSAGES */
 async function loadMessages(){
