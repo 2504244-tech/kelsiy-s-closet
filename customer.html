@@ -590,6 +590,36 @@
         font-size: 15px;
       }
     }
+
+
+    /* Shopping cart and checkout */
+    .kc-shopping { background: #fffaf4; }
+    .kc-cart-items { display:grid; gap:14px; margin:24px 0; }
+    .kc-cart-line { display:grid; grid-template-columns:100px minmax(0,1fr); gap:16px; padding:16px; border:1px solid #ead9d2; border-radius:12px; background:#fff; }
+    .kc-cart-line img { width:100px; height:120px; object-fit:cover; border-radius:8px; }
+    .kc-cart-line h3 { margin:0 0 6px; color:var(--burgundy); }
+    .kc-cart-line input,.kc-cart-line select { max-width:130px; padding:8px; border:1px solid #d9c8c4; border-radius:6px; }
+    .kc-cart-line button { margin:8px 8px 0 0; cursor:pointer; }
+    .kc-cart-summary { max-width:520px; margin:20px 0 30px auto; padding:20px; background:#f6eae2; border-radius:12px; }
+    .kc-cart-summary p { display:flex; justify-content:space-between; gap:16px; margin:5px 0; }
+    .kc-cart-summary .kc-total { border-top:1px solid #d8c3b9; padding-top:12px; font-size:1.2rem; color:var(--dark-burgundy); }
+    .kc-checkout-form { max-width:760px; background:white; border:1px solid #ead9d2; padding:22px; border-radius:14px; }
+    .kc-checkout-form h3 { color:var(--burgundy); margin:4px 0 12px; }
+    .kc-checkout-form input,.kc-checkout-form select,.kc-checkout-form textarea { width:100%; padding:11px; border:1px solid #d9c8c4; border-radius:6px; background:#fff; }
+    .kc-notice { background:#fff4df; padding:12px; border-left:4px solid var(--gold); margin:12px 0; }
+    .kc-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .kc-button-outline { background:#fff; color:var(--burgundy); }
+    .kc-empty { padding:18px; border:1px dashed #c9a46a; border-radius:10px; }
+    .kc-order-card { padding:16px; margin:14px 0; background:white; border:1px solid #ead9d2; border-radius:12px; }
+    .kc-order-card h3 { color:var(--burgundy); }
+    .kc-stock-badge { font-size:.85rem; font-weight:bold; color:#276749; }
+    .kc-stock-badge.out { color:#b42318; }
+    .kc-product-options { display:grid; gap:8px; margin:12px 0; }
+    .kc-product-options label { font-size:.85rem; font-weight:700; }
+    .kc-product-options select,.kc-product-options input { width:100%; padding:9px; border:1px solid #d9c8c4; border-radius:6px; }
+    .kc-add-button:disabled { opacity:.55; cursor:not-allowed; }
+    @media(max-width:520px){ .kc-cart-line{grid-template-columns:75px minmax(0,1fr);padding:10px}.kc-cart-line img{width:75px;height:95px}.kc-cart-summary{margin-left:0}.kc-checkout-form{padding:14px} }
+
   </style>
 </head>
 
@@ -618,6 +648,8 @@
         <a href="#home">HOME</a>
         <a href="#about">ABOUT</a>
         <a href="#gallery">GALLERY</a>
+        <a href="#shopping-bag" id="bag-nav-link">BAG (<span id="bag-count">0</span>)</a>
+        <a href="#my-orders">MY ORDERS</a>
         <a href="#contacts">CONTACTS</a>
 
         <button
@@ -732,6 +764,68 @@
         <!-- Products from Supabase will appear inside this container. -->
         <div id="customer-products"></div>
 
+      </div>
+    </section>
+
+    <!-- SHOPPING BAG AND CHECKOUT -->
+    <section class="kc-section kc-shopping" id="shopping-bag">
+      <div class="kc-section-inner">
+        <p class="kc-eyebrow">YOUR SELECTION</p>
+        <h2 class="kc-section-heading">YOUR SHOPPING BAG</h2>
+        <p class="kc-section-intro">Review your items, select delivery or pickup, and confirm your order.</p>
+        <div id="cart-items" class="kc-cart-items"></div>
+        <div class="kc-cart-summary">
+          <p>Subtotal: <strong id="cart-subtotal">KES 0</strong></p>
+          <p>Discount: <strong id="cart-discount">KES 0</strong></p>
+          <p>Delivery: <strong id="cart-delivery">KES 0</strong></p>
+          <p class="kc-total">Total: <strong id="cart-total">KES 0</strong></p>
+        </div>
+
+        <form id="checkout-form" class="kc-form kc-checkout-form">
+          <h3>Customer details</h3>
+          <div class="kc-field"><label for="order-name">FULL NAME</label><input id="order-name" required autocomplete="name"></div>
+          <div class="kc-field"><label for="order-phone">PHONE NUMBER</label><input id="order-phone" required type="tel" autocomplete="tel" placeholder="07xx xxx xxx"></div>
+          <div class="kc-field"><label for="order-email">EMAIL</label><input id="order-email" required type="email" autocomplete="email"></div>
+          <div class="kc-field"><label for="delivery-method">DELIVERY OR PICKUP</label>
+            <select id="delivery-method" required><option value="delivery">Delivery within Kenya</option><option value="pickup">Pick up from the shop (free)</option></select>
+          </div>
+          <div id="delivery-fields">
+            <div class="kc-field"><label for="delivery-area">DELIVERY AREA</label>
+              <select id="delivery-area"><option value="near_shop">Near Mama Sita shops — KSh 200</option><option value="nairobi">Other locations in Nairobi — KSh 500</option><option value="countrywide">Countrywide, outside Nairobi — KSh 700–800 (owner confirms)</option></select>
+            </div>
+            <div class="kc-field"><label for="delivery-location">COUNTY, TOWN, ESTATE AND SPECIFIC LOCATION</label><textarea id="delivery-location" placeholder="For example: Kiambu, town/estate, street or landmark" required></textarea></div>
+            <div class="kc-field"><label for="delivery-date">PREFERRED DELIVERY DATE</label><input id="delivery-date" type="date" required></div>
+            <div class="kc-field"><label for="delivery-time">PREFERRED TIME</label><select id="delivery-time" required>
+              <option value="Weekday daytime (11 am–5 pm)">Weekday daytime (11 am–5 pm)</option>
+              <option value="Weekday evening (5 pm–8 pm)">Weekday evening (5 pm–8 pm)</option>
+              <option value="Weekend afternoon (1 pm–5 pm)">Weekend afternoon (1 pm–5 pm)</option>
+              <option value="Weekend evening (5 pm–8 pm)">Weekend evening (5 pm–8 pm)</option>
+            </select></div>
+          </div>
+          <div id="pickup-fields" hidden>
+            <div class="kc-field"><label for="pickup-date">PICKUP DATE</label><input id="pickup-date" type="date"></div>
+            <div class="kc-field"><label for="pickup-time">PICKUP TIME</label><select id="pickup-time"><option value="11 am–1 pm">11 am–1 pm</option><option value="1 pm–3 pm">1 pm–3 pm</option><option value="3 pm–5 pm">3 pm–5 pm</option><option value="5 pm–7 pm">5 pm–7 pm</option></select></div>
+          </div>
+          <div class="kc-field"><label for="discount-code">DISCOUNT CODE (OPTIONAL)</label><input id="discount-code" placeholder="Try KC10"></div>
+          <div class="kc-field"><label for="payment-method">PAYMENT METHOD</label><select id="payment-method"><option value="cod">Cash on Delivery</option><option value="demo_mpesa">Demo M-Pesa (simulated)</option></select></div>
+          <div id="mpesa-fields" hidden>
+            <div class="kc-field"><label for="mpesa-phone">M-PESA PHONE NUMBER FOR DEMO</label><input id="mpesa-phone" type="tel" placeholder="07xx xxx xxx"></div>
+            <p class="kc-notice">Demo only: no real M-Pesa request is sent. Never enter your M-Pesa PIN here.</p>
+            <div class="kc-actions"><button class="kc-button" type="button" id="simulate-mpesa-success">SIMULATE PAYMENT SUCCESS</button><button class="kc-button kc-button-outline" type="button" id="simulate-mpesa-failure">SIMULATE FAILURE</button></div>
+            <p id="mpesa-demo-status" role="status"></p>
+          </div>
+          <div class="kc-field"><label for="order-notes">ORDER NOTES (OPTIONAL)</label><textarea id="order-notes" placeholder="Extra delivery instructions"></textarea></div>
+          <p class="kc-notice">Countrywide delivery is KSh 700–800. The owner will confirm the final charge based on your location before the order is finalised.</p>
+          <button class="kc-button" id="place-order-button" type="submit">PLACE ORDER</button>
+          <p id="checkout-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="kc-section kc-shopping" id="my-orders">
+      <div class="kc-section-inner">
+        <p class="kc-eyebrow">ORDER HISTORY</p><h2 class="kc-section-heading">MY ORDERS</h2>
+        <p id="my-orders-status" role="status">Sign in to view your orders.</p><div id="my-orders-list"></div>
       </div>
     </section>
 
@@ -862,6 +956,7 @@
 
   <!-- Supabase library must load before customer.js -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
   <!-- This separate file contains the product-loading and sign-out JavaScript -->
   <script src="customer.js" defer></script>
