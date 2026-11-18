@@ -1,238 +1,304 @@
-async function loadOrders() {
-  const table = document.getElementById("orders-table");
-  if (!table) {
-    console.error("Could not find orders-table.");
-    return;
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kelsiy's Closet - Owner Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
+*{box-sizing:border-box}
+body{margin:0;background:var(--c);font:15px Arial;color:#30242a}
+header{background:var(--d);color:white;padding:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:4px solid var(--g)}
+main{max-width:1200px;margin:20px auto;padding:12px}
+button{background:var(--b);color:white;border:1px solid var(--g);padding:10px;border-radius:5px;cursor:pointer;margin:3px}
+input,select,textarea{padding:10px;border:1px solid #ddc9c9;border-radius:5px;max-width:100%;width:100%;margin:4px 0 10px}
+nav,.panel{background:white;padding:15px;margin-bottom:15px;border:1px solid #eadbd5;border-radius:8px}
+nav{display:flex;flex-wrap:wrap;gap:5px}
+table{border-collapse:collapse;width:100%;min-width:650px}
+th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
+th{background:#f4e7df}
+.wrap{overflow-x:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+[hidden]{display:none!important}
+h2,h3{color:var(--b)}
+.status{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header>
+  <div><h2 style="color:white;margin:0">KELSIY'S CLOSET</h2><p>Owner Dashboard</p></div>
+  <button id="logout">SIGN OUT</button>
+</header>
+<main>
+<p id="notice" class="status">Checking owner access...</p>
+<section id="login" class="panel" hidden>
+<h2>Owner login required</h2>
+<p>Please sign in using your existing website login.</p>
+<button onclick="location.href='index.html'">GO TO LOGIN</button>
+</section>
+<div id="app" hidden>
+<nav>
+<button data-page="home">Dashboard</button>
+<button data-page="products">Inventory</button>
+<button data-page="sales">Record Sale</button>
+<button data-page="orders">Customer Orders</button>
+<button data-page="reports">Sales Reports</button>
+<button data-page="messages">Messages</button>
+</nav>
 
-  const tbody = table.querySelector("tbody") || table;
-  tbody.innerHTML = `
-    <tr><td colspan="8">Loading customer orders...</td></tr>
-  `;
+<section class="panel" id="home">
+<h2>Business Overview</h2>
+<div class="grid">
+<div><strong>Products</strong><h2 id="count">0</h2></div>
+<div><strong>Total Stock</strong><h2 id="stock">0</h2></div>
+<div><strong>Out of Stock</strong><h2 id="empty">0</h2></div>
+</div>
+<button onclick="refreshAll()">REFRESH DASHBOARD</button>
+</section>
 
-  try {
-    const { data: orders, error } = await db
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(300);
+<section class="panel" id="products" hidden>
+<h2>Inventory</h2>
+<form id="productForm">
+<input id="pid" type="hidden">
+<label>Product name</label><input id="pname" required>
+<label>Category</label><input id="pcat" required>
+<label>Price (KSh)</label><input id="pprice" type="number" min="0" step=".01" required>
+<label>Stock quantity</label><input id="pstock" type="number" min="0" required>
+<label>Sizes</label><input id="psize" placeholder="S, M, L, XL">
+<label>Colours</label><input id="pcolor" placeholder="Black, Cream">
+<label>Image URL</label><input id="pimage">
+<label>Description</label><textarea id="pdesc"></textarea>
+<button type="submit">SAVE PRODUCT</button>
+<button type="button" id="cancelEdit">CLEAR FORM</button>
+</form>
+<p id="productMsg"></p>
+<div class="wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="productRows"></tbody></table></div>
+</section>
 
-    if (error) throw error;
+<section class="panel" id="sales" hidden>
+<h2>Record In-Person Sale</h2>
+<p>Use for sales made outside the online checkout.</p>
+<label>Product</label><select id="saleProduct"></select>
+<label>Quantity</label><input id="saleQty" type="number" min="1" value="1">
+<button id="addSale">ADD ITEM</button>
+<div class="wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="saleRows"></tbody></table></div>
+<h3>Total: <span id="saleTotal">KSh 0</span></h3>
+<label>Payment method</label>
+<select id="salePayment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select>
+<button id="saveSale">RECORD SALE</button>
+<p id="saleMsg"></p>
+</section>
 
-    if (!orders || orders.length === 0) {
-      tbody.innerHTML = `
-        <tr><td colspan="8">No customer orders have been placed yet.</td></tr>
-      `;
-      return;
-    }
+<section class="panel" id="orders" hidden>
+<h2>Customer Orders</h2>
+<button id="refreshOrders">REFRESH ORDERS</button>
+<p id="orderMsg"></p>
+<div class="wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order Status</th><th>Save</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+</section>
 
-    const { data: items, error: itemsError } = await db
-      .from("order_items")
-      .select("order_id,product_name,color,size,quantity,unit_price,line_total");
+<section class="panel" id="reports" hidden>
+<h2>Sales Reports</h2>
+<button id="refreshReports">REFRESH REPORTS</button>
+<h3>Total recorded sales: <span id="revenue">KSh 0</span></h3>
+<p id="reportMsg"></p>
+<div class="wrap"><table><thead><tr><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+</section>
 
-    if (itemsError) throw itemsError;
+<section class="panel" id="messages" hidden>
+<h2>Customer Messages</h2>
+<button id="refreshMessages">REFRESH MESSAGES</button>
+<p id="messageMsg"></p>
+<div class="wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Message</th><th>Date</th><th>Action</th></tr></thead><tbody id="messageRows"></tbody></table></div>
+</section>
+</div>
+</main>
 
-    const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
+<script>
+const db=supabase.createClient(
+"https://zqvjaqpqtctnvylgtwjg.supabase.co",
+"sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR"
+);
+const $=id=>document.getElementById(id);
+const cash=n=>"KSh "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let items=[],sale=[],orders=[];
 
-    const money = value => "KSh " + Number(value || 0).toLocaleString("en-KE", {
-      maximumFractionDigits: 2
-    });
-
-    const normalStatus = value => String(value || "pending").toLowerCase();
-
-    tbody.innerHTML = "";
-
-    for (const order of orders) {
-      const orderItems = (items || []).filter(item =>
-        item.order_id === order.id
-      );
-
-      const itemText = orderItems.length
-        ? orderItems.map(item =>
-            `${item.product_name} — ${item.color || "Colour not specified"}, ` +
-            `${item.size || "Size not specified"} × ${item.quantity} ` +
-            `(${money(item.line_total ?? item.unit_price * item.quantity)})`
-          ).join("<br>")
-        : "No item details found";
-
-      const fulfilment = order.fulfillment_type ||
-        order.customer_fulfillment_type ||
-        order.delivery_method || "delivery";
-
-      const address = [
-        order.delivery_address,
-        order.delivery_location,
-        order.town,
-        order.county,
-        order.delivery_area
-      ].filter((value, index, array) =>
-        value && array.indexOf(value) === index
-      ).join(", ");
-
-      const date = order.schedule_date || order.delivery_date || "Not scheduled";
-      const time = order.schedule_slot || order.delivery_time ||
-        order.fulfillment_time || "Not specified";
-
-      const orderStatus = normalStatus(order.order_status);
-      const paymentStatus = normalStatus(order.payment_status);
-
-      const row = document.createElement("tr");
-
-      row.innerHTML = `
-        <td>
-          <strong>${safe(String(order.id).slice(0, 8).toUpperCase())}</strong><br>
-          <small>${safe(order.created_at
-            ? new Date(order.created_at).toLocaleString()
-            : "")}</small>
-        </td>
-
-        <td>
-          <strong>${safe(order.customer_name || "Customer")}</strong><br>
-          ${safe(order.customer_phone_number || order.customer_phone || "")}<br>
-          <small>${safe(order.customer_email || "")}</small>
-        </td>
-
-        <td>${itemText}</td>
-
-        <td>
-          ${safe(fulfilment)}<br>
-          ${safe(address || "No address supplied")}<br>
-          <small>${safe(date)} · ${safe(time)}</small><br>
-          <small>Delivery fee: ${money(order.delivery_fee)}</small>
-          ${order.order_notes
-            ? `<br><small>Notes: ${safe(order.order_notes)}</small>`
-            : ""}
-        </td>
-
-        <td>
-          Subtotal: ${money(order.subtotal)}<br>
-          Discount: ${money(order.discount_amount)}<br>
-          <strong>Total: ${money(order.total)}</strong>
-        </td>
-
-        <td>
-          ${safe(order.payment_method || "Not specified")}<br>
-          Payment:
-          <strong>${safe(paymentStatus)}</strong>
-          ${order.mpesa_phone_number
-            ? `<br><small>M-Pesa: ${safe(order.mpesa_phone_number)}</small>`
-            : ""}
-        </td>
-
-        <td>
-          <label>Order status</label>
-          <select class="owner-order-status">
-            ${[
-              ["pending", "Pending"],
-              ["confirmed", "Confirmed"],
-              ["processing", "Processing"],
-              ["ready_for_pickup", "Ready for pickup"],
-              ["out_for_delivery", "Out for delivery"],
-              ["completed", "Completed"],
-              ["cancelled", "Cancelled"]
-            ].map(([value, label]) =>
-              `<option value="${value}" ${orderStatus === value ? "selected" : ""}>${label}</option>`
-            ).join("")}
-          </select>
-
-          <label>Payment status</label>
-          <select class="owner-payment-status">
-            ${[
-              ["pending", "Pending"],
-              ["successful", "Successful"],
-              ["refunded", "Refunded"]
-            ].map(([value, label]) => {
-              const selected = (
-                value === "successful" &&
-                ["paid", "success", "successful"].includes(paymentStatus)
-              ) || value === paymentStatus;
-
-              return `<option value="${value}" ${selected ? "selected" : ""}>${label}</option>`;
-            }).join("")}
-          </select>
-
-          <button type="button" class="owner-save-order">Save changes</button>
-          <small class="owner-order-message"></small>
-        </td>
-      `;
-
-      const orderSelect = row.querySelector(".owner-order-status");
-      const paymentSelect = row.querySelector(".owner-payment-status");
-      const saveButton = row.querySelector(".owner-save-order");
-      const statusMessage = row.querySelector(".owner-order-message");
-
-      saveButton.addEventListener("click", async () => {
-        const newOrderStatus = orderSelect.value;
-        const newPaymentStatus = paymentSelect.value;
-        const paymentMethod = String(order.payment_method || "").toLowerCase();
-
-        if (
-          newPaymentStatus === "successful" &&
-          ["cash_on_delivery", "cash on delivery", "cod", "cash", "cash_at_pickup"].includes(paymentMethod) &&
-          !["paid", "success", "successful"].includes(paymentStatus)
-        ) {
-          const confirmed = window.confirm(
-            "Confirm that you have actually received the customer's cash before marking this payment successful."
-          );
-
-          if (!confirmed) {
-            paymentSelect.value = "pending";
-            return;
-          }
-        }
-
-        if (
-          newPaymentStatus === "successful" &&
-          ["mpesa", "m-pesa", "demo_mpesa"].includes(paymentMethod) &&
-          !["paid", "success", "successful"].includes(paymentStatus)
-        ) {
-          const confirmed = window.confirm(
-            "Only mark M-Pesa successful after checking the actual payment in your M-Pesa account or transaction records. Have you verified receipt?"
-          );
-
-          if (!confirmed) {
-            paymentSelect.value = "pending";
-            return;
-          }
-        }
-
-        saveButton.disabled = true;
-        statusMessage.textContent = "Saving...";
-
-        try {
-          const update = {
-            order_status: newOrderStatus,
-            payment_status: newPaymentStatus
-          };
-
-          const { error: updateError } = await db
-            .from("orders")
-            .update(update)
-            .eq("id", order.id);
-
-          if (updateError) throw updateError;
-
-          statusMessage.textContent = "Saved.";
-          await loadOrders();
-        } catch (error) {
-          console.error("Order update error:", error);
-          statusMessage.textContent = "Could not save: " + error.message;
-          saveButton.disabled = false;
-        }
-      });
-
-      tbody.appendChild(row);
-    }
-  } catch (error) {
-    console.error("Loading orders failed:", error);
-    tbody.innerHTML = `
-      <tr><td colspan="8">Could not load orders: ${String(error.message || error)}</td></tr>
-    `;
-  }
+async function start(){
+try{
+const {data:{session},error}=await db.auth.getSession();
+if(error)throw error;
+if(!session){$("login").hidden=false;$("notice").textContent="Sign in to continue.";return}
+const {data:profile,error:e}=await db.from("profiles").select("role").eq("id",session.user.id).maybeSingle();
+if(e)throw e;
+if(profile?.role!=="owner"){$("login").hidden=false;$("notice").textContent="This account does not have owner access.";return}
+$("app").hidden=false;$("notice").textContent="Owner dashboard ready.";
+await refreshAll();
+}catch(e){$("notice").textContent="Dashboard error: "+e.message}
 }
+
+$("logout").onclick=async()=>{await db.auth.signOut();location.href="index.html"};
+
+document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{
+document.querySelectorAll("main section[id]").forEach(s=>s.hidden=true);
+$(b.dataset.page).hidden=false;
+if(b.dataset.page==="products")loadProducts();
+if(b.dataset.page==="sales")loadSaleProducts();
+if(b.dataset.page==="orders")loadOrders();
+if(b.dataset.page==="reports")loadReports();
+if(b.dataset.page==="messages")loadMessages();
+});
+
+async function refreshAll(){await loadProducts();await loadOrders();await loadReports()}
+
+async function loadProducts(){
+try{
+const {data,error}=await db.from("products").select("*").order("name");
+if(error)throw error;
+items=data||[];
+$("productRows").innerHTML="";
+items.forEach(p=>{
+const r=document.createElement("tr");
+r.innerHTML=`<td>${esc(p.name)}<br><small>${esc(p.category||"")}</small></td><td>${cash(p.price)}</td><td>${p.stock??p.quantity_in_stock??0}</td><td><button data-edit="${esc(p.id)}">EDIT</button><button data-delete="${esc(p.id)}">DELETE</button></td>`;
+$("productRows").appendChild(r);
+});
+$("count").textContent=items.length;
+const stocks=items.map(p=>Number(p.stock??p.quantity_in_stock??0));
+$("stock").textContent=stocks.reduce((a,b)=>a+b,0);
+$("empty").textContent=stocks.filter(n=>n===0).length;
+$("saleProduct").innerHTML=items.filter(p=>Number(p.stock??p.quantity_in_stock??0)>0).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${cash(p.price)}</option>`).join("");
+}catch(e){$("productMsg").textContent="Inventory error: "+e.message}
+}
+
+$("productForm").onsubmit=async e=>{
+e.preventDefault();
+const id=$("pid").value;
+const payload={name:$("pname").value.trim(),category:$("pcat").value.trim(),price:Number($("pprice").value),stock:Number($("pstock").value),size:$("psize").value,color:$("pcolor").value,image_url:$("pimage").value,description:$("pdesc").value};
+try{
+let result;
+if(id)result=await db.from("products").update(payload).eq("id",id);
+else result=await db.from("products").insert(payload);
+if(result.error)throw result.error;
+$("productForm").reset();$("pid").value="";
+$("productMsg").textContent="Product saved.";
+await loadProducts();
+}catch(e){$("productMsg").textContent="Could not save product: "+e.message}
+};
+$("cancelEdit").onclick=()=>{$("productForm").reset();$("pid").value=""};
+
+$("productRows").onclick=async e=>{
+const edit=e.target.dataset.edit,del=e.target.dataset.delete;
+if(edit){
+const p=items.find(x=>String(x.id)===edit);if(!p)return;
+$("pid").value=p.id;$("pname").value=p.name||"";$("pcat").value=p.category||"";
+$("pprice").value=p.price||0;$("pstock").value=p.stock??p.quantity_in_stock??0;
+$("psize").value=p.size||"";$("pcolor").value=p.color||p.colour||"";
+$("pimage").value=p.image_url||p.image||"";$("pdesc").value=p.description||"";
+window.scrollTo({top:0,behavior:"smooth"});
+}
+if(del&&confirm("Delete this product?")){
+const result=await db.from("products").delete().eq("id",del);
+if(result.error)alert(result.error.message);else await loadProducts();
+}
+};
+
+async function loadSaleProducts(){await loadProducts()}
+$("addSale").onclick=()=>{
+const p=items.find(x=>String(x.id)===$("saleProduct").value),q=Number($("saleQty").value);
+if(!p||!Number.isInteger(q)||q<1)return alert("Choose a product and valid quantity.");
+const stock=Number(p.stock??p.quantity_in_stock??0);
+if(q>stock)return alert("Not enough stock.");
+const found=sale.find(x=>String(x.id)===String(p.id));
+if(found){if(found.quantity+q>stock)return alert("Not enough stock.");found.quantity+=q}
+else sale.push({id:p.id,name:p.name,price:Number(p.price),quantity:q});
+renderSale();
+};
+function renderSale(){
+$("saleRows").innerHTML=sale.map((p,i)=>`<tr><td>${esc(p.name)}</td><td>${p.quantity}</td><td>${cash(p.price*p.quantity)}</td><td><button data-remove-sale="${i}">REMOVE</button></td></tr>`).join("");
+$("saleTotal").textContent=cash(sale.reduce((s,p)=>s+p.price*p.quantity,0));
+}
+$("saleRows").onclick=e=>{if(e.target.dataset.removeSale!==undefined){sale.splice(Number(e.target.dataset.removeSale),1);renderSale()}};
+$("saveSale").onclick=async()=>{
+if(!sale.length)return alert("Add at least one product.");
+try{
+const {error}=await db.rpc("record_sale",{p_items:sale.map(p=>({product_id:p.id,quantity:p.quantity})),p_payment_method:$("salePayment").value});
+if(error)throw error;
+sale=[];renderSale();$("saleMsg").textContent="Sale recorded successfully.";
+await loadProducts();await loadReports();
+}catch(e){$("saleMsg").textContent="Sale failed: "+e.message}
+};
+
+async function loadOrders(){
+$("orderRows").innerHTML="<tr><td colspan='8'>Loading orders...</td></tr>";
+try{
+const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(200);
+if(error)throw error;orders=data||[];
+const {data:lines,error:le}=await db.from("order_items").select("order_id,product_name,color,size,quantity,unit_price,line_total");
+if(le)throw le;
+$("orderRows").innerHTML="";
+for(const o of orders){
+const list=(lines||[]).filter(i=>i.order_id===o.id);
+const tr=document.createElement("tr");
+tr.innerHTML=`<td>${esc(String(o.id).slice(0,8))}<br><small>${esc(o.created_at?new Date(o.created_at).toLocaleString():"")}</small></td>
+<td>${esc(o.customer_name)}<br>${esc(o.customer_phone_number||"")}<br>${esc(o.customer_email||"")}</td>
+<td>${list.map(i=>`${esc(i.product_name)} / ${esc(i.color||"")} / ${esc(i.size||"")} × ${i.quantity}`).join("<br>")||"No items found"}</td>
+<td>${esc(o.fulfillment_type||o.delivery_method||"Delivery")}<br>${esc(o.delivery_address||o.delivery_location||"")}<br>${esc(o.town||"")} ${esc(o.county||"")}<br>${esc(o.schedule_date||o.delivery_date||"")} ${esc(o.schedule_slot||o.delivery_time||"")}<br>Fee: ${cash(o.delivery_fee)}</td>
+<td>Subtotal: ${cash(o.subtotal)}<br>Discount: ${cash(o.discount_amount)}<br><b>${cash(o.total)}</b></td>
+<td>${esc(o.payment_method||"")}<br>${esc(o.payment_status||"pending")}</td>
+<td><select class="ostatus">${["pending","confirmed","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].map(s=>`<option ${s===(o.order_status||"pending")?"selected":""} value="${s}">${s.replaceAll("_"," ")}</option>`).join("")}</select><br>
+<select class="pstatus">${["pending","successful","refunded"].map(s=>`<option value="${s}" ${s===((["paid","success"].includes(o.payment_status))?"successful":o.payment_status||"pending")?"selected":""}>${s}</option>`).join("")}</select></td>
+<td><button class="save-order">SAVE</button><p class="rowmsg"></p></td>`;
+tr.querySelector(".save-order").onclick=async()=>{
+const payment=tr.querySelector(".pstatus").value;
+if(payment==="successful"&&!["paid","success","successful"].includes(o.payment_status)){
+if(!confirm("Only confirm successful payment after receiving cash or verifying M-Pesa. Have you verified receipt?"))return;
+}
+try{
+const {error}=await db.from("orders").update({order_status:tr.querySelector(".ostatus").value,payment_status:payment}).eq("id",o.id);
+if(error)throw error;
+tr.querySelector(".rowmsg").textContent="Saved.";
+await loadOrders();
+}catch(e){tr.querySelector(".rowmsg").textContent=e.message}
+};
+$("orderRows").appendChild(tr);
+}
+$("orderMsg").textContent=orders.length+" order(s) loaded.";
+}catch(e){$("orderRows").innerHTML="";$("orderMsg").textContent="Orders error: "+e.message}
+}
+$("refreshOrders").onclick=loadOrders;
+
+async function loadReports(){
+try{
+const {data,error}=await db.from("sales").select("*").order("sale_date",{ascending:false}).limit(300);
+if(error)throw error;
+const rows=data||[];
+$("revenue").textContent=cash(rows.reduce((s,r)=>s+Number(r.total||0),0));
+$("reportRows").innerHTML=rows.map(r=>`<tr><td>${esc(r.receipt_number||r.id||"")}</td><td>${esc(r.sale_date||"")}</td><td>${esc(r.payment_method||"")}</td><td>${cash(r.total)}</td></tr>`).join("");
+$("reportMsg").textContent=rows.length+" recorded sale(s).";
+}catch(e){$("reportMsg").textContent="Report error: "+e.message}
+}
+$("refreshReports").onclick=loadReports;
+
+async function loadMessages(){
+try{
+const {data,error}=await db.from("messages").select("*").order("created_at",{ascending:false}).limit(100);
+if(error)throw error;
+$("messageRows").innerHTML="";
+(data||[]).forEach(m=>{
+const r=document.createElement("tr");
+r.innerHTML=`<td>${esc(m.customer_name||m.name||"")}</td><td>${esc(m.customer_email||m.email||"")}<br>${esc(m.customer_phone||"")}</td><td>${esc(m.message||"")}</td><td>${esc(m.created_at||"")}</td><td>${m.is_read?"Read":"Unread"}</td><td><button data-read="${esc(m.id)}">MARK READ</button></td>`;
+$("messageRows").appendChild(r);
+});
+$("messageMsg").textContent=(data||[]).length+" message(s).";
+}catch(e){$("messageMsg").textContent="Messages error: "+e.message}
+}
+$("refreshMessages").onclick=loadMessages;
+$("messageRows").onclick=async e=>{
+const id=e.target.dataset.read;if(!id)return;
+const {error}=await db.from("messages").update({is_read:true}).eq("id",id);
+if(error)alert(error.message);else loadMessages();
+};
+start();
+</script>
+</body>
+</html>
