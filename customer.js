@@ -4,8 +4,9 @@ const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = (id) => document.getElementById(id);
-const money = (n) => "KSh " + Number(n || 0).toLocaleString("en-KE", {
+const $ = id => document.getElementById(id);
+const clean = value => String(value ?? "").trim();
+const money = n => "KSh " + Number(n || 0).toLocaleString("en-KE", {
   maximumFractionDigits: 2
 });
 
@@ -19,10 +20,6 @@ function message(id, text) {
   if (node) node.textContent = text;
 }
 
-function clean(value) {
-  return String(value ?? "").trim();
-}
-
 function optionsFrom(value) {
   if (Array.isArray(value)) return value.map(clean).filter(Boolean);
   return clean(value).split(/[,/|]/).map(x => x.trim()).filter(Boolean);
@@ -30,34 +27,35 @@ function optionsFrom(value) {
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
   })[char]);
 }
 
-function productImage(product) {
-  return product.image_url || product.image || product.image_path || "";
+function todayLocal() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString().slice(0, 10);
 }
 
-function productStock(product) {
-  return Number(product.stock ?? product.quantity_in_stock ?? 0);
+function productImage(p) {
+  return p.image_url || p.image || p.image_path || "";
 }
 
-function productPrice(product) {
-  return Number(product.price ?? 0);
+function productStock(p) {
+  return Number(p.stock ?? p.quantity_in_stock ?? 0);
+}
+
+function productPrice(p) {
+  return Number(p.price ?? 0);
 }
 
 async function loadProducts() {
   message("catalogue-message", "Loading our collection...");
 
   try {
-    const { data, error } = await db
-      .from("products")
-      .select("*")
-      .order("name", { ascending: true });
+    const { data, error } = await db.from("products")
+      .select("*").order("name", { ascending: true });
 
     if (error) throw error;
 
@@ -78,14 +76,11 @@ async function loadProducts() {
 function renderProducts() {
   const container = $("customer-products");
   if (!container) return;
-
   container.replaceChildren();
 
   const category = clean($("category-filter")?.value || "all").toLowerCase();
-
   const visible = products.filter(p =>
-    category === "all" ||
-    clean(p.category).toLowerCase() === category
+    category === "all" || clean(p.category).toLowerCase() === category
   );
 
   if (!visible.length) {
@@ -103,10 +98,9 @@ function renderProducts() {
     const colors = optionsFrom(product.color || product.colour || product.colors);
 
     card.innerHTML = `
-      <img class="customer-product-image"
-           src="${escapeHtml(image)}"
-           alt="${escapeHtml(product.name || "Clothing item")}"
-           onerror="this.style.display='none'">
+      <img class="customer-product-image" src="${escapeHtml(image)}"
+        alt="${escapeHtml(product.name || "Clothing item")}"
+        onerror="this.style.display='none'">
       <div class="customer-product-details">
         <h3>${escapeHtml(product.name)}</h3>
         <p>${escapeHtml(product.description || "")}</p>
@@ -129,11 +123,11 @@ function renderProducts() {
           </label>
           <label>Quantity
             <input class="choose-quantity" type="number" min="1"
-                   max="${Math.max(1, stock)}" value="1">
+              max="${Math.max(1, stock)}" value="1">
           </label>
         </div>
         <button class="kc-button kc-add-button" type="button"
-                ${stock < 1 ? "disabled" : ""}>
+          ${stock < 1 ? "disabled" : ""}>
           ${stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"}
         </button>
       </div>`;
@@ -146,7 +140,7 @@ function renderProducts() {
       if (sizes.length && !size) return alert("Please select a size.");
       if (colors.length && !color) return alert("Please select a colour.");
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
-        return alert("Please enter a valid quantity within available stock.");
+        return alert("Enter a valid quantity within available stock.");
       }
 
       const existing = cart.find(item =>
@@ -160,14 +154,8 @@ function renderProducts() {
         existing.quantity += quantity;
       } else {
         cart.push({
-          id: product.id,
-          name: product.name,
-          price: productPrice(product),
-          image,
-          size,
-          color,
-          quantity,
-          stock
+          id: product.id, name: product.name,
+          price: productPrice(product), image, size, color, quantity, stock
         });
       }
 
@@ -185,7 +173,6 @@ function subtotal() {
 
 function deliveryFee() {
   if ($("delivery-method")?.value === "pickup") return 0;
-
   const area = $("delivery-area")?.value;
   if (area === "near_shop") return 200;
   if (area === "nairobi") return 500;
@@ -193,14 +180,13 @@ function deliveryFee() {
 }
 
 function discountAmount() {
-  const code = clean($("discount-code")?.value).toUpperCase();
-  return code === "KC10" ? subtotal() * 0.10 : 0;
+  return clean($("discount-code")?.value).toUpperCase() === "KC10"
+    ? subtotal() * 0.10 : 0;
 }
 
 function renderCart() {
   const container = $("cart-items");
   if (!container) return;
-
   container.replaceChildren();
 
   if (!cart.length) {
@@ -215,7 +201,7 @@ function renderCart() {
     line.className = "kc-cart-line";
     line.innerHTML = `
       <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}"
-           onerror="this.style.display='none'">
+        onerror="this.style.display='none'">
       <div>
         <h3>${escapeHtml(item.name)}</h3>
         <p>Size: ${escapeHtml(item.size || "Not specified")}</p>
@@ -223,7 +209,7 @@ function renderCart() {
         <p>${money(item.price)} each</p>
         <label>Quantity
           <input class="cart-quantity" type="number" min="1"
-                 max="${item.stock}" value="${item.quantity}">
+            max="${item.stock}" value="${item.quantity}">
         </label>
         <p><strong>${money(item.price * item.quantity)}</strong></p>
         <button class="kc-button kc-button-outline remove-item" type="button">
@@ -234,7 +220,7 @@ function renderCart() {
     line.querySelector(".cart-quantity").addEventListener("change", event => {
       const qty = Number(event.target.value);
       if (!Number.isInteger(qty) || qty < 1 || qty > item.stock) {
-        alert("Please enter a valid quantity within available stock.");
+        alert("Enter a valid quantity within available stock.");
         event.target.value = item.quantity;
         return;
       }
@@ -284,16 +270,19 @@ function updatePaymentFields() {
 }
 
 function setDateLimits() {
-  const today = new Date();
-  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
-    .toISOString().slice(0, 10);
+  const today = todayLocal();
 
   ["delivery-date", "pickup-date"].forEach(id => {
-    if ($(id)) {
-      $(id).min = localDate;
-      if (!$(id).value) $(id).value = localDate;
-    }
+    const field = $(id);
+    if (!field) return;
+    field.min = today;
+    if (!field.value || field.value < today) field.value = today;
   });
+}
+
+function validKenyanPhone(value) {
+  const phone = clean(value).replace(/[\s()-]/g, "");
+  return /^(?:\+254|254|0)?[17]\d{8}$/.test(phone);
 }
 
 async function placeOrder(event) {
@@ -308,20 +297,48 @@ async function placeOrder(event) {
   const name = clean($("order-name")?.value);
   const phone = clean($("order-phone")?.value);
   const email = clean($("order-email")?.value);
-  const pickup = $("delivery-method").value === "pickup";
-  const area = pickup ? "pickup" : $("delivery-area").value;
-  const location = pickup ? "Shop pickup" : clean($("delivery-location").value);
-  const date = pickup ? $("pickup-date").value : $("delivery-date").value;
-  const slot = pickup ? $("pickup-time").value : $("delivery-time").value;
-  const method = $("payment-method").value;
+  const pickup = $("delivery-method")?.value === "pickup";
+  const area = pickup ? "pickup" : clean($("delivery-area")?.value);
+  const location = pickup ? "Shop pickup" : clean($("delivery-location")?.value);
+  const method = clean($("payment-method")?.value);
+
+  const dateField = pickup ? $("pickup-date") : $("delivery-date");
+  const timeField = pickup ? $("pickup-time") : $("delivery-time");
+
+  // Never submit a missing or past schedule date.
+  const date = clean(dateField?.value) || todayLocal();
+  const slot = clean(timeField?.value) ||
+    (pickup ? "11 am–1 pm" : "Weekday daytime (11 am–5 pm)");
 
   if (!name || !phone || !email) {
-    message("checkout-status", "Please complete your name, phone number and email.");
+    message("checkout-status", "Complete your name, phone number and email.");
+    return;
+  }
+
+  if (!validKenyanPhone(phone)) {
+    message("checkout-status",
+      "Enter a valid Kenyan phone number, for example 0712345678 or +254712345678.");
+    return;
+  }
+
+  if (!pickup && (!area || !location)) {
+    message("checkout-status", "Please complete your delivery area and address.");
+    return;
+  }
+
+  if (date < todayLocal()) {
+    message("checkout-status", "Choose today or a future date.");
     return;
   }
 
   if (method === "demo_mpesa" && mpesaDemoResult !== "success") {
-    message("checkout-status", "Please complete the M-Pesa demo step or choose cash on delivery.");
+    message("checkout-status",
+      "Complete the payment step or choose cash on delivery. A demo does not confirm real payment.");
+    return;
+  }
+
+  if (method === "demo_mpesa" && !validKenyanPhone($("mpesa-phone")?.value)) {
+    message("checkout-status", "Enter a valid Kenyan M-Pesa phone number.");
     return;
   }
 
@@ -331,20 +348,23 @@ async function placeOrder(event) {
   const total = Math.max(0, sub - discount + fee);
 
   submitting = true;
-  $("place-order-button").disabled = true;
+  if ($("place-order-button")) $("place-order-button").disabled = true;
   message("checkout-status", "Submitting your order...");
 
-  let createdOrderId = null;
-
   try {
-    const { data: authData } = await db.auth.getUser();
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
     const user = authData?.user || null;
 
     const orderPayload = {
       customer_id: user?.id || null,
       customer_name: name,
       customer_email: email,
+
+      // Both fields support databases with either phone column.
       customer_phone_number: phone,
+      customer_phone: phone,
+
       fulfillment_type: pickup ? "pickup" : "delivery",
       customer_fulfillment_type: pickup ? "pickup" : "delivery",
       delivery_method: pickup ? "pickup" : "delivery",
@@ -354,20 +374,24 @@ async function placeOrder(event) {
       delivery_address: location,
       delivery_location: location,
       delivery_fee: fee,
+
       schedule_date: date,
-      schedule_slot: slot,
       delivery_date: date,
+      schedule_slot: slot,
       delivery_time: slot,
       fulfillment_time: slot,
+
       subtotal: sub,
-      discount_code: clean($("discount-code").value).toUpperCase() || null,
+      discount_code: clean($("discount-code")?.value).toUpperCase() || null,
       discount_amount: discount,
       total,
+
       payment_method: method,
       payment_status: "pending",
-      mpesa_phone_number: method === "demo_mpesa" ? clean($("mpesa-phone").value) : null,
+      mpesa_phone_number: method === "demo_mpesa"
+        ? clean($("mpesa-phone")?.value) : null,
       order_status: "pending",
-      order_notes: clean($("order-notes").value)
+      order_notes: clean($("order-notes")?.value)
     };
 
     const { data: order, error: orderError } = await db
@@ -377,10 +401,10 @@ async function placeOrder(event) {
       .single();
 
     if (orderError) throw orderError;
-    createdOrderId = order.id;
+    const orderId = order.id;
 
     const items = cart.map(item => ({
-      order_id: createdOrderId,
+      order_id: orderId,
       product_id: String(item.id),
       product_name: item.name,
       size: item.size || "",
@@ -393,23 +417,24 @@ async function placeOrder(event) {
     const { error: itemError } = await db.from("order_items").insert(items);
 
     if (itemError) {
-      message("checkout-status",
-        "Order created, but its items could not be saved. Please contact the shop and provide order reference " +
-        createdOrderId);
       console.error("Order items insert error:", itemError);
+      message("checkout-status",
+        "The order was created, but its items could not be saved. Contact the shop with reference " +
+        orderId);
       return;
     }
 
     cart = [];
     renderCart();
-    $("checkout-form").reset();
+    $("checkout-form")?.reset();
     setDateLimits();
     updateFulfilmentFields();
     updatePaymentFields();
 
     message("checkout-status",
-      "Order placed successfully. Reference: " + createdOrderId.slice(0, 8).toUpperCase() +
-      ". Payment is pending until confirmed by the shop.");
+      "Order placed successfully. Reference: " +
+      orderId.slice(0, 8).toUpperCase() +
+      ". Payment remains pending until the shop confirms receipt.");
 
     await loadMyOrders();
   } catch (error) {
@@ -417,14 +442,13 @@ async function placeOrder(event) {
     message("checkout-status", "Order could not be placed: " + error.message);
   } finally {
     submitting = false;
-    $("place-order-button").disabled = false;
+    if ($("place-order-button")) $("place-order-button").disabled = false;
   }
 }
 
 async function loadMyOrders() {
   const container = $("my-orders-list");
   if (!container) return;
-
   container.replaceChildren();
 
   try {
@@ -432,8 +456,7 @@ async function loadMyOrders() {
     const user = authData?.user;
 
     if (!user) {
-      message("my-orders-status",
-        "Sign in to view your order history. Your order is still saved for the shop.");
+      message("my-orders-status", "Sign in to view your order history.");
       return;
     }
 
@@ -449,12 +472,13 @@ async function loadMyOrders() {
       return;
     }
 
-    for (const order of data) {
+    data.forEach(order => {
       const card = document.createElement("article");
       card.className = "kc-order-card";
 
       const heading = document.createElement("h3");
       heading.textContent = "Order " + String(order.id).slice(0, 8).toUpperCase();
+
       const details = document.createElement("p");
       details.textContent =
         "Placed: " + new Date(order.created_at).toLocaleString() +
@@ -470,7 +494,7 @@ async function loadMyOrders() {
 
       card.append(heading, details, fulfilment);
       container.appendChild(card);
-    }
+    });
 
     message("my-orders-status", "Your order history is up to date.");
   } catch (error) {
@@ -499,10 +523,10 @@ function setupContactForm() {
 
     try {
       const payload = {
-        customer_name: clean($("contact-name").value),
-        customer_email: clean($("contact-email").value),
-        customer_phone: clean($("contact-phone").value),
-        message: clean($("contact-message").value),
+        customer_name: clean($("contact-name")?.value),
+        customer_email: clean($("contact-email")?.value),
+        customer_phone: clean($("contact-phone")?.value),
+        message: clean($("contact-message")?.value),
         subject: "Website enquiry",
         is_read: false
       };
@@ -536,12 +560,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   $("simulate-mpesa-success")?.addEventListener("click", () => {
     mpesaDemoResult = "success";
-    message("mpesa-demo-status", "Demo marked successful. No real M-Pesa payment was received.");
+    message("mpesa-demo-status",
+      "Demo marked successful. No real M-Pesa payment was received.");
   });
 
   $("simulate-mpesa-failure")?.addEventListener("click", () => {
     mpesaDemoResult = "failure";
-    message("mpesa-demo-status", "Demo payment failed. You may choose cash on delivery.");
+    message("mpesa-demo-status",
+      "Demo payment failed. You may choose cash on delivery.");
   });
 
   setupContactForm();
