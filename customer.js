@@ -513,6 +513,137 @@ if (customerSignOut) {
   });
 }
 
+
+// CUSTOMER CHECKOUT AND ORDER SUBMISSION
+const checkoutForm = document.getElementById("customer-checkout-form");
+const checkoutButton = document.getElementById("customer-checkout-button");
+const receivingMethod = document.getElementById("checkout-receiving-method");
+const deliveryAddressWrap = document.getElementById("checkout-address-wrap");
+const deliveryAddressInput = document.getElementById("checkout-address");
+const checkoutPaymentMethod = document.getElementById("checkout-payment-method");
+const mpesaWrap = document.getElementById("checkout-mpesa-wrap");
+const mpesaPhoneInput = document.getElementById("checkout-mpesa-phone");
+const checkoutStatus = document.getElementById("customer-checkout-status");
+
+function customerCartSubtotal() {
+  return customerCart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
+}
+function updateCheckoutFields() {
+  const isDelivery = receivingMethod?.value === "delivery";
+  if (deliveryAddressWrap) deliveryAddressWrap.hidden = !isDelivery;
+  if (deliveryAddressInput) deliveryAddressInput.required = isDelivery;
+  const useMpesa = checkoutPaymentMethod?.value === "simulated_mpesa";
+  if (mpesaWrap) mpesaWrap.hidden = !useMpesa;
+  if (mpesaPhoneInput) mpesaPhoneInput.required = useMpesa;
+  const total = document.getElementById("checkout-order-total");
+  if (total) total.textContent = priceKES(customerCartSubtotal());
+}
+function checkoutMessage(message, isError = false) {
+  if (checkoutStatus) {
+    checkoutStatus.textContent = message;
+    checkoutStatus.style.color = isError ? "#a21b2d" : "var(--burgundy)";
+  }
+}
+if (checkoutButton) checkoutButton.addEventListener("click", async () => {
+  if (!customerCart.length) { setCartMessage("Your bag is empty. Add an item before checkout."); return; }
+  const user = currentCustomer || await loadCustomerAccount();
+  if (!user) { setCartMessage("Please sign in to your customer account before placing an order."); return; }
+  const emailInput = document.getElementById("checkout-customer-email");
+  if (emailInput) emailInput.value = user.email || "";
+  checkoutForm.hidden = false;
+  updateCheckoutFields();
+  checkoutForm.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+if (receivingMethod) receivingMethod.addEventListener("change", updateCheckoutFields);
+if (checkoutPaymentMethod) checkoutPaymentMethod.addEventListener("change", updateCheckoutFields);
+const backToBag = document.getElementById("customer-back-to-bag");
+if (backToBag) backToBag.addEventListener("click", () => {
+  checkoutForm.hidden = true;
+  document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+function validKenyanPhone(value) {
+  const digits = String(value || "").replace(/[\s-]/g, "");
+  return /^(?:\+254|0)?[17]\d{8}$/.test(digits);
+}
+if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const submitButton = document.getElementById("customer-place-order");
+  if (!customerCart.length) return checkoutMessage("Your bag is empty. Add an item before placing an order.", true);
+  const user = currentCustomer || await loadCustomerAccount();
+  if (!user) return checkoutMessage("Please sign in again before placing your order.", true);
+  const name = document.getElementById("checkout-customer-name").value.trim();
+  const phone = document.getElementById("checkout-customer-phone").value.trim();
+  const email = document.getElementById("checkout-customer-email").value.trim();
+  const method = receivingMethod.value;
+  const address = deliveryAddressInput.value.trim();
+  const payment = checkoutPaymentMethod.value;
+  const mpesaPhone = mpesaPhoneInput.value.trim();
+  if (!name) return checkoutMessage("Enter your full name.", true);
+  if (!validKenyanPhone(phone)) return checkoutMessage("Enter a valid Kenyan phone number, for example 0712345678.", true);
+  if (!email || email.toLowerCase() !== String(user.email || "").toLowerCase()) return checkoutMessage("Your checkout email must match the signed-in account.", true);
+  if (method === "delivery" && !address) return checkoutMessage("Enter the delivery address or area.", true);
+  if (payment === "simulated_mpesa" && !validKenyanPhone(mpesaPhone)) return checkoutMessage("Enter a valid Kenyan M-Pesa phone number.", true);
+
+  submitButton.disabled = true;
+  submitButton.textContent = "PLACING ORDER...";
+  checkoutMessage("Checking stock and saving your order...");
+  try {
+    const freshItems = [];
+    for (const item of customerCart) {
+      const { data, error } = await customerDB.from("products")
+        .select("id,name,price,stock,active,image_url,size,color")
+        .eq("id", item.productId).maybeSingle();
+      if (error) throw error;
+      if (!data || !data.active) throw new Error(`${item.name} is no longer available. Remove it from your bag.`);
+      if (Number(data.stock) < Number(item.quantity)) throw new Error(`Only ${Number(data.stock)} of ${item.name} remain. Update your bag quantity.`);
+      freshItems.push({
+        product_id: data.id, name: data.name || item.name,
+        size: item.size || data.size || "Not specified",
+        color: item.color || data.color || "Not specified",
+        quantity: Number(item.quantity), unit_price: Number(data.price ?? item.price) || 0,
+        line_total: (Number(data.price ?? item.price) || 0) * Number(item.quantity),
+        image_url: data.image_url || item.imageUrl || null
+      });
+    }
+    const subtotal = freshItems.reduce((sum, item) => sum + item.line_total, 0);
+    const orderPayload = {
+      customer_id: user.id,
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone.replace(/[\s-]/g, ""),
+      receiving_method: method,
+      delivery_address: method === "delivery" ? address : null,
+      payment_method: payment === "simulated_mpesa" ? "M-Pesa (simulated)" : "Pay on collection/receipt",
+      payment_status: payment === "simulated_mpesa" ? "paid_simulated" : "unpaid",
+      order_status: "new",
+      subtotal: subtotal,
+      delivery_fee: null,
+      total: subtotal,
+      order_items: freshItems,
+      order_notes: document.getElementById("checkout-order-notes").value.trim() || null,
+      mpesa_phone: payment === "simulated_mpesa" ? mpesaPhone.replace(/[\s-]/g, "") : null
+    };
+    const { data: savedOrder, error } = await customerDB.from("customer_orders").insert(orderPayload).select("id,order_number").single();
+    if (error) throw error;
+    const orderRef = savedOrder?.order_number || savedOrder?.id || "saved";
+    customerCart = [];
+    saveCustomerCart();
+    checkoutForm.reset();
+    checkoutForm.hidden = true;
+    updateCheckoutFields();
+    checkoutMessage("");
+    setCartMessage(`Thank you, ${name}! Your order ${orderRef} has been submitted to Kelsiy's Closet. The owner can now see your order. ${payment === "simulated_mpesa" ? "This is a simulated payment record; no real money was moved." : "Payment is marked as pending until collection/receipt."}`);
+    document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    console.error("Order submission failed:", error);
+    checkoutMessage("Your order could not be submitted: " + (error.message || "Please try again."), true);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "PLACE ORDER";
+  }
+});
+
 // INITIAL LOAD AND REFRESH
 async function loadCustomerPage() {
   renderCustomerCart();
