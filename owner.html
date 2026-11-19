@@ -10,858 +10,1034 @@
   <style>
     :root {
       --burgundy: #701f36;
-      --dark: #451321;
+      --dark-burgundy: #451321;
       --cream: #fff8ed;
+      --light-cream: #fffdf8;
       --gold: #c9a45c;
       --text: #35252a;
+      --muted: #88777c;
+      --border: #eee2d8;
       --white: #ffffff;
-      --border: #eadbd5;
+      --green: #26734d;
+      --red: #b42335;
+      --shadow: 0 8px 28px rgba(69, 19, 33, 0.07);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
       background: var(--cream);
       color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
     }
 
-    header {
-      background: var(--dark);
-      color: white;
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    header h1 { margin: 0; font-size: 23px; }
-    header p { margin: 6px 0 0; color: #f3dfd4; }
-
-    button, input, select {
+    button, input, select, textarea {
       font: inherit;
-      border-radius: 6px;
-      padding: 10px;
     }
 
     button {
-      background: var(--burgundy);
-      color: white;
-      border: 0;
       cursor: pointer;
-      font-weight: bold;
     }
 
-    button:hover { background: var(--dark); }
-    button:disabled { opacity: .6; cursor: wait; }
-
-    .logout { background: #fff; color: var(--dark); }
-
-    .login-box {
-      max-width: 420px;
-      margin: 55px auto;
-      padding: 25px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 18px #00000012;
+    .hidden {
+      display: none !important;
     }
 
-    .login-box input { width: 100%; margin: 8px 0 15px; }
-    .login-box button { width: 100%; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border-radius: 13px;
+      background: var(--gold);
+      color: var(--dark-burgundy);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .brand-name {
+      margin: 0;
+      color: var(--dark-burgundy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 19px;
+    }
+
+    .brand-subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* Login */
+
+    #login-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top right, #f2dfc4 0, transparent 38%),
+        var(--cream);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 430px;
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .login-brand {
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .login-heading {
+      margin: 0 0 8px;
+      color: var(--dark-burgundy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .login-description {
+      margin: 0 0 26px;
+      color: var(--muted);
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 17px;
+    }
+
+    .field label {
+      color: var(--dark-burgundy);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea,
+    .toolbar input,
+    .toolbar select {
+      width: 100%;
+      min-width: 0;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: var(--light-cream);
+      color: var(--text);
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus,
+    .toolbar input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 10px 15px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--burgundy);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background: var(--dark-burgundy);
+    }
+
+    .btn-secondary {
+      border-color: var(--border);
+      background: var(--white);
+      color: var(--burgundy);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--gold);
+      background: var(--cream);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--dark-burgundy);
+    }
+
+    .btn-danger {
+      border-color: #f2c9cf;
+      background: #fff1f2;
+      color: var(--red);
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .message {
+      margin: 14px 0 0;
+      padding: 11px 12px;
+      border-radius: 9px;
+      background: var(--cream);
+      color: var(--dark-burgundy);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    /* Dashboard layout */
+
+    #dashboard {
+      min-height: 100vh;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 245px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 25px 17px;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+    }
+
+    .sidebar .brand {
+      padding: 0 7px;
+    }
+
+    .nav-heading {
+      margin: 0 10px 10px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
 
     nav {
       display: flex;
-      gap: 8px;
-      padding: 15px;
-      background: white;
-      overflow-x: auto;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    nav [data-view] {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #6e5960;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    nav [data-view]:hover {
+      background: var(--cream);
+      color: var(--burgundy);
+    }
+
+    nav [data-view].active {
+      background: var(--burgundy);
+      color: var(--white);
+    }
+
+    .nav-icon {
+      width: 23px;
+      font-size: 17px;
+      text-align: center;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px 10px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .sidebar-bottom p {
+      margin: 0 0 13px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .main-area {
+      min-width: 0;
+      padding: 25px 30px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 30px;
+      padding-bottom: 19px;
       border-bottom: 1px solid var(--border);
     }
 
-    nav button { white-space: nowrap; }
-
-    main { padding: 20px; max-width: 1500px; margin: auto; }
-
-    .panel {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px;
-      margin-bottom: 20px;
+    .topbar h1 {
+      margin: 0;
+      color: var(--dark-burgundy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
     }
 
-    .stats {
+    .topbar p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .owner-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--white);
+    }
+
+    .owner-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--dark-burgundy);
+      font-weight: 800;
+    }
+
+    .owner-label strong {
+      display: block;
+      font-size: 12px;
+    }
+
+    .owner-label small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .page-intro {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 23px;
+    }
+
+    .page-intro h2 {
+      margin: 0;
+      color: var(--dark-burgundy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 23px;
+    }
+
+    .page-intro p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Overview cards */
+
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
     .stat {
-      background: white;
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
       border: 1px solid var(--border);
-      border-left: 4px solid var(--gold);
-      border-radius: 9px;
-      padding: 18px;
+      border-radius: 15px;
+      background: var(--white);
+      box-shadow: 0 4px 14px rgba(69, 19, 33, 0.035);
     }
 
-    .stat span { display: block; color: #76656a; margin-bottom: 8px; }
-    .stat strong { font-size: 23px; color: var(--burgundy); }
+    .stat::after {
+      position: absolute;
+      right: -18px;
+      bottom: -24px;
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: rgba(201, 164, 92, 0.12);
+      content: "";
+    }
 
-    .table-wrap { overflow-x: auto; }
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .stat-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 35px;
+      height: 35px;
+      border-radius: 10px;
+      background: var(--cream);
+      color: var(--burgundy);
+      font-size: 17px;
+    }
+
+    .stat h3 {
+      margin: 18px 0 5px;
+      color: var(--dark-burgundy);
+      font-size: 27px;
+    }
+
+    .stat p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* Panels and tables */
+
+    .panel {
+      min-width: 0;
+      margin-bottom: 23px;
+      padding: 21px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--white);
+      box-shadow: 0 4px 14px rgba(69, 19, 33, 0.035);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      color: var(--dark-burgundy);
+      font-size: 16px;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .toolbar input {
+      flex: 1 1 200px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 800px;
-    }
-
-    th, td {
-      border-bottom: 1px solid var(--border);
-      padding: 12px;
+      background: var(--white);
       text-align: left;
-      vertical-align: top;
     }
 
-    th { background: #f7eee7; color: var(--dark); }
-
-    td input, td select { width: 100%; min-width: 115px; }
-    td button { margin: 4px 0; }
-
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 15px;
+    th {
+      padding: 14px 13px;
+      background: #fbf1e6;
+      color: var(--dark-burgundy);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
-    .toolbar input, .toolbar select { max-width: 260px; }
+    td {
+      padding: 13px;
+      border-top: 1px solid #f2e9e1;
+      color: var(--text);
+      font-size: 12px;
+      vertical-align: middle;
+    }
 
-    .message { margin: 12px 0; font-size: 14px; white-space: pre-wrap; }
-    .error { color: #b42318; }
-    .success { color: #176b3a; }
-    .muted { color: #76656a; }
-    .hidden { display: none !important; }
-    .status-pill { font-weight: bold; color: var(--burgundy); }
+    tbody tr:hover {
+      background: #fffdf9;
+    }
 
-    @media (max-width: 600px) {
-      main { padding: 12px; }
-      header { padding: 16px; }
-      header h1 { font-size: 19px; }
-      .panel { padding: 12px; }
+    td img {
+      width: 48px;
+      height: 55px;
+      border-radius: 7px;
+      object-fit: cover;
+    }
+
+    td button {
+      margin: 2px;
+    }
+
+    .empty-state {
+      padding: 30px 15px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .small-note {
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .main-area {
+        padding: 22px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        gap: 16px;
+        padding: 15px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .sidebar nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 3px;
+      }
+
+      nav [data-view] {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .nav-heading,
+      .sidebar-bottom {
+        display: none;
+      }
+
+      .main-area {
+        padding: 18px 13px 30px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .topbar h1 {
+        font-size: 21px;
+      }
+
+      .owner-label {
+        padding: 6px;
+      }
+
+      .owner-label div:last-child {
+        display: none;
+      }
+
+      .stats-grid {
+        gap: 10px;
+      }
+
+      .stat {
+        padding: 15px;
+      }
+
+      .stat h3 {
+        font-size: 23px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .login-card {
+        padding: 25px 20px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .brand-name {
+        font-size: 17px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<header>
-  <div>
-    <h1>Kelsey's Closet</h1>
-    <p>Owner Management Dashboard</p>
+  <!-- OWNER SIGN-IN -->
+  <section id="login-section">
+    <div class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-mark">K</div>
+        <div>
+          <h1 class="brand-name">Kelsey's Closet</h1>
+          <p class="brand-subtitle">Owner management</p>
+        </div>
+      </div>
+
+      <h2 class="login-heading">Welcome back</h2>
+      <p class="login-description">
+        Sign in to manage your products, customer orders, inventory and sales.
+      </p>
+
+      <form id="login-form">
+        <div class="field">
+          <label for="login-email">Email address</label>
+          <input
+            id="login-email"
+            type="email"
+            placeholder="Enter your owner email"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button id="login-button" class="btn btn-primary full-width" type="submit">
+          Sign in to dashboard
+        </button>
+
+        <p id="login-message" class="message hidden" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- OWNER DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <div class="app-layout">
+
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">K</div>
+          <div>
+            <h2 class="brand-name">Kelsey's Closet</h2>
+            <p class="brand-subtitle">Management system</p>
+          </div>
+        </div>
+
+        <div>
+          <p class="nav-heading">Main menu</p>
+
+          <nav aria-label="Dashboard navigation">
+            <button type="button" class="active" data-view="overview">
+              <span class="nav-icon">⌂</span>
+              Overview
+            </button>
+
+            <button type="button" data-view="orders">
+              <span class="nav-icon">▤</span>
+              Customer orders
+            </button>
+
+            <button type="button" data-view="inventory">
+              <span class="nav-icon">▦</span>
+              Inventory
+            </button>
+
+            <button type="button" data-view="sales">
+              <span class="nav-icon">▥</span>
+              Sales records
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <p>
+            Keep your stock organised and stay up to date with customer orders.
+          </p>
+          <button id="logout-button" type="button" class="btn btn-secondary full-width">
+            ↪ Sign out
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <div>
+            <h1>Owner Management Dashboard</h1>
+            <p>Manage your boutique from one place.</p>
+          </div>
+
+          <div class="owner-label">
+            <div class="owner-avatar">K</div>
+            <div>
+              <strong>Store Owner</strong>
+              <small><span class="status-dot"></span>Management portal</small>
+            </div>
+          </div>
+        </header>
+
+        <!-- OVERVIEW -->
+        <section id="view-overview" class="view active">
+          <div class="page-intro">
+            <div>
+              <h2>Store overview</h2>
+              <p>Here's a summary of your store activity.</p>
+            </div>
+
+            <button id="refresh-all" type="button" class="btn btn-secondary">
+              ↻ Refresh dashboard
+            </button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat">
+              <div class="stat-top">
+                <span class="stat-label">Products</span>
+                <span class="stat-icon">♧</span>
+              </div>
+              <h3 id="product-count">—</h3>
+              <p>Products in inventory</p>
+            </article>
+
+            <article class="stat">
+              <div class="stat-top">
+                <span class="stat-label">Customer orders</span>
+                <span class="stat-icon">▤</span>
+              </div>
+              <h3 id="order-count">—</h3>
+              <p>Orders recorded</p>
+            </article>
+
+            <article class="stat">
+              <div class="stat-top">
+                <span class="stat-label">Pending orders</span>
+                <span class="stat-icon">◷</span>
+              </div>
+              <h3 id="pending-count">—</h3>
+              <p>Orders awaiting action</p>
+            </article>
+
+            <article class="stat">
+              <div class="stat-top">
+                <span class="stat-label">Sales records</span>
+                <span class="stat-icon">▥</span>
+              </div>
+              <h3 id="sales-count">—</h3>
+              <p>Recorded sales transactions</p>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Store management</h3>
+                <p>Choose a section to manage your business.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <button type="button" class="btn btn-primary" data-view="orders">
+                View customer orders
+              </button>
+
+              <button type="button" class="btn btn-secondary" data-view="inventory">
+                Manage inventory
+              </button>
+
+              <button type="button" class="btn btn-secondary" data-view="sales">
+                View sales records
+              </button>
+            </div>
+
+            <p id="overview-message" class="message hidden" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <!-- CUSTOMER ORDERS -->
+        <section id="view-orders" class="view">
+          <div class="page-intro">
+            <div>
+              <h2>Customer orders</h2>
+              <p>Review online orders, payment details and fulfilment information.</p>
+            </div>
+
+            <button id="refresh-orders" type="button" class="btn btn-secondary">
+              ↻ Refresh orders
+            </button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Order management</h3>
+                <p>Check each order before updating its status.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <input
+                id="order-search"
+                type="search"
+                placeholder="Search by customer, email or order ID..."
+                aria-label="Search customer orders"
+              >
+            </div>
+
+            <p id="orders-status" class="message hidden" role="status" aria-live="polite"></p>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Fulfilment</th>
+                    <th>Order status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-table">
+                  <tr>
+                    <td colspan="8" class="empty-state">
+                      Sign in to load customer orders.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- INVENTORY -->
+        <section id="view-inventory" class="view">
+          <div class="page-intro">
+            <div>
+              <h2>Inventory management</h2>
+              <p>Add products, update stock and manage your product catalogue.</p>
+            </div>
+
+            <button id="refresh-products" type="button" class="btn btn-secondary">
+              ↻ Refresh inventory
+            </button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Your products</h3>
+                <p>Product images, prices, sizes, colours and stock levels.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <input
+                id="product-search"
+                type="search"
+                placeholder="Search products by name or category..."
+                aria-label="Search inventory"
+              >
+            </div>
+
+            <p id="inventory-status" class="message hidden" role="status" aria-live="polite"></p>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Details / Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="products-table">
+                  <tr>
+                    <td colspan="4" class="empty-state">
+                      Sign in to load inventory.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="small-note">
+              Keep product prices and available quantities accurate so customers
+              can shop using the correct stock information.
+            </p>
+          </div>
+        </section>
+
+        <!-- SALES -->
+        <section id="view-sales" class="view">
+          <div class="page-intro">
+            <div>
+              <h2>Sales records</h2>
+              <p>Review recorded transactions and payment methods.</p>
+            </div>
+
+            <button id="refresh-sales" type="button" class="btn btn-secondary">
+              ↻ Refresh sales
+            </button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Sales history</h3>
+                <p>Transactions saved in your sales records.</p>
+              </div>
+            </div>
+
+            <p id="sales-status" class="message hidden" role="status" aria-live="polite"></p>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Receipt</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Payment method</th>
+                    <th>Sale date</th>
+                    <th>Recorded by</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-table">
+                  <tr>
+                    <td colspan="6" class="empty-state">
+                      Sign in to load sales records.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          Kelsey's Closet · Inventory and Sales Management System
+        </footer>
+      </main>
+    </div>
   </div>
-  <button id="logout-button" class="logout hidden">Sign out</button>
-</header>
 
-<section id="login-section" class="login-box">
-  <h2>Owner Sign In</h2>
-  <p class="muted">Sign in using your existing Supabase account.</p>
-
-  <form id="login-form">
-    <label for="login-email">Email address</label>
-    <input id="login-email" type="email" required autocomplete="username">
-
-    <label for="login-password">Password</label>
-    <input id="login-password" type="password" required autocomplete="current-password">
-
-    <button id="login-button" type="submit">Sign In</button>
-  </form>
-
-  <p id="login-message" class="message"></p>
-</section>
-
-<div id="dashboard" class="hidden">
-
-  <nav>
-    <button data-view="overview">Overview</button>
-    <button data-view="orders">Customer Orders</button>
-    <button data-view="inventory">Inventory</button>
-    <button data-view="sales">Sales</button>
-  </nav>
-
-  <main>
-    <section id="view-overview" class="view">
-      <h2>Dashboard Overview</h2>
-
-      <div class="stats">
-        <div class="stat">
-          <span>Products</span>
-          <strong id="product-count">—</strong>
-        </div>
-        <div class="stat">
-          <span>Customer Orders</span>
-          <strong id="order-count">—</strong>
-        </div>
-        <div class="stat">
-          <span>Awaiting Confirmation</span>
-          <strong id="pending-count">—</strong>
-        </div>
-        <div class="stat">
-          <span>Recorded Sales</span>
-          <strong id="sales-count">—</strong>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>System Status</h3>
-        <p id="overview-message" class="message">Loading dashboard...</p>
-        <button id="refresh-all">Refresh Dashboard</button>
-      </div>
-    </section>
-
-    <section id="view-orders" class="view hidden">
-      <div class="panel">
-        <h2>Customer Orders</h2>
-        <p class="muted">
-          Review customer details, ordered items, scheduled delivery or pickup,
-          totals and payment status.
-        </p>
-
-        <div class="toolbar">
-          <input id="order-search" type="search"
-                 placeholder="Search customer or order ID">
-          <button id="refresh-orders">Refresh Orders</button>
-        </div>
-
-        <p id="orders-status" class="message"></p>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Delivery / Pickup</th>
-                <th>Total (KES)</th>
-                <th>Payment</th>
-                <th>Order Status</th>
-                <th>Update Order</th>
-              </tr>
-            </thead>
-            <tbody id="orders-table">
-              <tr><td colspan="8">Orders will appear here.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-inventory" class="view hidden">
-      <div class="panel">
-        <h2>Inventory</h2>
-        <div class="toolbar">
-          <input id="product-search" type="search" placeholder="Search products">
-          <button id="refresh-products">Refresh Inventory</button>
-        </div>
-        <p id="inventory-status" class="message"></p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody id="products-table">
-              <tr><td colspan="4">Products will appear here.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-sales" class="view hidden">
-      <div class="panel">
-        <h2>Sales Records</h2>
-        <button id="refresh-sales">Refresh Sales</button>
-        <p id="sales-status" class="message"></p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Receipt</th>
-                <th>Customer</th>
-                <th>Total (KES)</th>
-                <th>Payment Method</th>
-                <th>Payment Status</th>
-                <th>Sale Date</th>
-              </tr>
-            </thead>
-            <tbody id="sales-table">
-              <tr><td colspan="6">Sales will appear here.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </main>
-</div>
-
-<script>
-"use strict";
-
-/* SUPABASE CONNECTION */
-const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const $ = id => document.getElementById(id);
-
-let ownerUser = null;
-let allOrders = [];
-let allProducts = [];
-let allSales = [];
-
-function money(value) {
-  return "KES " + Number(value || 0).toLocaleString("en-KE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-function say(id, message, type = "") {
-  const element = $(id);
-  if (!element) return;
-  element.textContent = message;
-  element.className = "message " + type;
-}
-
-function cell(row, value) {
-  const td = document.createElement("td");
-  td.textContent = value == null ? "" : String(value);
-  row.appendChild(td);
-  return td;
-}
-
-function formatDate(value) {
-  if (!value) return "Not specified";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) :
-    date.toLocaleString("en-KE");
-}
-
-async function withTimeout(promise, ms = 20000) {
-  let timer;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error("Request timed out. Check your connection.")),
-          ms
-        );
-      })
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function showView(name) {
-  document.querySelectorAll(".view").forEach(view => view.classList.add("hidden"));
-  const selected = $("view-" + name);
-  if (selected) selected.classList.remove("hidden");
-
-  if (name === "orders") loadOrders();
-  if (name === "inventory") loadProducts();
-  if (name === "sales") loadSales();
-  if (name === "overview") loadOverview();
-}
-
-document.querySelectorAll("nav [data-view]").forEach(button => {
-  button.addEventListener("click", () => showView(button.dataset.view));
-});
-
-/* SIGN IN */
-$("login-form").addEventListener("submit", async event => {
-  event.preventDefault();
-
-  const button = $("login-button");
-  button.disabled = true;
-  say("login-message", "Signing in...");
-
-  try {
-    const { data, error } = await withTimeout(
-      db.auth.signInWithPassword({
-        email: $("login-email").value.trim(),
-        password: $("login-password").value
-      })
-    );
-
-    if (error) throw error;
-    ownerUser = data.user;
-
-    /*
-      IMPORTANT:
-      This verifies the Supabase login, but it does not by itself prove
-      the account has the owner role. Apply your existing database RLS
-      policies so customers cannot access owner data.
-    */
-
-    $("login-section").classList.add("hidden");
-    $("dashboard").classList.remove("hidden");
-    $("logout-button").classList.remove("hidden");
-
-    say("overview-message", "Signed in. Loading your records...", "success");
-    await loadOverview();
-  } catch (error) {
-    console.error("Sign-in error:", error);
-    say("login-message", "Sign-in failed: " + error.message, "error");
-  } finally {
-    button.disabled = false;
-  }
-});
-
-$("logout-button").addEventListener("click", async () => {
-  await db.auth.signOut();
-  ownerUser = null;
-  $("dashboard").classList.add("hidden");
-  $("logout-button").classList.add("hidden");
-  $("login-section").classList.remove("hidden");
-  $("login-password").value = "";
-  say("login-message", "You have signed out.");
-});
-
-/* CUSTOMER ORDERS */
-async function loadOrders() {
-  if (!ownerUser) return;
-
-  const body = $("orders-table");
-  const refresh = $("refresh-orders");
-  refresh.disabled = true;
-  say("orders-status", "Loading customer orders...");
-
-  try {
-    const { data, error } = await withTimeout(
-      db.from("orders")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(300)
-    );
-
-    if (error) throw error;
-    allOrders = data || [];
-    renderOrders();
-    say("orders-status", "Loaded " + allOrders.length + " order(s).", "success");
-  } catch (error) {
-    console.error("Load orders error:", error);
-    body.replaceChildren();
-    const row = body.insertRow();
-    cell(row, "Could not load orders: " + error.message).colSpan = 8;
-    say("orders-status", "Check your orders table permissions and column names: " + error.message, "error");
-  } finally {
-    refresh.disabled = false;
-  }
-}
-
-function renderOrders() {
-  const body = $("orders-table");
-  body.replaceChildren();
-
-  const query = $("order-search").value.trim().toLowerCase();
-  const filtered = allOrders.filter(order =>
-    [
-      order.id, order.customer_name, order.customer_email,
-      order.customer_phone_number, order.order_status
-    ].some(value => String(value || "").toLowerCase().includes(query))
-  );
-
-  if (!filtered.length) {
-    const row = body.insertRow();
-    cell(row, "No matching customer orders.").colSpan = 8;
-    return;
-  }
-
-  filtered.forEach(order => {
-    const row = body.insertRow();
-
-    const orderCell = cell(row,
-      String(order.id).slice(0, 8).toUpperCase() +
-      "\n" + formatDate(order.created_at));
-    orderCell.style.whiteSpace = "pre-line";
-
-    const customerCell = cell(row,
-      (order.customer_name || "Customer") + "\n" +
-      (order.customer_email || "") + "\n" +
-      (order.customer_phone_number || ""));
-    customerCell.style.whiteSpace = "pre-line";
-
-    const itemsCell = cell(row, "Loading items...");
-    itemsCell.style.whiteSpace = "pre-line";
-
-    loadOrderItems(order.id).then(items => {
-      itemsCell.textContent = items.length
-        ? items.map(item =>
-            (item.product_name || "Product") +
-            (item.color ? " / " + item.color : "") +
-            (item.size ? " / " + item.size : "") +
-            " × " + item.quantity +
-            " — " + money(item.unit_price)
-          ).join("\n")
-        : "No order items found";
-    }).catch(error => {
-      itemsCell.textContent = "Could not load items: " + error.message;
-    });
-
-    const isPickup = order.fulfillment_type === "pickup";
-    const date = order.scheduled_date || "Not scheduled";
-    const slot = order.scheduled_slot || order.schedule_slot || "Not specified";
-
-    const deliveryCell = cell(row,
-      (isPickup ? "Pickup" : "Delivery") + "\n" +
-      (order.delivery_address || order.town || order.delivery_area || "Not specified") +
-      "\nDate: " + date +
-      "\nTime: " + slot +
-      "\nFee: " + money(order.delivery_fee));
-    deliveryCell.style.whiteSpace = "pre-line";
-
-    cell(row, money(order.total));
-
-    const paymentCell = cell(row,
-      (order.payment_method || "Not specified") +
-      "\nStatus: " + (order.payment_status || "unpaid"));
-    paymentCell.style.whiteSpace = "pre-line";
-
-    cell(row, order.order_status || "awaiting confirmation");
-
-    const actions = cell(row, "");
-    const feeLabel = document.createElement("label");
-    feeLabel.textContent = "Delivery fee (KES)";
-
-    const feeInput = document.createElement("input");
-    feeInput.type = "number";
-    feeInput.min = "0";
-    feeInput.step = "1";
-    feeInput.value = isPickup ? "0" : String(Number(order.delivery_fee || 0));
-    feeInput.disabled = isPickup;
-    feeLabel.appendChild(feeInput);
-    actions.appendChild(feeLabel);
-
-    const statusLabel = document.createElement("label");
-    statusLabel.textContent = "Order status";
-    const statusSelect = document.createElement("select");
-
-    [
-      ["awaiting confirmation", "Awaiting confirmation"],
-      ["confirmed", "Confirmed"]
-    ].forEach(([value, label]) => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      statusSelect.appendChild(option);
-    });
-
-    statusSelect.value = order.order_status === "confirmed"
-      ? "confirmed" : "awaiting confirmation";
-
-    statusLabel.appendChild(statusSelect);
-    actions.appendChild(statusLabel);
-
-    const paymentLabel = document.createElement("label");
-    paymentLabel.textContent = "Payment status";
-    const paymentSelect = document.createElement("select");
-
-    /*
-      These options use the known allowed statuses.
-      Add "paid" only if the database constraint permits it.
-    */
-    [
-      ["unpaid", "Unpaid"],
-      ["simulated", "Simulated"]
-    ].forEach(([value, label]) => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      paymentSelect.appendChild(option);
-    });
-
-    paymentSelect.value = order.payment_status === "simulated"
-      ? "simulated" : "unpaid";
-
-    paymentLabel.appendChild(paymentSelect);
-    actions.appendChild(paymentLabel);
-
-    const saveButton = document.createElement("button");
-    saveButton.type = "button";
-    saveButton.textContent = "SAVE CHANGES";
-    actions.appendChild(saveButton);
-
-    saveButton.addEventListener("click", async () => {
-      const fee = isPickup ? 0 : Number(feeInput.value);
-
-      if (!Number.isFinite(fee) || fee < 0) {
-        say("orders-status", "Enter a valid delivery fee.", "error");
-        return;
-      }
-
-      const subtotal = Number(order.subtotal || 0);
-      const discount = Number(order.discount_amount || 0);
-      const total = Math.max(0, subtotal - discount + fee);
-
-      if (statusSelect.value === "confirmed" &&
-          order.order_status !== "confirmed") {
-        if (!confirm("Confirm this customer's order? This does not mean payment has been received.")) {
-          return;
-        }
-      }
-
-      if (paymentSelect.value === "simulated" &&
-          order.payment_status !== "simulated") {
-        if (!confirm("Mark this payment as simulated? This does not confirm real money was received.")) {
-          return;
-        }
-      }
-
-      saveButton.disabled = true;
-      say("orders-status", "Saving order changes...");
-
-      try {
-        const payload = {
-          order_status: statusSelect.value,
-          delivery_fee: fee,
-          total: total,
-          payment_status: paymentSelect.value
-        };
-
-        const { data, error } = await withTimeout(
-          db.from("orders").update(payload).eq("id", order.id).select("id")
-        );
-
-        if (error) throw error;
-        if (!data || data.length === 0) {
-          throw new Error("No order was updated. Check your Supabase permissions.");
-        }
-
-        say("orders-status", "Order updated successfully.", "success");
-        await loadOrders();
-      } catch (error) {
-        console.error("Save order error:", error);
-        say("orders-status", "Could not save order: " + error.message, "error");
-      } finally {
-        saveButton.disabled = false;
-      }
-    });
-  });
-}
-
-async function loadOrderItems(orderId) {
-  const { data, error } = await withTimeout(
-    db.from("order_items")
-      .select("product_name, quantity, unit_price, size, color")
-      .eq("order_id", orderId)
-  );
-  if (error) throw error;
-  return data || [];
-}
-
-$("refresh-orders").addEventListener("click", loadOrders);
-$("order-search").addEventListener("input", renderOrders);
-
-/* INVENTORY */
-async function loadProducts() {
-  if (!ownerUser) return;
-
-  const body = $("products-table");
-  $("refresh-products").disabled = true;
-  say("inventory-status", "Loading inventory...");
-
-  try {
-    const { data, error } = await withTimeout(
-      db.from("products").select("*").limit(500)
-    );
-    if (error) throw error;
-
-    allProducts = data || [];
-    renderProducts();
-    say("inventory-status", "Loaded " + allProducts.length + " product(s).", "success");
-  } catch (error) {
-    console.error("Inventory error:", error);
-    body.replaceChildren();
-    const row = body.insertRow();
-    cell(row, "Could not load inventory: " + error.message).colSpan = 4;
-    say("inventory-status", "Check your products table and permissions: " + error.message, "error");
-  } finally {
-    $("refresh-products").disabled = false;
-  }
-}
-
-function renderProducts() {
-  const body = $("products-table");
-  body.replaceChildren();
-  const query = $("product-search").value.trim().toLowerCase();
-
-  const filtered = allProducts.filter(product =>
-    String(product.product_name || product.name || "")
-      .toLowerCase().includes(query)
-  );
-
-  if (!filtered.length) {
-    const row = body.insertRow();
-    cell(row, "No products found.").colSpan = 4;
-    return;
-  }
-
-  filtered.forEach(product => {
-    const row = body.insertRow();
-    cell(row, product.product_name || product.name || "Unnamed product");
-    cell(row, money(product.price));
-    cell(row, product.stock_quantity ?? product.stock ?? product.quantity ?? "—");
-    cell(row, product.description || product.category || "—");
-  });
-}
-
-$("refresh-products").addEventListener("click", loadProducts);
-$("product-search").addEventListener("input", renderProducts);
-
-/* SALES */
-async function loadSales() {
-  if (!ownerUser) return;
-
-  const body = $("sales-table");
-  $("refresh-sales").disabled = true;
-  say("sales-status", "Loading sales...");
-
-  try {
-    const { data, error } = await withTimeout(
-      db.from("sales").select("*").order("sales_date", { ascending: false }).limit(500)
-    );
-
-    if (error) {
-      /*
-        Some installations use created_at instead of sales_date.
-        Retry with the alternate common date column.
-      */
-      const retry = await withTimeout(
-        db.from("sales").select("*").order("created_at", { ascending: false }).limit(500)
-      );
-      if (retry.error) throw error;
-      allSales = retry.data || [];
-    } else {
-      allSales = data || [];
-    }
-
-    body.replaceChildren();
-
-    if (!allSales.length) {
-      const row = body.insertRow();
-      cell(row, "No sales records found.").colSpan = 6;
-    } else {
-      allSales.forEach(sale => {
-        const row = body.insertRow();
-        cell(row, sale.receipt_number || sale.receipt_no || sale.id || "—");
-        cell(row, sale.customer_name || sale.customer_id || "Walk-in customer");
-        cell(row, money(sale.total_amount ?? sale.total ?? sale.grand_total));
-        cell(row, sale.payment_method || "—");
-        cell(row, sale.payment_status || "—");
-        cell(row, formatDate(sale.sales_date || sale.created_at));
-      });
-    }
-
-    say("sales-status", "Loaded " + allSales.length + " sales record(s).", "success");
-  } catch (error) {
-    console.error("Sales error:", error);
-    body.replaceChildren();
-    const row = body.insertRow();
-    cell(row, "Could not load sales: " + error.message).colSpan = 6;
-    say("sales-status", "Check your sales table's date and total columns: " + error.message, "error");
-  } finally {
-    $("refresh-sales").disabled = false;
-  }
-}
-
-$("refresh-sales").addEventListener("click", loadSales);
-
-/* DASHBOARD SUMMARY */
-async function loadOverview() {
-  if (!ownerUser) return;
-
-  say("overview-message", "Refreshing dashboard...");
-  try {
-    const [productsResult, ordersResult, salesResult] = await Promise.all([
-      withTimeout(db.from("products").select("*", { count: "exact", head: true })),
-      withTimeout(db.from("orders").select("*", { count: "exact", head: true })),
-      withTimeout(db.from("sales").select("*", { count: "exact", head: true }))
-    ]);
-
-    $("product-count").textContent =
-      productsResult.error ? "—" : String(productsResult.count ?? 0);
-    $("order-count").textContent =
-      ordersResult.error ? "—" : String(ordersResult.count ?? 0);
-    $("sales-count").textContent =
-      salesResult.error ? "—" : String(salesResult.count ?? 0);
-
-    const pendingResult = await withTimeout(
-      db.from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("order_status", "awaiting confirmation")
-    );
-
-    $("pending-count").textContent =
-      pendingResult.error ? "—" : String(pendingResult.count ?? 0);
-
-    const errors = [
-      productsResult.error && "products",
-      ordersResult.error && "orders",
-      salesResult.error && "sales",
-      pendingResult.error && "pending orders"
-    ].filter(Boolean);
-
-    say(
-      "overview-message",
-      errors.length
-        ? "Dashboard partly loaded. Check table permissions for: " + errors.join(", ")
-        : "Dashboard connected successfully. Your records are ready.",
-      errors.length ? "error" : "success"
-    );
-  } catch (error) {
-    console.error("Dashboard error:", error);
-    say("overview-message", "Could not load dashboard: " + error.message, "error");
-  }
-}
-
-$("refresh-all").addEventListener("click", async () => {
-  await loadOverview();
-  await loadOrders();
-  await loadProducts();
-  await loadSales();
-});
-
-/* RESTORE AN EXISTING SUPABASE SESSION */
-(async function restoreSession() {
-  try {
-    const { data, error } = await withTimeout(db.auth.getSession());
-    if (error) throw error;
-
-    if (data.session && data.session.user) {
-      ownerUser = data.session.user;
-      $("login-section").classList.add("hidden");
-      $("dashboard").classList.remove("hidden");
-      $("logout-button").classList.remove("hidden");
-      await loadOverview();
-    }
-  } catch (error) {
-    console.error("Session restore error:", error);
-    say("login-message", "Please sign in again: " + error.message, "error");
-  }
-})();
-</script>
+  <!-- Load the separate owner JavaScript file -->
+  <script src="owner.js"></script>
 
 </body>
 </html>
