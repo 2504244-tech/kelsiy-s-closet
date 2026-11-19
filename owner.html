@@ -597,7 +597,7 @@ async function loadReport(){
 
   rows.forEach(s=>{
    const r=tbody.insertRow();
-   cell(r,s.receipt_number);
+   cell(r, String(s.receipt_number || "").startsWith("KC-") ? s.receipt_number : "KC-" + s.receipt_number);
    cell(r,formatDate(s.sale_date));
    cell(r,s.payment_method);
    cell(r,money(s.total));
@@ -650,8 +650,29 @@ async function loadCustomerOrders() {
    const paymentCell=cell(r,"");paymentCell.textContent=(order.payment_status||"unpaid").replaceAll("_"," ")+" · "+(order.payment_method||"Not specified");
    const orderCell=cell(r,order.order_status||"new");
    const actions=cell(r,"");
-   const pay=document.createElement("button");pay.type="button";pay.className="small";pay.textContent="CONFIRM PAYMENT";pay.disabled=["paid","paid_simulated","confirmed"].includes(String(order.payment_status||"").toLowerCase());
-   pay.onclick=async()=>{if(!confirm("Confirm that payment has been received/verified for this order? For simulated M-Pesa, this only updates the system record."))return;await updateCustomerOrder(order.id,{payment_status:"confirmed"},"Payment confirmed.");};
+   const pay=document.createElement("button");pay.type="button";pay.className="small";pay.textContent="CONFIRM PAYMENT";pay.disabled=["paid","confirmed"].includes(String(order.payment_status||"").toLowerCase());
+   pay.onclick=async()=>{
+    if(!confirm("Confirm that you have actually received and verified this customer's payment? This will record the sale and update stock. Continue?"))return;
+    pay.disabled=true;
+    try{
+     const items=Array.isArray(order.order_items)?order.order_items:[];
+     if(!items.length)throw new Error("This order has no saved item details, so it cannot be recorded as a sale.");
+     if(!items.every(i=>i.product_id && Number(i.quantity)>0))throw new Error("The order is missing product IDs or valid quantities.");
+     const method=String(order.payment_method||"").toLowerCase().includes("mpesa")?"mpesa":"cash";
+     const {data:sale,error:saleError}=await withTimeout(db.rpc("record_sale",{p_items:items.map(i=>({product_id:i.product_id,quantity:Number(i.quantity)})),p_payment_method:method}));
+     if(saleError)throw saleError;
+     if(!sale||sale.receipt_number==null)throw new Error("Sale was not confirmed because no receipt number was returned. Check Sales before retrying.");
+     const salesReceipt=String(sale.receipt_number).startsWith("KC-")?String(sale.receipt_number):"KC-"+sale.receipt_number;
+     const {error:updateError}=await withTimeout(db.from("customer_orders").update({payment_status:"paid",sales_receipt_number:salesReceipt}).eq("id",order.id));
+     if(updateError)throw new Error("Sale was recorded as "+salesReceipt+", but the order status could not be updated. Check Sales before retrying. "+updateError.message);
+     say("orders-status","Payment confirmed. Sale receipt "+salesReceipt+" has been added to Sales Reports.");
+     await loadCustomerOrders();
+     await loadReport();
+     await loadProducts();
+     populateProducts();
+    }catch(error){console.error("Payment confirmation failed:",error);say("orders-status","Could not confirm payment: "+error.message);}
+    finally{pay.disabled=false;}
+   };
    const status=document.createElement("select");status.className="small";["new","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v.replaceAll("_"," ");if(v===(order.order_status||"new"))o.selected=true;status.appendChild(o);});
    const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";save.onclick=async()=>updateCustomerOrder(order.id,{order_status:status.value},"Order status updated.");
    actions.append(pay,status,save);
