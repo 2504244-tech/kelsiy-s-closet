@@ -1,1043 +1,803 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kelsey's Closet | Owner Dashboard</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    :root {
-      --burgundy: #701f36;
-      --dark-burgundy: #451321;
-      --cream: #fff8ed;
-      --light-cream: #fffdf8;
-      --gold: #c9a45c;
-      --text: #35252a;
-      --muted: #88777c;
-      --border: #eee2d8;
-      --white: #ffffff;
-      --green: #26734d;
-      --red: #b42335;
-      --shadow: 0 8px 28px rgba(69, 19, 33, 0.07);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--cream);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 14px;
-    }
-
-    button, input, select, textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-mark {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      flex-shrink: 0;
-      border-radius: 13px;
-      background: var(--gold);
-      color: var(--dark-burgundy);
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .brand-name {
-      margin: 0;
-      color: var(--dark-burgundy);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 19px;
-    }
-
-    .brand-subtitle {
-      margin: 5px 0 0;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    /* Login */
-
-    #login-section {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background:
-        radial-gradient(circle at top right, #f2dfc4 0, transparent 38%),
-        var(--cream);
-    }
-
-    .login-card {
-      width: 100%;
-      max-width: 430px;
-      padding: 34px;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      background: var(--white);
-      box-shadow: var(--shadow);
-    }
-
-    .login-brand {
-      justify-content: center;
-      margin-bottom: 30px;
-    }
-
-    .login-heading {
-      margin: 0 0 8px;
-      color: var(--dark-burgundy);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 28px;
-      text-align: center;
-    }
-
-    .login-description {
-      margin: 0 0 26px;
-      color: var(--muted);
-      line-height: 1.6;
-      text-align: center;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 17px;
-    }
-
-    .field label {
-      color: var(--dark-burgundy);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .field input,
-    .field select,
-    .field textarea,
-    .toolbar input,
-    .toolbar select {
-      width: 100%;
-      min-width: 0;
-      padding: 12px 13px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      outline: none;
-      background: var(--light-cream);
-      color: var(--text);
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus,
-    .toolbar input:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.15);
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 40px;
-      padding: 10px 15px;
-      border: 1px solid transparent;
-      border-radius: 10px;
-      font-weight: 700;
-      transition: 0.2s ease;
-    }
-
-    .btn-primary {
-      background: var(--burgundy);
-      color: var(--white);
-    }
-
-    .btn-primary:hover {
-      background: var(--dark-burgundy);
-    }
-
-    .btn-secondary {
-      border-color: var(--border);
-      background: var(--white);
-      color: var(--burgundy);
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--gold);
-      background: var(--cream);
-    }
-
-    .btn-gold {
-      background: var(--gold);
-      color: var(--dark-burgundy);
-    }
-
-    .btn-danger {
-      border-color: #f2c9cf;
-      background: #fff1f2;
-      color: var(--red);
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    .message {
-      margin: 14px 0 0;
-      padding: 11px 12px;
-      border-radius: 9px;
-      background: var(--cream);
-      color: var(--dark-burgundy);
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-    }
-
-    /* Dashboard layout */
-
-    #dashboard {
-      min-height: 100vh;
-    }
-
-    .app-layout {
-      display: grid;
-      grid-template-columns: 245px minmax(0, 1fr);
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
-      padding: 25px 17px;
-      background: var(--white);
-      border-right: 1px solid var(--border);
-    }
-
-    .sidebar .brand {
-      padding: 0 7px;
-    }
-
-    .nav-heading {
-      margin: 0 10px 10px;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    nav {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    nav [data-view] {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      padding: 13px 12px;
-      border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: #6e5960;
-      text-align: left;
-      font-weight: 600;
-    }
-
-    nav [data-view]:hover {
-      background: var(--cream);
-      color: var(--burgundy);
-    }
-
-    nav [data-view].active {
-      background: var(--burgundy);
-      color: var(--white);
-    }
-
-    .nav-icon {
-      width: 23px;
-      font-size: 17px;
-      text-align: center;
-    }
-
-    .sidebar-bottom {
-      margin-top: auto;
-      padding: 16px 10px 0;
-      border-top: 1px solid var(--border);
-    }
-
-    .sidebar-bottom p {
-      margin: 0 0 13px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .main-area {
-      min-width: 0;
-      padding: 25px 30px 40px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      margin-bottom: 30px;
-      padding-bottom: 19px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .topbar h1 {
-      margin: 0;
-      color: var(--dark-burgundy);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 25px;
-    }
-
-    .topbar p {
-      margin: 7px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .owner-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--white);
-    }
-
-    .owner-avatar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      background: var(--gold);
-      color: var(--dark-burgundy);
-      font-weight: 800;
-    }
-
-    .owner-label strong {
-      display: block;
-      font-size: 12px;
-    }
-
-    .owner-label small {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .view {
-      display: none;
-    }
-
-    .view.active {
-      display: block;
-    }
-
-    .page-intro {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 23px;
-    }
-
-    .page-intro h2 {
-      margin: 0;
-      color: var(--dark-burgundy);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 23px;
-    }
-
-    .page-intro p {
-      margin: 7px 0 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* Overview cards */
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .stat {
-      position: relative;
-      overflow: hidden;
-      padding: 20px;
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      background: var(--white);
-      box-shadow: 0 4px 14px rgba(69, 19, 33, 0.035);
-    }
-
-    .stat::after {
-      position: absolute;
-      right: -18px;
-      bottom: -24px;
-      width: 75px;
-      height: 75px;
-      border-radius: 50%;
-      background: rgba(201, 164, 92, 0.12);
-      content: "";
-    }
-
-    .stat-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .stat-label {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .stat-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 35px;
-      height: 35px;
-      border-radius: 10px;
-      background: var(--cream);
-      color: var(--burgundy);
-      font-size: 17px;
-    }
-
-    .stat h3 {
-      margin: 18px 0 5px;
-      color: var(--dark-burgundy);
-      font-size: 27px;
-    }
-
-    .stat p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    /* Panels and tables */
-
-    .panel {
-      min-width: 0;
-      margin-bottom: 22px;
-      padding: 21px;
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      background: var(--white);
-      box-shadow: 0 4px 14px rgba(69, 19, 33, 0.035);
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .panel-header h3 {
-      margin: 0;
-      color: var(--dark-burgundy);
-      font-size: 16px;
-    }
-
-    .panel-header p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 17px;
-    }
-
-    .toolbar input {
-      flex: 1 1 200px;
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 11px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--white);
-      text-align: left;
-    }
-
-    th {
-      padding: 14px 13px;
-      background: #fbf1e6;
-      color: var(--dark-burgundy);
-      font-size: 11px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 13px;
-      border-top: 1px solid #f2e9e1;
-      color: var(--text);
-      font-size: 12px;
-      vertical-align: middle;
-    }
-
-    tbody tr:hover {
-      background: #fffdf9;
-    }
-
-    td img {
-      width: 48px;
-      height: 55px;
-      border-radius: 7px;
-      object-fit: cover;
-    }
-
-    td button {
-      margin: 2px;
-    }
-
-    .empty-state {
-      padding: 30px 15px;
-      color: var(--muted);
-      text-align: center;
-    }
-
-    .small-note {
-      margin-top: 13px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.6;
-    }
-
-    .status-dot {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      margin-right: 6px;
-      border-radius: 50%;
-      background: var(--gold);
-    }
-
-    .footer {
-      margin-top: 30px;
-      color: var(--muted);
-      font-size: 11px;
-      text-align: center;
-    }
-
-    @media (max-width: 1100px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .main-area {
-        padding: 22px;
-      }
-    }
-
-    @media (max-width: 760px) {
-      .app-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        gap: 16px;
-        padding: 15px;
-        border-right: 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .sidebar nav {
-        flex-direction: row;
-        overflow-x: auto;
-        padding-bottom: 3px;
-      }
-
-      nav [data-view] {
-        flex: 0 0 auto;
-        width: auto;
-        padding: 10px 12px;
-        font-size: 12px;
-      }
-
-      .nav-heading,
-      .sidebar-bottom {
-        display: none;
-      }
-
-      .main-area {
-        padding: 18px 13px 30px;
-      }
-
-      .topbar {
-        align-items: flex-start;
-      }
-
-      .topbar h1 {
-        font-size: 21px;
-      }
-
-      .owner-label {
-        padding: 6px;
-      }
-
-      .owner-label div:last-child {
-        display: none;
-      }
-
-      .stats-grid {
-        gap: 10px;
-      }
-
-      .stat {
-        padding: 15px;
-      }
-
-      .stat h3 {
-        font-size: 23px;
-      }
-
-      .panel {
-        padding: 14px;
-      }
-
-      .login-card {
-        padding: 25px 20px;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .brand-name {
-        font-size: 17px;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kelsiy's Closet | Owner Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
+*{box-sizing:border-box}
+body{margin:0;background:var(--c);color:#292126;font:16px Arial,sans-serif}
+header,footer{background:var(--d);color:white;padding:20px 5%}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:4px solid var(--g)}
+header h1{margin:0;color:white}
+header p{color:#e9c88e;margin-bottom:0}
+h1,h2{color:var(--b)}
+button{padding:11px 14px;background:var(--b);color:white;border:1px solid var(--g);border-radius:5px;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6;cursor:wait}
+main{width:94%;max-width:1250px;margin:25px auto;min-height:60vh}
+.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px}
+nav,.panel{background:white;padding:18px;border:1px solid #eadbd5;border-radius:8px;margin-bottom:16px}
+nav button{display:block;width:100%;text-align:left;margin:5px 0}
+[hidden]{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
+.stat{background:#fffaf5;border-top:4px solid var(--g);padding:14px;overflow-wrap:anywhere}
+.stat strong{display:block;color:var(--b);font-size:22px;margin-top:8px}
+.field{display:grid;gap:6px;margin:10px 0}
+label{font-weight:bold;color:var(--d)}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d9c8c4;border-radius:5px;font:inherit}
+textarea{min-height:75px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
+.table-wrap{overflow-x:auto}
+table{width:100%;min-width:500px;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
+th{background:#f5e9e2}
+.photo{width:50px;height:60px;object-fit:cover}
+.small{padding:7px;margin:2px;font-size:13px}
+.delete{background:#a21b2d}
+.status{overflow-wrap:anywhere;white-space:pre-wrap}
+#sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
+footer{text-align:center;border-top:4px solid var(--g)}
+@media(max-width:700px){
+ .layout{grid-template-columns:1fr}
+ nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ nav button{margin:0}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:450px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
-
 <body>
+<header>
+ <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
+ <button id="sign-out" type="button">SIGN OUT</button>
+</header>
 
-  <!-- OWNER SIGN-IN -->
-  <section id="login-section">
-    <div class="login-card">
-      <div class="brand login-brand">
-        <div class="brand-mark">K</div>
-        <div>
-          <h1 class="brand-name">Kelsey's Closet</h1>
-          <p class="brand-subtitle">Owner management</p>
-        </div>
-      </div>
+<main>
+<h1>Owner's Dashboard</h1>
+<p>Manage products, stock, sales and customer messages.</p>
+<p id="status" class="status" role="status">Connecting to Supabase...</p>
 
-      <h2 class="login-heading">Welcome back</h2>
-      <p class="login-description">
-        Sign in to manage your products, customer orders, inventory and sales.
-      </p>
+<div class="layout">
+<nav>
+ <button type="button" data-section="home">HOME</button>
+ <button type="button" data-section="inventory">INVENTORY</button>
+ <button type="button" data-section="sales">SALES</button>
+ <button type="button" data-section="reports">SALES REPORTS</button>
+ <button type="button" data-section="messages">MESSAGES</button>
+</nav>
 
-      <form id="login-form">
-        <div class="field">
-          <label for="login-email">Email address</label>
-          <input
-            id="login-email"
-            type="email"
-            placeholder="Enter your owner email"
-            autocomplete="username"
-            required
-          >
-        </div>
+<div>
+<section class="panel" data-panel="home">
+ <h2>Business Overview</h2>
+ <div class="stats">
+  <div class="stat">Active Products<strong id="stat-products">0</strong></div>
+  <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
+  <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
+ </div>
+ <button type="button" data-go="inventory">MANAGE INVENTORY</button>
+</section>
 
-        <div class="field">
-          <label for="login-password">Password</label>
-          <input
-            id="login-password"
-            type="password"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
-        </div>
+<section class="panel" data-panel="inventory" hidden>
+<h2>Product Inventory</h2>
+<form id="product-form">
+<input type="hidden" id="product-id">
+<div class="grid">
+ <div class="field"><label for="product-name">Product name *</label><input id="product-name" required></div>
+ <div class="field"><label for="product-category">Category *</label>
+ <select id="product-category">
+ <option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option>
+ </select></div>
+ <div class="field"><label for="product-price">Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
+ <div class="field"><label for="product-stock">Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
+ <div class="field"><label for="product-size">Size</label><input id="product-size" placeholder="S, M, L, XL"></div>
+ <div class="field"><label for="product-colour">Color</label><input id="product-colour" placeholder="Black"></div>
+ <div class="field"><label for="product-image">Image URL or path</label><input id="product-image" placeholder="images/dress.jpg"></div>
+ <div class="field"><label for="product-description">Description</label><textarea id="product-description"></textarea></div>
+</div>
+<div class="actions">
+ <button id="save-button" type="submit">SAVE PRODUCT</button>
+ <button id="cancel-edit" type="button" hidden>CANCEL EDIT</button>
+</div>
+</form>
+<p id="product-status" class="status" role="status"></p>
+<h2>Saved Products</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Photo</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+<tbody id="inventory-table"></tbody>
+</table></div>
+</section>
 
-        <button id="login-button" class="btn btn-primary full-width" type="submit">
-          Sign in to dashboard
-        </button>
+<section class="panel" data-panel="sales" hidden>
+<h2>Record a Sale</h2>
+<div class="grid">
+ <div class="field"><label for="sales-product">Product</label><select id="sales-product"></select></div>
+ <div class="field"><label for="sales-quantity">Quantity</label><input id="sales-quantity" type="number" min="1" step="1" value="1"></div>
+</div>
+<button id="add-sale-item" type="button">ADD TO SALE</button>
+<h2>Sale Items</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th><th>Action</th></tr></thead>
+<tbody id="sales-cart-body"></tbody>
+</table></div>
+<p><strong>Total: <span id="sales-total">KES 0</span></strong></p>
+<div class="field"><label for="sales-payment">Payment method</label>
+<select id="sales-payment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select></div>
+<button id="record-sale-button" type="button">RECORD SALE</button>
+<p id="sales-status" class="status" role="status">Ready.</p>
+<div id="sale-receipt" hidden></div>
+</section>
 
-        <p id="login-message" class="message hidden" role="status" aria-live="polite"></p>
-      </form>
-    </div>
-  </section>
+<section class="panel" data-panel="reports" hidden>
+<h2>Sales Reports</h2>
+<div class="grid">
+ <div class="field"><label for="report-start">Start date</label><input id="report-start" type="date"></div>
+ <div class="field"><label for="report-end">End date</label><input id="report-end" type="date"></div>
+</div>
+<div class="actions">
+ <button id="apply-report-filter" type="button">APPLY DATES</button>
+ <button id="clear-report-filter" type="button">SHOW ALL</button>
+ <button id="refresh-report" type="button">REFRESH</button>
+</div>
+<p id="report-status" class="status" role="status">Open Sales Reports to load transactions.</p>
+<div class="stats">
+ <div class="stat">Revenue<strong id="report-revenue">KES 0</strong></div>
+ <div class="stat">Transactions<strong id="report-count">0</strong></div>
+ <div class="stat">Average Sale<strong id="report-average">KES 0</strong></div>
+ <div class="stat">Cash<strong id="report-cash">KES 0</strong></div>
+ <div class="stat">M-Pesa<strong id="report-mpesa">KES 0</strong></div>
+ <div class="stat">Other Payments<strong id="report-other">KES 0</strong></div>
+</div>
+<h2>Sales History</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Receipt</th><th>Date and Time</th><th>Payment</th><th>Total</th></tr></thead>
+<tbody id="report-table"></tbody>
+</table></div>
+</section>
 
-  <!-- OWNER DASHBOARD -->
-  <div id="dashboard" class="hidden">
-    <div class="app-layout">
+<section class="panel" data-panel="messages" hidden>
+<h2>Customer Messages</h2>
+<p>View, reply to, and manage messages sent by your customers.</p>
+<button id="refresh-messages" type="button">REFRESH MESSAGES</button>
+<p id="messages-status" class="status" role="status">Open Messages to load messages.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Customer</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="messages-table"></tbody>
+</table></div>
+</section>
+</div>
+</div>
+</main>
 
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">K</div>
-          <div>
-            <h2 class="brand-name">Kelsey's Closet</h2>
-            <p class="brand-subtitle">Management system</p>
-          </div>
-        </div>
+<footer>
+<strong>KELSIY'S CLOSET</strong>
+<p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p>
+<p>© <span id="year"></span></p>
+</footer>
 
-        <div>
-          <p class="nav-heading">Main menu</p>
+<script>
+"use strict";
 
-          <nav aria-label="Dashboard navigation">
-            <button type="button" class="active" data-view="overview">
-              <span class="nav-icon">⌂</span>
-              Overview
-            </button>
+const SUPABASE_URL="https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const SUPABASE_KEY="sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
-            <button type="button" data-view="orders">
-              <span class="nav-icon">▤</span>
-              Customer orders
-            </button>
+const el=id=>document.getElementById(id);
+const say=(id,message)=>{if(el(id))el(id).textContent=message};
+const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
 
-            <button type="button" data-view="inventory">
-              <span class="nav-icon">▦</span>
-              Inventory
-            </button>
+let db=null,ownerUser=null,products=[],cart=[],busy=false;
+el("year").textContent=new Date().getFullYear();
 
-            <button type="button" data-view="sales">
-              <span class="nav-icon">▥</span>
-              Sales records
-            </button>
-          </nav>
-        </div>
+function cell(row,value){
+ const td=document.createElement("td");
+ td.textContent=value==null?"":String(value);
+ row.appendChild(td);
+ return td;
+}
 
-        <div class="sidebar-bottom">
-          <p>
-            Keep your stock organised and stay up to date with customer orders.
-          </p>
-          <button id="logout-button" type="button" class="btn btn-secondary full-width">
-            ↪ Sign out
-          </button>
-        </div>
-      </aside>
+function withTimeout(promise,ms=15000){
+ return Promise.race([
+  promise,
+  new Promise((_,reject)=>setTimeout(()=>reject(
+   new Error("Request timed out. Check your internet connection and Supabase status.")
+  ),ms))
+ ]);
+}
 
-      <main class="main-area">
-        <header class="topbar">
-          <div>
-            <h1>Owner Management Dashboard</h1>
-            <p>Manage your boutique from one place.</p>
-          </div>
+function showSection(name){
+ document.querySelectorAll("[data-panel]").forEach(panel=>{
+  panel.hidden=panel.dataset.panel!==name;
+ });
+ if(name==="inventory")loadProducts();
+ if(name==="sales")loadSalesProducts();
+ if(name==="reports")loadReport();
+ if(name==="messages")loadMessages();
+}
 
-          <div class="owner-label">
-            <div class="owner-avatar">K</div>
-            <div>
-              <strong>Store Owner</strong>
-              <small><span class="status-dot"></span>Management portal</small>
-            </div>
-          </div>
-        </header>
+document.querySelectorAll("[data-section]").forEach(button=>{
+ button.addEventListener("click",()=>showSection(button.dataset.section));
+});
+document.querySelectorAll("[data-go]").forEach(button=>{
+ button.addEventListener("click",()=>showSection(button.dataset.go));
+});
 
-        <!-- OVERVIEW -->
-        <section id="view-overview" class="view active">
-          <div class="page-intro">
-            <div>
-              <h2>Store overview</h2>
-              <p>Here's a summary of your store activity.</p>
-            </div>
+el("sign-out").onclick=async()=>{
+ try{if(db)await db.auth.signOut()}catch(error){console.error(error)}
+ window.location.replace("index.html");
+};
 
-            <button id="refresh-all" type="button" class="btn btn-secondary">
-              ↻ Refresh dashboard
-            </button>
-          </div>
+function updateStats(){
+ const active=products.filter(p=>p.active!==false);
+ say("stat-products",active.length);
+ say("stat-stock",active.reduce((sum,p)=>sum+Number(p.stock||0),0));
+ say("stat-empty",active.filter(p=>Number(p.stock)<=0).length);
+}
 
-          <div class="stats-grid">
-            <article class="stat">
-              <div class="stat-top">
-                <span class="stat-label">Products</span>
-                <span class="stat-icon">♧</span>
-              </div>
-              <h3 id="product-count">—</h3>
-              <p>Products in inventory</p>
-            </article>
+function clearForm(){
+ el("product-form").reset();
+ el("product-id").value="";
+ el("save-button").textContent="SAVE PRODUCT";
+ el("cancel-edit").hidden=true;
+}
+el("cancel-edit").onclick=clearForm;
 
-            <article class="stat">
-              <div class="stat-top">
-                <span class="stat-label">Customer orders</span>
-                <span class="stat-icon">▤</span>
-              </div>
-              <h3 id="order-count">—</h3>
-              <p>Orders recorded</p>
-            </article>
+async function loadProducts(){
+ say("product-status","Loading products...");
+ try{
+  const {data,error}=await withTimeout(
+   db.from("products")
+    .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
+    .order("created_at",{ascending:false})
+  );
+  if(error)throw error;
+  products=data||[];
+  updateStats();
 
-            <article class="stat">
-              <div class="stat-top">
-                <span class="stat-label">Pending orders</span>
-                <span class="stat-icon">◷</span>
-              </div>
-              <h3 id="pending-count">—</h3>
-              <p>Orders awaiting action</p>
-            </article>
+  const tbody=el("inventory-table");
+  tbody.replaceChildren();
 
-            <article class="stat">
-              <div class="stat-top">
-                <span class="stat-label">Sales records</span>
-                <span class="stat-icon">▥</span>
-              </div>
-              <h3 id="sales-count">—</h3>
-              <p>Recorded sales transactions</p>
-            </article>
-          </div>
+  if(!products.length){
+   const r=tbody.insertRow();
+   cell(r,"No products yet.").colSpan=6;
+  }
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Store management</h3>
-                <p>Choose a section to manage your business.</p>
-              </div>
-            </div>
+  products.forEach(p=>{
+   const r=tbody.insertRow();
+   const photo=cell(r,"");
 
-            <div class="toolbar">
-              <button type="button" class="btn btn-primary" data-view="orders">
-                View customer orders
-              </button>
+   if(p.image_url){
+    const img=document.createElement("img");
+    img.className="photo";
+    img.src=p.image_url;
+    img.alt=p.name;
+    img.onerror=()=>{img.remove();photo.textContent="No photo"};
+    photo.appendChild(img);
+   }else{
+    photo.textContent="No photo";
+   }
 
-              <button type="button" class="btn btn-secondary" data-view="inventory">
-                Manage inventory
-              </button>
+   cell(r,p.name);
+   cell(r,p.category);
+   cell(r,money(p.price));
+   cell(r,p.stock);
 
-              <button type="button" class="btn btn-secondary" data-view="sales">
-                View sales records
-              </button>
-            </div>
+   const actions=cell(r,"");
+   const edit=document.createElement("button");
+   edit.type="button";
+   edit.className="small";
+   edit.textContent="Edit";
+   edit.onclick=()=>editProduct(p);
 
-            <p id="overview-message" class="message hidden" role="status" aria-live="polite"></p>
-          </div>
-        </section>
+   const del=document.createElement("button");
+   del.type="button";
+   del.className="small delete";
+   del.textContent="Delete";
+   del.onclick=()=>deleteProduct(p);
 
-        <!-- CUSTOMER ORDERS -->
-        <section id="view-orders" class="view">
-          <div class="page-intro">
-            <div>
-              <h2>Customer orders</h2>
-              <p>Review online orders, payment details and fulfilment information.</p>
-            </div>
+   actions.append(edit,del);
+  });
 
-            <button id="refresh-orders" type="button" class="btn btn-secondary">
-              ↻ Refresh orders
-            </button>
-          </div>
+  say("product-status","Products loaded: "+products.length);
+  return true;
+ }catch(error){
+  say("product-status","Could not load products: "+error.message);
+  return false;
+ }
+}
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Order management</h3>
-                <p>Check each order before updating its status.</p>
-              </div>
-            </div>
+function populateProducts(){
+ const select=el("sales-product");
+ select.replaceChildren();
+ select.add(new Option("Choose a product",""));
+ products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>{
+  select.add(new Option(
+   `${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id
+  ));
+ });
+}
 
-            <div class="toolbar">
-              <input
-                id="order-search"
-                type="search"
-                placeholder="Search by customer, email or order ID..."
-                aria-label="Search customer orders"
-              >
-            </div>
+async function loadSalesProducts(){
+ if(!await loadProducts()){
+  say("sales-status","Products could not load.");
+  return;
+ }
+ populateProducts();
+ renderCart();
+ say("sales-status","Products loaded.");
+}
 
-            <p id="orders-status" class="message hidden" role="status" aria-live="polite"></p>
+function renderCart(){
+ const tbody=el("sales-cart-body");
+ tbody.replaceChildren();
+ let total=0;
 
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Order</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Payment</th>
-                    <th>Fulfilment</th>
-                    <th>Order status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="orders-table">
-                  <tr>
-                    <td colspan="8" class="empty-state">
-                      Sign in to load customer orders.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+ if(!cart.length){
+  const r=tbody.insertRow();
+  cell(r,"No items added.").colSpan=5;
+ }
 
-        <!-- INVENTORY -->
-        <section id="view-inventory" class="view">
-          <div class="page-intro">
-            <div>
-              <h2>Inventory management</h2>
-              <p>Add products, update stock and manage your product catalogue.</p>
-            </div>
+ cart.forEach(item=>{
+  const p=products.find(x=>x.id===item.product_id);
+  if(!p)return;
 
-            <button id="refresh-products" type="button" class="btn btn-secondary">
-              ↻ Refresh inventory
-            </button>
-          </div>
+  const subtotal=Number(p.price)*item.quantity;
+  total+=subtotal;
+  const r=tbody.insertRow();
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Your products</h3>
-                <p>Product images, prices, sizes, colours and stock levels.</p>
-              </div>
-            </div>
+  cell(r,p.name);
+  cell(r,item.quantity);
+  cell(r,money(p.price));
+  cell(r,money(subtotal));
 
-            <div class="toolbar">
-              <input
-                id="product-search"
-                type="search"
-                placeholder="Search products by name or category..."
-                aria-label="Search inventory"
-              >
-            </div>
+  const action=cell(r,"");
+  const remove=document.createElement("button");
+  remove.type="button";
+  remove.className="small delete";
+  remove.textContent="Remove";
+  remove.onclick=()=>{
+   cart=cart.filter(x=>x.product_id!==item.product_id);
+   renderCart();
+  };
+  action.appendChild(remove);
+ });
+ say("sales-total",money(total));
+}
 
-            <p id="inventory-status" class="message hidden" role="status" aria-live="polite"></p>
+el("add-sale-item").onclick=()=>{
+ const id=el("sales-product").value;
+ const quantity=Number(el("sales-quantity").value);
+ const p=products.find(x=>x.id===id);
 
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Details / Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="products-table">
-                  <tr>
-                    <td colspan="4" class="empty-state">
-                      Sign in to load inventory.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+ if(!p||p.active===false)return say("sales-status","Choose an active product.");
+ if(!Number.isInteger(quantity)||quantity<1)
+  return say("sales-status","Enter a valid whole-number quantity.");
 
-            <p class="small-note">
-              Keep product prices and available quantities accurate so customers
-              can shop using the correct stock information.
-            </p>
-          </div>
-        </section>
+ const old=cart.find(x=>x.product_id===id);
+ if((old?old.quantity:0)+quantity>Number(p.stock))
+  return say("sales-status","Not enough stock available.");
 
-        <!-- SALES -->
-        <section id="view-sales" class="view">
-          <div class="page-intro">
-            <div>
-              <h2>Sales records</h2>
-              <p>Review recorded transactions and payment methods.</p>
-            </div>
+ if(old)old.quantity+=quantity;
+ else cart.push({product_id:id,quantity});
 
-            <button id="refresh-sales" type="button" class="btn btn-secondary">
-              ↻ Refresh sales
-            </button>
-          </div>
+ renderCart();
+ say("sales-status",p.name+" added.");
+ el("sales-quantity").value=1;
+};
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Sales history</h3>
-                <p>Transactions saved in your sales records.</p>
-              </div>
-            </div>
+el("record-sale-button").onclick=async()=>{
+ if(busy)return;
+ if(!ownerUser)return say("sales-status","Please sign in again.");
+ if(!cart.length)return say("sales-status","Add products first.");
 
-            <p id="sales-status" class="message hidden" role="status" aria-live="polite"></p>
+ const payment=el("sales-payment").value;
+ busy=true;
+ el("record-sale-button").disabled=true;
+ say("sales-status","Recording sale...");
 
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Receipt</th>
-                    <th>Customer</th>
-                    <th>Total</th>
-                    <th>Payment method</th>
-                    <th>Sale date</th>
-                    <th>Recorded by</th>
-                  </tr>
-                </thead>
-                <tbody id="sales-table">
-                  <tr>
-                    <td colspan="6" class="empty-state">
-                      Sign in to load sales records.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+ try{
+  const {data,error}=await withTimeout(
+   db.rpc("record_sale",{
+    p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),
+    p_payment_method:payment
+   })
+  );
 
-        <footer class="footer">
-          Kelsey's Closet · Inventory and Sales Management System
-        </footer>
-      </main>
-    </div>
-  </div>
+  if(error)throw error;
+  if(!data||data.receipt_number==null)
+   throw new Error("No receipt number returned. Check Supabase before retrying.");
 
-  <!-- Load the separate owner JavaScript file -->
-  <script src="owner.js"></script>
+  cart=[];
+  renderCart();
 
+  const box=el("sale-receipt");
+  box.replaceChildren();
+  box.hidden=false;
+
+  const h=document.createElement("h3");
+  h.textContent="Sale recorded successfully";
+  box.appendChild(h);
+
+  [
+   "Receipt number: "+data.receipt_number,
+   "Total: "+money(data.total),
+   "Payment: "+(payment==="mpesa"?"M-Pesa":"Cash")
+  ].forEach(t=>{
+   const p=document.createElement("p");
+   p.textContent=t;
+   box.appendChild(p);
+  });
+
+  say("sales-status","Sale saved. Stock updated.");
+  await loadProducts();
+  populateProducts();
+ }catch(error){
+  console.error(error);
+  say("sales-status","Sale was not confirmed: "+error.message+
+   ". Check Supabase before retrying.");
+ }finally{
+  busy=false;
+  el("record-sale-button").disabled=false;
+ }
+};
+
+function editProduct(p){
+ el("product-id").value=p.id;
+ el("product-name").value=p.name||"";
+ el("product-category").value=p.category||"Women";
+ el("product-price").value=p.price??"";
+ el("product-stock").value=p.stock??0;
+ el("product-size").value=p.size||"";
+ el("product-colour").value=p.color||"";
+ el("product-image").value=p.image_url||"";
+ el("product-description").value=p.description||"";
+ el("save-button").textContent="UPDATE PRODUCT";
+ el("cancel-edit").hidden=false;
+ el("product-form").scrollIntoView({behavior:"smooth"});
+}
+
+async function deleteProduct(p){
+ if(!confirm('Delete "'+p.name+'" from inventory?'))return;
+ try{
+  const {error}=await db.from("products").delete().eq("id",p.id);
+  if(error)throw error;
+  say("product-status","Product deleted.");
+  await loadProducts();
+  populateProducts();
+ }catch(error){
+  say("product-status","Could not delete: "+error.message);
+ }
+}
+
+el("product-form").onsubmit=async event=>{
+ event.preventDefault();
+ if(!ownerUser)return say("product-status","Please sign in again.");
+
+ const price=Number(el("product-price").value);
+ const stock=Number(el("product-stock").value);
+
+ if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))
+  return say("product-status","Enter a valid price and whole-number stock.");
+
+ const product={
+  name:el("product-name").value.trim(),
+  category:el("product-category").value,
+  price,stock,
+  size:el("product-size").value.trim()||null,
+  color:el("product-colour").value.trim()||null,
+  image_url:el("product-image").value.trim()||null,
+  description:el("product-description").value.trim()||null,
+  active:true
+ };
+
+ if(!product.name)return say("product-status","Enter a product name.");
+
+ const id=el("product-id").value;
+ el("save-button").disabled=true;
+
+ try{
+  const result=id
+   ?await db.from("products").update(product).eq("id",id)
+   :await db.from("products").insert(product);
+
+  if(result.error)throw result.error;
+
+  clearForm();
+  say("product-status",id?"Product updated.":"Product saved.");
+  await loadProducts();
+  populateProducts();
+ }catch(error){
+  say("product-status","Could not save product: "+error.message);
+ }finally{
+  el("save-button").disabled=false;
+ }
+};
+
+/* SALES REPORTS */
+function dateStart(value){
+ if(!value)return null;
+ return new Date(value+"T00:00:00").toISOString();
+}
+function dateEnd(value){
+ if(!value)return null;
+ const d=new Date(value+"T00:00:00");
+ d.setDate(d.getDate()+1);
+ return d.toISOString();
+}
+function formatDate(value){
+ const d=new Date(value);
+ return Number.isNaN(d.getTime())?String(value||""):d.toLocaleString();
+}
+
+async function loadReport(){
+ if(!ownerUser)return;
+
+ const startValue=el("report-start").value;
+ const endValue=el("report-end").value;
+
+ if(startValue&&endValue&&startValue>endValue)
+  return say("report-status","Start date must not be after end date.");
+
+ say("report-status","Loading sales report...");
+ el("refresh-report").disabled=true;
+
+ try{
+  let query=db.from("sales")
+   .select("receipt_number,total,payment_method,sale_date")
+   .order("sale_date",{ascending:false}).limit(1000);
+
+  const start=dateStart(startValue);
+  const end=dateEnd(endValue);
+  if(start)query=query.gte("sale_date",start);
+  if(end)query=query.lt("sale_date",end);
+
+  const {data,error}=await withTimeout(query);
+  if(error)throw error;
+
+  const rows=data||[];
+  let revenue=0,cash=0,mpesa=0,other=0;
+
+  rows.forEach(s=>{
+   const total=Number(s.total)||0;
+   revenue+=total;
+   const method=String(s.payment_method||"").toLowerCase();
+   if(method==="cash")cash+=total;
+   else if(method==="mpesa")mpesa+=total;
+   else other+=total;
+  });
+
+  say("report-revenue",money(revenue));
+  say("report-count",rows.length);
+  say("report-average",money(rows.length?revenue/rows.length:0));
+  say("report-cash",money(cash));
+  say("report-mpesa",money(mpesa));
+  say("report-other",money(other));
+
+  const tbody=el("report-table");
+  tbody.replaceChildren();
+
+  if(!rows.length){
+   const r=tbody.insertRow();
+   cell(r,"No sales found for this period.").colSpan=4;
+  }
+
+  rows.forEach(s=>{
+   const r=tbody.insertRow();
+   cell(r,s.receipt_number);
+   cell(r,formatDate(s.sale_date));
+   cell(r,s.payment_method);
+   cell(r,money(s.total));
+  });
+
+  say("report-status","Report loaded: "+rows.length+" transaction(s)."+
+   (rows.length===1000?" Showing up to 1,000 records.":""));
+ }catch(error){
+  console.error("Report error:",error);
+  say("report-status","Could not load report: "+error.message);
+ }finally{
+  el("refresh-report").disabled=false;
+ }
+}
+
+el("apply-report-filter").onclick=loadReport;
+el("refresh-report").onclick=loadReport;
+el("clear-report-filter").onclick=()=>{
+ el("report-start").value="";
+ el("report-end").value="";
+ loadReport();
+};
+
+/* CUSTOMER MESSAGES */
+async function loadMessages(){
+ if(!ownerUser)return say("messages-status","Please sign in again.");
+
+ say("messages-status","Loading messages...");
+ el("refresh-messages").disabled=true;
+
+ try{
+  const {data,error}=await withTimeout(
+   db.from("messages")
+    .select("id,customer_name,customer_email,subject,message,created_at,is_read,reply,replied_at")
+    .order("created_at",{ascending:false})
+  );
+
+  if(error)throw error;
+
+  const tbody=el("messages-table");
+  tbody.replaceChildren();
+  const rows=data||[];
+
+  if(!rows.length){
+   const r=tbody.insertRow();
+   cell(r,"No customer messages yet.").colSpan=5;
+  }
+
+  rows.forEach(m=>{
+   const r=tbody.insertRow();
+   cell(r,m.customer_name||"Customer");
+
+   const details=cell(r,"");
+   const subject=document.createElement("strong");
+   subject.textContent=m.subject||"No subject";
+
+   const preview=document.createElement("p");
+   const full=m.message||"";
+   preview.textContent=full.length>80?full.slice(0,80)+"…":full;
+   details.append(subject,preview);
+
+   cell(r,formatDate(m.created_at));
+   cell(r,m.is_read?"Read":"Unread");
+
+   const actions=cell(r,"");
+
+   function makeButton(label,fn,extraClass=""){
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="small "+extraClass;
+    button.textContent=label;
+    button.onclick=fn;
+    actions.appendChild(button);
+    return button;
+   }
+
+   // VIEW THE FULL MESSAGE
+   makeButton("View",()=>{
+    alert(
+     "CUSTOMER: "+(m.customer_name||"Customer")+
+     "\nEMAIL: "+(m.customer_email||"Not provided")+
+     "\nSUBJECT: "+(m.subject||"No subject")+
+     "\nDATE: "+formatDate(m.created_at)+
+     "\nSTATUS: "+(m.is_read?"Read":"Unread")+
+     "\n\nMESSAGE:\n"+full+
+     (m.reply?"\n\nYOUR SAVED REPLY:\n"+m.reply:"")
+    );
+   });
+
+   // SAVE OR EDIT YOUR REPLY
+   makeButton(m.reply?"Edit Reply":"Reply",async()=>{
+    const answer=prompt(
+     "Write your reply to "+(m.customer_name||"the customer")+":",
+     m.reply||""
+    );
+
+    if(answer===null)return;
+    if(!answer.trim())return say("messages-status","Please enter a reply.");
+
+    say("messages-status","Saving reply...");
+
+    try{
+     const {error}=await withTimeout(
+      db.from("messages").update({
+       reply:answer.trim(),
+       replied_at:new Date().toISOString()
+      }).eq("id",m.id)
+     );
+
+     if(error)throw error;
+
+     say("messages-status","Reply saved in the database. It has not been emailed to the customer.");
+     await loadMessages();
+    }catch(error){
+     say("messages-status","Could not save reply: "+error.message);
+    }
+   });
+
+   // MARK AS READ
+   if(!m.is_read){
+    makeButton("Mark Read",async()=>{
+     try{
+      const {error}=await withTimeout(
+       db.from("messages").update({is_read:true}).eq("id",m.id)
+      );
+      if(error)throw error;
+      say("messages-status","Message marked as read.");
+      await loadMessages();
+     }catch(error){
+      say("messages-status","Could not mark as read: "+error.message);
+     }
+    });
+   }
+
+   // DELETE MESSAGE
+   makeButton("Delete",async()=>{
+    if(!confirm("Are you sure you want to delete this customer message?"))return;
+
+    try{
+     const {error}=await withTimeout(
+      db.from("messages").delete().eq("id",m.id)
+     );
+     if(error)throw error;
+     say("messages-status","Message deleted.");
+     await loadMessages();
+    }catch(error){
+     say("messages-status","Could not delete message: "+error.message);
+    }
+   },"delete");
+  });
+
+  say("messages-status","Messages loaded: "+rows.length);
+ }catch(error){
+  console.error("Messages error:",error);
+  say("messages-status","Could not load messages: "+error.message+
+   ". Check the messages table and its permissions.");
+ }finally{
+  el("refresh-messages").disabled=false;
+ }
+}
+
+el("refresh-messages").onclick=loadMessages;
+
+/* STARTUP AND LOGIN CHECK */
+async function checkOwner(){
+ try{
+  say("status","Connecting to Supabase...");
+
+  if(!window.supabase)
+   throw new Error("Supabase library did not load. Check your internet connection.");
+
+  const {data,error}=await withTimeout(db.auth.getSession());
+  if(error)throw error;
+
+  if(!data.session){
+   say("status","No active session. Returning to sign-in...");
+   window.location.replace("index.html");
+   return;
+  }
+
+  ownerUser=data.session.user;
+  say("status","Checking owner permissions...");
+
+  const result=await withTimeout(
+   db.from("profiles").select("role").eq("id",ownerUser.id).maybeSingle()
+  );
+  if(result.error)throw result.error;
+
+  if(!result.data||result.data.role!=="owner"){
+   say("status","Owner access not found. Please sign in with the owner account.");
+   await db.auth.signOut();
+   window.location.replace("index.html");
+   return;
+  }
+
+  say("status","Connected! Loading your dashboard...");
+  await loadProducts();
+  showSection("home");
+  say("status","Signed in as owner: "+(ownerUser.email||""));
+
+ }catch(error){
+  console.error("Dashboard startup error:",error);
+  say("status","Dashboard startup error: "+error.message);
+ }
+}
+
+try{
+ db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ checkOwner();
+}catch(error){
+ console.error(error);
+ say("status","Could not start Supabase: "+error.message);
+}
+</script>
 </body>
 </html>
