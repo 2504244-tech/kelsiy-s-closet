@@ -532,7 +532,7 @@ function updateCheckoutFields() {
   const isDelivery = receivingMethod?.value === "delivery";
   if (deliveryAddressWrap) deliveryAddressWrap.hidden = !isDelivery;
   if (deliveryAddressInput) deliveryAddressInput.required = isDelivery;
-  const useMpesa = checkoutPaymentMethod?.value === "simulated_mpesa";
+  const useMpesa = checkoutPaymentMethod?.value === "mpesa";
   if (mpesaWrap) mpesaWrap.hidden = !useMpesa;
   if (mpesaPhoneInput) mpesaPhoneInput.required = useMpesa;
   const total = document.getElementById("checkout-order-total");
@@ -583,7 +583,7 @@ if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
   if (!validKenyanPhone(phone)) return checkoutMessage("Enter a valid Kenyan phone number, for example 0712345678.", true);
   if (!email || email.toLowerCase() !== String(user.email || "").toLowerCase()) return checkoutMessage("Your checkout email must match the signed-in account.", true);
   if (method === "delivery" && !address) return checkoutMessage("Enter the delivery address or area.", true);
-  if (payment === "simulated_mpesa" && !validKenyanPhone(mpesaPhone)) return checkoutMessage("Enter a valid Kenyan M-Pesa phone number.", true);
+  if (payment === "mpesa" && !validKenyanPhone(mpesaPhone)) return checkoutMessage("Enter a valid Kenyan M-Pesa phone number.", true);
 
   submitButton.disabled = true;
   submitButton.textContent = "PLACING ORDER...";
@@ -614,15 +614,15 @@ if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
       customer_phone: phone.replace(/[\s-]/g, ""),
       receiving_method: method,
       delivery_address: method === "delivery" ? address : null,
-      payment_method: payment === "simulated_mpesa" ? "M-Pesa (simulated)" : "Pay on collection/receipt",
-      payment_status: payment === "simulated_mpesa" ? "paid_simulated" : "unpaid",
+      payment_method: payment === "mpesa" ? "mpesa" : "cash",
+      payment_status: "unpaid",
       order_status: "new",
       subtotal: subtotal,
       delivery_fee: null,
       total: subtotal,
       order_items: freshItems,
       order_notes: document.getElementById("checkout-order-notes").value.trim() || null,
-      mpesa_phone: payment === "simulated_mpesa" ? mpesaPhone.replace(/[\s-]/g, "") : null
+      mpesa_phone: payment === "mpesa" ? mpesaPhone.replace(/[\s-]/g, "") : null
     };
     const { data: savedOrder, error } = await customerDB.from("customer_orders").insert(orderPayload).select("id,order_number").single();
     if (error) throw error;
@@ -633,7 +633,7 @@ if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
     checkoutForm.hidden = true;
     updateCheckoutFields();
     checkoutMessage("");
-    setCartMessage(`Thank you, ${name}! Your order ${orderRef} has been submitted to Kelsiy's Closet. The owner can now see your order. ${payment === "simulated_mpesa" ? "This is a simulated payment record; no real money was moved." : "Payment is marked as pending until collection/receipt."}`);
+    setCartMessage(`Thank you, ${name}, for your order! Receipt number ${orderRef} has been submitted to Kelsiy’s Closet. The owner can now see your order and will update you on its status.`);
     document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     console.error("Order submission failed:", error);
