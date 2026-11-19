@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,16 +17,14 @@
       --gold: #c6a15b;
       --text: #30242a;
       --muted: #76666b;
-      --white: #ffffff;
+      --white: #fff;
       --border: #eadbd7;
       --danger: #a3283e;
-      --shadow: 0 8px 25px rgba(64, 16, 32, 0.08);
+      --shadow: 0 8px 25px rgba(64,16,32,.08);
     }
 
     * { box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
-
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -35,17 +34,10 @@
     }
 
     img { max-width: 100%; }
-
     a { color: inherit; text-decoration: none; }
-
     button, input, select, textarea { font: inherit; }
-
     button { cursor: pointer; }
-
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.55;
-    }
+    button:disabled { cursor: not-allowed; opacity: .55; }
 
     .site-header {
       background: var(--burgundy);
@@ -69,7 +61,7 @@
     .brand {
       font-size: 1.35rem;
       font-weight: 800;
-      letter-spacing: 0.4px;
+      letter-spacing: .4px;
     }
 
     .brand span { color: #f0d59c; }
@@ -81,11 +73,7 @@
       flex-wrap: wrap;
     }
 
-    .nav-links a {
-      font-size: 0.92rem;
-      font-weight: 600;
-    }
-
+    .nav-links a { font-size: .92rem; font-weight: 600; }
     .nav-links a:hover { color: #f0d59c; }
 
     .menu-toggle {
@@ -98,18 +86,13 @@
     }
 
     .hero {
-      background:
-        linear-gradient(110deg, rgba(64,16,32,.95), rgba(101,27,50,.78)),
-        var(--burgundy);
+      background: linear-gradient(110deg, rgba(64,16,32,.95), rgba(101,27,50,.78));
       color: white;
       padding: 65px 22px;
       text-align: center;
     }
 
-    .hero-inner {
-      max-width: 850px;
-      margin: auto;
-    }
+    .hero-inner { max-width: 850px; margin: auto; }
 
     .hero h1 {
       font-family: Georgia, "Times New Roman", serif;
@@ -131,10 +114,7 @@
       scroll-margin-top: 85px;
     }
 
-    .section-heading {
-      text-align: center;
-      margin-bottom: 28px;
-    }
+    .section-heading { text-align: center; margin-bottom: 28px; }
 
     .section-heading h2 {
       font-family: Georgia, "Times New Roman", serif;
@@ -143,10 +123,7 @@
       margin: 0 0 8px;
     }
 
-    .section-heading p {
-      color: var(--muted);
-      margin: 0;
-    }
+    .section-heading p { color: var(--muted); margin: 0; }
 
     .kc-button {
       display: inline-flex;
@@ -168,14 +145,8 @@
       transform: translateY(-1px);
     }
 
-    .kc-button-outline {
-      color: var(--burgundy);
-      background: transparent;
-    }
-
-    .kc-button-outline:hover {
-      color: white;
-    }
+    .kc-button-outline { color: var(--burgundy); background: transparent; }
+    .kc-button-outline:hover { color: white; }
 
     .kc-button-light {
       background: var(--cream);
@@ -204,7 +175,6 @@
     }
 
     .catalogue-toolbar label { font-weight: 700; }
-
     .catalogue-toolbar select { max-width: 100%; }
 
     .customer-products {
@@ -247,18 +217,8 @@
     }
 
     .customer-product-details p { margin: 0; }
-
-    .customer-product-price {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--burgundy);
-    }
-
-    .customer-product-stock {
-      font-size: 0.88rem;
-      color: #35734a;
-    }
-
+    .customer-product-price { font-size: 1.2rem; font-weight: 800; color: var(--burgundy); }
+    .customer-product-stock { font-size: .88rem; color: #35734a; }
     .customer-product-stock.out-of-stock { color: var(--danger); }
 
     .kc-product-options {
@@ -270,11 +230,7 @@
 
     .kc-product-options label:last-child { grid-column: 1 / -1; }
 
-    label {
-      display: block;
-      font-size: 0.92rem;
-      font-weight: 600;
-    }
+    label { display: block; font-size: .92rem; font-weight: 600; }
 
     input, select, textarea {
       display: block;
@@ -288,21 +244,14 @@
       color: var(--text);
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 100px;
-    }
+    textarea { resize: vertical; min-height: 100px; }
 
     input:focus, select:focus, textarea:focus {
       outline: 2px solid #c6a15b70;
       border-color: var(--gold);
     }
 
-    .customer-product-details .kc-add-button {
-      width: 100%;
-      margin-top: auto;
-    }
-
+    .customer-product-details .kc-add-button { width: 100%; margin-top: auto; }
     .soft-section { background: var(--light-cream); }
 
     .bag-layout {
@@ -321,10 +270,7 @@
       min-width: 0;
     }
 
-    .panel h3 {
-      color: var(--burgundy);
-      margin-top: 0;
-    }
+    .panel h3 { color: var(--burgundy); margin-top: 0; }
 
     .kc-cart-line {
       display: grid;
@@ -344,15 +290,9 @@
       background: var(--light-cream);
     }
 
-    .kc-cart-line h3 {
-      margin: 0 0 5px;
-      font-size: 1.05rem;
-    }
-
+    .kc-cart-line h3 { margin: 0 0 5px; font-size: 1.05rem; }
     .kc-cart-line p { margin: 4px 0; }
-
     .kc-cart-line label { max-width: 125px; }
-
     .kc-cart-line .remove-item { margin-top: 8px; }
 
     .kc-empty {
@@ -388,7 +328,6 @@
       scroll-margin-top: 95px;
     }
 
-    .checkout-form[hidden],
     [hidden] { display: none !important; }
 
     .form-grid {
@@ -407,11 +346,7 @@
 
     .form-section h3 { margin-bottom: 14px; }
 
-    .form-help {
-      font-size: 0.88rem;
-      color: var(--muted);
-      margin: 7px 0 0;
-    }
+    .form-help { font-size: .88rem; color: var(--muted); margin: 7px 0 0; }
 
     .checkout-actions {
       display: flex;
@@ -442,10 +377,7 @@
       overflow-wrap: anywhere;
     }
 
-    .kc-order-card h3 {
-      color: var(--burgundy);
-      margin-top: 0;
-    }
+    .kc-order-card h3 { color: var(--burgundy); margin-top: 0; }
 
     .contact-grid {
       display: grid;
@@ -480,23 +412,13 @@
       }
 
       .nav-links.open { display: flex; }
-
-      .nav-links a, .nav-links button {
-        margin-top: 5px;
-        padding: 10px;
-      }
-
+      .nav-links a, .nav-links button { margin-top: 5px; padding: 10px; }
       .customer-products { grid-template-columns: 1fr; }
       .customer-product-image { height: 300px; }
-
       .section { padding: 35px 15px; }
       .hero { padding: 48px 18px; }
       .panel { padding: 16px; }
-
-      .form-grid, .contact-grid, .order-list {
-        grid-template-columns: 1fr;
-      }
-
+      .form-grid, .contact-grid, .order-list { grid-template-columns: 1fr; }
       .form-grid .span-two { grid-column: auto; }
 
       .kc-cart-line {
@@ -504,11 +426,7 @@
         gap: 12px;
       }
 
-      .kc-cart-line img {
-        width: 82px;
-        height: 105px;
-      }
-
+      .kc-cart-line img { width: 82px; height: 105px; }
       .checkout-actions { flex-direction: column; }
       .checkout-actions button { width: 100%; }
     }
@@ -520,9 +438,8 @@
     <div class="header-inner">
       <a class="brand" href="customer.html">Kelsiy's <span>Closet</span></a>
 
-      <button class="menu-toggle" id="menu-toggle"
-              type="button" aria-expanded="false"
-              aria-controls="main-navigation">
+      <button class="menu-toggle" id="menu-toggle" type="button"
+              aria-expanded="false" aria-controls="main-navigation">
         Menu
       </button>
 
@@ -532,8 +449,7 @@
         <a href="#shopping-bag">My Bag (<span id="bag-count">0</span>)</a>
         <a href="#my-orders">My Orders</a>
         <a href="#contact">Contact</a>
-        <button class="kc-button kc-button-light"
-                id="customer-signout" type="button">
+        <button class="kc-button kc-button-light" id="customer-signout" type="button">
           SIGN OUT
         </button>
       </nav>
@@ -566,8 +482,9 @@
         </select>
       </div>
 
-      <p class="status-message" id="catalogue-message" role="status"
-         aria-live="polite">Loading our collection...</p>
+      <p class="status-message" id="catalogue-message" role="status" aria-live="polite">
+        Loading our collection...
+      </p>
 
       <div class="customer-products" id="customer-products"></div>
     </section>
@@ -610,16 +527,13 @@
           </div>
 
           <label for="discount-code">Discount code</label>
-          <input id="discount-code" type="text"
-                 placeholder="Enter code if available">
+          <input id="discount-code" type="text" placeholder="Enter code if available">
 
-          <button class="kc-button full-width" id="checkout-toggle"
-                  type="button">
+          <button class="kc-button full-width" id="checkout-toggle" type="button">
             CHECKOUT
           </button>
 
-          <p class="status-message" id="checkout-status"
-             role="status" aria-live="polite"></p>
+          <p class="status-message" id="checkout-status" role="status" aria-live="polite"></p>
         </aside>
       </div>
 
@@ -635,28 +549,27 @@
           <div class="form-grid">
             <label for="order-first-name">
               First name
-              <input id="order-first-name" name="first_name"
-                     type="text" autocomplete="given-name" required>
+              <input id="order-first-name" name="first_name" type="text"
+                     autocomplete="given-name" required>
             </label>
 
             <label for="order-last-name">
               Last name
-              <input id="order-last-name" name="last_name"
-                     type="text" autocomplete="family-name" required>
+              <input id="order-last-name" name="last_name" type="text"
+                     autocomplete="family-name" required>
             </label>
 
             <label for="order-phone">
               Phone number
-              <input id="order-phone" name="phone"
-                     type="tel" inputmode="tel" autocomplete="tel"
-                     placeholder="0712345678" required>
+              <input id="order-phone" name="phone" type="tel" inputmode="tel"
+                     autocomplete="tel" placeholder="0712345678" required>
               <span class="form-help">Use a Kenyan number beginning with 01 or 07.</span>
             </label>
 
             <label for="order-email">
               Email address
-              <input id="order-email" name="email"
-                     type="email" autocomplete="email" required>
+              <input id="order-email" name="email" type="email"
+                     autocomplete="email" required>
             </label>
           </div>
         </div>
@@ -686,8 +599,8 @@
 
               <label for="delivery-location">
                 County, town and full delivery address
-                <input id="delivery-location" name="delivery_location"
-                       type="text" autocomplete="street-address"
+                <input id="delivery-location" name="delivery_location" type="text"
+                       autocomplete="street-address"
                        placeholder="e.g. Kiambu, Ruiru, estate and house details">
               </label>
 
@@ -709,9 +622,9 @@
             </div>
 
             <p class="form-help">
-              The final countrywide delivery charge may depend on your
-              destination and will need to be confirmed by the shop.
-              International delivery is not currently offered.
+              The final countrywide delivery charge may depend on your destination
+              and will need to be confirmed by the shop. International delivery is
+              not currently offered.
             </p>
           </div>
 
@@ -751,13 +664,12 @@
           <div id="mpesa-fields" class="form-section" hidden>
             <label for="mpesa-phone">
               M-Pesa phone number
-              <input id="mpesa-phone" name="mpesa_phone"
-                     type="tel" inputmode="tel"
-                     placeholder="0712345678">
+              <input id="mpesa-phone" name="mpesa_phone" type="tel"
+                     inputmode="tel" placeholder="0712345678">
             </label>
             <p class="form-help">
-              Use the phone number registered with M-Pesa.
-              Never enter or share your M-Pesa PIN on this website.
+              Use the phone number registered with M-Pesa. Never enter or share
+              your M-Pesa PIN on this website.
             </p>
           </div>
 
@@ -776,8 +688,7 @@
         </div>
 
         <div class="checkout-actions">
-          <button class="kc-button kc-button-outline"
-                  id="back-to-bag" type="button">
+          <button class="kc-button kc-button-outline" id="back-to-bag" type="button">
             BACK TO BAG
           </button>
 
@@ -794,8 +705,7 @@
         <p>Review your recent orders and their current status.</p>
       </div>
 
-      <p id="my-orders-status" class="status-message"
-         role="status" aria-live="polite">
+      <p id="my-orders-status" class="status-message" role="status" aria-live="polite">
         Loading your order history...
       </p>
 
@@ -823,8 +733,7 @@
 
           <label for="contact-email">
             Email address
-            <input id="contact-email" name="contact_email"
-                   type="email" required>
+            <input id="contact-email" name="contact_email" type="email" required>
           </label>
 
           <label for="contact-phone">
@@ -834,16 +743,12 @@
 
           <label for="contact-message">
             Your message
-            <textarea id="contact-message" name="contact_message"
-                      required></textarea>
+            <textarea id="contact-message" name="contact_message" required></textarea>
           </label>
 
-          <button class="kc-button full-width" type="submit">
-            SEND MESSAGE
-          </button>
+          <button class="kc-button full-width" type="submit">SEND MESSAGE</button>
 
-          <p class="status-message" id="contact-status"
-             role="status" aria-live="polite"></p>
+          <p class="status-message" id="contact-status" role="status" aria-live="polite"></p>
         </form>
       </div>
     </section>
@@ -855,27 +760,108 @@
     <p>&copy; <span id="current-year"></span> Kelsiy's Closet. All rights reserved.</p>
   </footer>
 
+  <!-- Load Supabase first, then the customer JavaScript file. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="customer.js" defer></script>
 
   <script>
+    "use strict";
+
     document.getElementById("current-year").textContent =
       new Date().getFullYear();
 
     const menuButton = document.getElementById("menu-toggle");
     const navigation = document.getElementById("main-navigation");
+    const checkoutButton = document.getElementById("checkout-toggle");
+    const checkoutForm = document.getElementById("checkout-form");
+    const backToBagButton = document.getElementById("back-to-bag");
+    const deliveryMethod = document.getElementById("delivery-method");
+    const deliveryFields = document.getElementById("delivery-fields");
+    const pickupFields = document.getElementById("pickup-fields");
+    const deliveryArea = document.getElementById("delivery-area");
+    const deliveryLocation = document.getElementById("delivery-location");
+    const deliveryDate = document.getElementById("delivery-date");
+    const deliveryTime = document.getElementById("delivery-time");
+    const pickupDate = document.getElementById("pickup-date");
+    const pickupTime = document.getElementById("pickup-time");
+    const paymentMethod = document.getElementById("payment-method");
+    const mpesaFields = document.getElementById("mpesa-fields");
+    const mpesaPhone = document.getElementById("mpesa-phone");
 
-    menuButton.addEventListener("click", () => {
+    menuButton.addEventListener("click", function () {
       const isOpen = navigation.classList.toggle("open");
       menuButton.setAttribute("aria-expanded", String(isOpen));
     });
 
-    navigation.querySelectorAll("a").forEach(link => {
-      link.addEventListener("click", () => {
+    navigation.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
         navigation.classList.remove("open");
         menuButton.setAttribute("aria-expanded", "false");
       });
     });
+
+    /*
+      Checkout fallback:
+      This handler opens the form directly from the HTML.
+      customer.js continues to handle cart validation and order submission.
+    */
+    checkoutButton.addEventListener("click", function () {
+      checkoutForm.hidden = false;
+      checkoutForm.removeAttribute("hidden");
+      checkoutForm.style.display = "block";
+
+      checkoutForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+
+    backToBagButton.addEventListener("click", function () {
+      checkoutForm.hidden = true;
+      checkoutForm.style.display = "none";
+
+      document.getElementById("shopping-bag").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+
+    function updateReceivingMethod() {
+      const isDelivery = deliveryMethod.value === "delivery";
+
+      deliveryFields.hidden = !isDelivery;
+      pickupFields.hidden = isDelivery;
+
+      deliveryArea.required = isDelivery;
+      deliveryLocation.required = isDelivery;
+      deliveryDate.required = isDelivery;
+      deliveryTime.required = isDelivery;
+
+      pickupDate.required = !isDelivery;
+      pickupTime.required = !isDelivery;
+
+      deliveryArea.disabled = !isDelivery;
+      deliveryLocation.disabled = !isDelivery;
+      deliveryDate.disabled = !isDelivery;
+      deliveryTime.disabled = !isDelivery;
+
+      pickupDate.disabled = isDelivery;
+      pickupTime.disabled = isDelivery;
+    }
+
+    deliveryMethod.addEventListener("change", updateReceivingMethod);
+    updateReceivingMethod();
+
+    function updatePaymentMethod() {
+      const useMpesa = paymentMethod.value === "mpesa";
+
+      mpesaFields.hidden = !useMpesa;
+      mpesaPhone.required = useMpesa;
+      mpesaPhone.disabled = !useMpesa;
+    }
+
+    paymentMethod.addEventListener("change", updatePaymentMethod);
+    updatePaymentMethod();
   </script>
 </body>
 </html>
