@@ -3,962 +3,879 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kelsiy's Closet | Style That Speaks</title>
+  <meta name="theme-color" content="#651b32">
   <meta name="description" content="Discover clothing, shoes and accessories at Kelsiy's Closet.">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css">
+  <title>Shop | Kelsiy's Closet</title>
 
   <style>
     :root {
-      --burgundy: #701b39;
-      --dark-burgundy: #3e1023;
-      --cream: #faf5ed;
-      --gold: #c49a58;
-      --ink: #292126;
-      --muted: #70636a;
+      --burgundy: #651b32;
+      --dark-burgundy: #401020;
+      --cream: #fff8ee;
+      --light-cream: #f8eee0;
+      --gold: #c6a15b;
+      --text: #30242a;
+      --muted: #76666b;
+      --white: #ffffff;
+      --border: #eadbd7;
+      --danger: #a3283e;
+      --shadow: 0 8px 25px rgba(64, 16, 32, 0.08);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html {
-      scroll-behavior: smooth;
-      scroll-padding-top: 100px;
-    }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
       background: var(--cream);
-      color: var(--ink);
-      font-family: "DM Sans", Arial, sans-serif;
-      line-height: 1.7;
+      color: var(--text);
+      line-height: 1.6;
     }
 
-    button,
-    input,
-    textarea,
-    select {
-      font: inherit;
+    img { max-width: 100%; }
+
+    a { color: inherit; text-decoration: none; }
+
+    button, input, select, textarea { font: inherit; }
+
+    button { cursor: pointer; }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
     }
 
-    a {
-      color: inherit;
-    }
-
-    .kc-header {
+    .site-header {
+      background: var(--burgundy);
+      color: var(--white);
       position: sticky;
       top: 0;
-      z-index: 1000;
-      background: var(--cream);
-      border-bottom: 1px solid #e8d9d1;
-      box-shadow: 0 4px 18px rgba(62, 16, 35, 0.06);
+      z-index: 10;
+      box-shadow: var(--shadow);
     }
 
-    .kc-header-inner {
-      max-width: 1450px;
-      min-height: 100px;
+    .header-inner {
+      max-width: 1200px;
       margin: auto;
-      padding: 15px 5%;
+      padding: 14px 22px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 20px;
-    }
-
-    .kc-brand {
-      display: flex;
       align-items: center;
-      gap: 13px;
-      text-decoration: none;
-      flex-shrink: 0;
+      gap: 18px;
     }
 
-    .kc-monogram {
-      width: 58px;
-      height: 58px;
-      display: grid;
-      place-items: center;
-      border: 2px solid var(--gold);
-      color: var(--burgundy);
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    .kc-brand-name {
-      margin: 0;
-      color: var(--burgundy);
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(18px, 2vw, 27px);
-      line-height: 1.2;
-    }
-
-    .kc-brand-tagline {
-      margin: 6px 0 0;
-      color: #8b6744;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    .kc-nav {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    .kc-nav a {
-      padding: 12px 14px;
-      border-radius: 5px;
-      color: var(--dark-burgundy);
-      text-decoration: none;
-      font-size: 14px;
+    .brand {
+      font-size: 1.35rem;
       font-weight: 800;
       letter-spacing: 0.4px;
     }
 
-    .kc-nav a:hover {
-      background: var(--burgundy);
+    .brand span { color: #f0d59c; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .nav-links a:hover { color: #f0d59c; }
+
+    .menu-toggle {
+      display: none;
       color: white;
+      background: transparent;
+      border: 1px solid #ffffff70;
+      padding: 7px 11px;
+      border-radius: 7px;
+    }
+
+    .hero {
+      background:
+        linear-gradient(110deg, rgba(64,16,32,.95), rgba(101,27,50,.78)),
+        var(--burgundy);
+      color: white;
+      padding: 65px 22px;
+      text-align: center;
+    }
+
+    .hero-inner {
+      max-width: 850px;
+      margin: auto;
+    }
+
+    .hero h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 6vw, 3.6rem);
+      margin: 0 0 12px;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin: 0 auto 24px;
+      color: #f7e9e8;
+    }
+
+    .section {
+      max-width: 1200px;
+      margin: auto;
+      padding: 48px 22px;
+      scroll-margin-top: 85px;
+    }
+
+    .section-heading {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .section-heading h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--burgundy);
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      margin: 0 0 8px;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      margin: 0;
     }
 
     .kc-button {
       display: inline-flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
-      min-height: 50px;
-      padding: 13px 22px;
-      border: 2px solid var(--burgundy);
-      border-radius: 5px;
+      border: 1px solid var(--burgundy);
+      border-radius: 8px;
       background: var(--burgundy);
       color: white;
+      font-weight: 700;
+      padding: 11px 17px;
+      min-height: 44px;
       text-align: center;
-      text-decoration: none;
-      text-transform: uppercase;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: 0.2s;
+      transition: background .2s, transform .2s;
     }
 
     .kc-button:hover {
       background: var(--dark-burgundy);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
+    }
+
+    .kc-button-outline {
+      color: var(--burgundy);
+      background: transparent;
+    }
+
+    .kc-button-outline:hover {
+      color: white;
     }
 
     .kc-button-light {
       background: var(--cream);
       color: var(--burgundy);
-      border-color: var(--burgundy);
+      border-color: var(--cream);
     }
 
     .kc-button-light:hover {
-      background: var(--burgundy);
-      color: white;
-    }
-
-    .kc-menu-button {
-      display: none;
-      padding: 10px 14px;
-      background: var(--burgundy);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .kc-hero {
-      min-height: 700px;
-      display: flex;
-      align-items: center;
-      color: white;
-      background-color: var(--dark-burgundy);
-      background-image:
-        linear-gradient(
-          90deg,
-          rgba(42, 8, 23, 0.92),
-          rgba(66, 13, 34, 0.75),
-          rgba(66, 13, 34, 0.2)
-        ),
-        url("https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=2000&q=85");
-      background-position: center;
-      background-size: cover;
-    }
-
-    .kc-hero-inner {
-      width: 100%;
-      max-width: 1450px;
-      margin: auto;
-      padding: 80px 7%;
-    }
-
-    .kc-eyebrow {
-      margin: 0 0 18px;
-      color: var(--gold);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    .kc-hero .kc-eyebrow {
-      color: #e9c88e;
-    }
-
-    .kc-hero h1 {
-      max-width: 850px;
-      margin: 0;
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(42px, 7vw, 82px);
-      line-height: 1.1;
-      text-transform: uppercase;
-    }
-
-    .kc-hero h1 span {
-      display: block;
-      color: #e9c88e;
-    }
-
-    .kc-hero-copy {
-      max-width: 630px;
-      margin: 25px 0 30px;
-      color: #fff5ed;
-      font-size: 19px;
-    }
-
-    .kc-explore-button {
-      min-width: 340px;
-      min-height: 76px;
-      padding: 20px 28px;
-      background: #f5e6d0;
-      color: var(--burgundy);
-      border: 3px solid var(--gold);
-      font-size: 17px;
-      letter-spacing: 0.7px;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
-    }
-
-    .kc-explore-button:hover {
-      background: white;
+      background: #f0e1d2;
       color: var(--dark-burgundy);
     }
 
-    .kc-section {
-      padding: 85px 6%;
-      scroll-margin-top: 100px;
-    }
-
-    .kc-section-inner {
-      max-width: 1250px;
-      margin: auto;
-    }
-
-    .kc-section-heading {
-      margin: 0 0 16px;
-      color: var(--burgundy);
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: clamp(32px, 5vw, 52px);
-      line-height: 1.2;
-    }
-
-    .kc-section-intro {
-      max-width: 760px;
-      margin: 0 0 30px;
-      color: var(--muted);
-      font-size: 18px;
-    }
-
-    .kc-gold-line {
-      width: 78px;
-      height: 4px;
-      margin: 20px 0 25px;
+    .hero .kc-button {
       background: var(--gold);
-    }
-
-    .kc-about {
-      background: white;
-    }
-
-    .kc-about-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-      gap: 50px;
-    }
-
-    .kc-about-photo {
-      min-height: 400px;
-      border-radius: 8px;
-      background-image: url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1100&q=85");
-      background-position: center;
-      background-size: cover;
-    }
-
-    .kc-about-copy {
-      color: var(--muted);
-      font-size: 17px;
-    }
-
-    .kc-gallery {
-      background: var(--cream);
-    }
-
-    .kc-gallery-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: end;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    .kc-filter {
-      max-width: 100%;
-      padding: 13px 15px;
-      border: 1px solid #d9c4c5;
-      border-radius: 5px;
-      background: white;
+      border-color: var(--gold);
       color: var(--dark-burgundy);
-      font-weight: 700;
     }
 
-    #customer-products {
+    .catalogue-toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .catalogue-toolbar label { font-weight: 700; }
+
+    .catalogue-toolbar select { max-width: 100%; }
+
+    .customer-products {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 24px;
-      margin-top: 30px;
+      gap: 22px;
     }
 
     .customer-product-card {
-      overflow: hidden;
-      border: 1px solid #eadbd5;
-      border-radius: 8px;
       background: white;
-      box-shadow: 0 8px 25px rgba(62, 16, 35, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
     }
 
     .customer-product-image {
       display: block;
       width: 100%;
-      height: 300px;
+      height: 270px;
       object-fit: cover;
-      background: #eee3dc;
+      background: var(--light-cream);
     }
 
     .customer-product-details {
-      padding: 20px;
+      padding: 18px;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 9px;
     }
 
     .customer-product-details h3 {
       color: var(--burgundy);
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: 23px;
-      line-height: 1.3;
+      margin: 0;
+      font-size: 1.15rem;
     }
 
+    .customer-product-details p { margin: 0; }
+
     .customer-product-price {
-      color: var(--burgundy);
-      font-size: 20px;
+      font-size: 1.2rem;
       font-weight: 800;
+      color: var(--burgundy);
     }
 
     .customer-product-stock {
-      font-weight: 700;
+      font-size: 0.88rem;
+      color: #35734a;
     }
 
-    .out-of-stock {
-      color: #a21b2d;
+    .customer-product-stock.out-of-stock { color: var(--danger); }
+
+    .kc-product-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 8px 0;
     }
 
-    #catalogue-message {
-      margin-top: 20px;
-      color: var(--muted);
-      font-weight: 700;
+    .kc-product-options label:last-child { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 600;
     }
 
-    .kc-contact {
+    input, select, textarea {
+      display: block;
+      width: 100%;
+      min-height: 43px;
+      margin-top: 5px;
+      padding: 10px 11px;
+      border: 1px solid #d8c6c5;
+      border-radius: 7px;
       background: white;
+      color: var(--text);
     }
 
-    .kc-contact-layout {
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid #c6a15b70;
+      border-color: var(--gold);
+    }
+
+    .customer-product-details .kc-add-button {
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .soft-section { background: var(--light-cream); }
+
+    .bag-layout {
       display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
-      gap: 45px;
+      grid-template-columns: minmax(0, 1.5fr) minmax(270px, .8fr);
+      gap: 24px;
+      align-items: start;
     }
 
-    .kc-contact-card {
-      padding: 30px;
-      border-radius: 8px;
-      background: var(--cream);
+    .panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      min-width: 0;
     }
 
-    .kc-contact-card h3 {
+    .panel h3 {
       color: var(--burgundy);
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: 27px;
+      margin-top: 0;
     }
 
-    .kc-form {
+    .kc-cart-line {
       display: grid;
+      grid-template-columns: 100px minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kc-cart-line:first-child { padding-top: 0; }
+
+    .kc-cart-line img {
+      width: 100px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--light-cream);
+    }
+
+    .kc-cart-line h3 {
+      margin: 0 0 5px;
+      font-size: 1.05rem;
+    }
+
+    .kc-cart-line p { margin: 4px 0; }
+
+    .kc-cart-line label { max-width: 125px; }
+
+    .kc-cart-line .remove-item { margin-top: 8px; }
+
+    .kc-empty {
+      background: #fffaf5;
+      border: 1px dashed var(--gold);
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 15px;
+      padding: 9px 0;
+      border-bottom: 1px solid #f0e5df;
+    }
+
+    .summary-row.total {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--burgundy);
+      border-bottom: 0;
+      padding-top: 15px;
+    }
+
+    .full-width { width: 100%; margin-top: 15px; }
+
+    .checkout-form {
+      margin-top: 25px;
+      scroll-margin-top: 95px;
+    }
+
+    .checkout-form[hidden],
+    [hidden] { display: none !important; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 17px;
+    }
+
+    .form-grid .span-two { grid-column: 1 / -1; }
+
+    .form-section {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      margin-top: 22px;
+    }
+
+    .form-section h3 { margin-bottom: 14px; }
+
+    .form-help {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 7px 0 0;
+    }
+
+    .checkout-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    .checkout-actions button { flex: 1; }
+
+    .status-message {
+      margin: 15px 0 0;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .order-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
 
-    .kc-field {
-      display: grid;
-      gap: 7px;
-    }
-
-    .kc-field label {
-      color: var(--dark-burgundy);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-
-    .kc-field input,
-    .kc-field textarea {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #d9c8c4;
-      border-radius: 5px;
+    .kc-order-card {
+      padding: 18px;
       background: white;
-      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow-wrap: anywhere;
     }
 
-    .kc-field textarea {
-      min-height: 145px;
-      resize: vertical;
+    .kc-order-card h3 {
+      color: var(--burgundy);
+      margin-top: 0;
     }
 
-    .kc-footer {
-      background: var(--dark-burgundy);
-      color: white;
-    }
-
-    .kc-footer-main {
-      max-width: 1350px;
-      margin: auto;
-      padding: 45px 6%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
+    .contact-grid {
+      display: grid;
+      grid-template-columns: .8fr 1.2fr;
       gap: 25px;
     }
 
-    .kc-footer-brand {
-      color: white;
-      font-family: "Playfair Display", Georgia, serif;
-      font-size: 26px;
-      font-weight: 800;
-    }
-
-    .kc-footer-tagline {
-      color: #e9c88e;
-      font-weight: 700;
-    }
-
-    .kc-copyright {
-      padding: 18px 6%;
-      border-top: 1px solid rgba(255, 255, 255, 0.15);
-      color: #e8d8d9;
+    .site-footer {
+      background: var(--dark-burgundy);
+      color: #f8eee8;
       text-align: center;
-      font-size: 13px;
+      padding: 26px 20px;
     }
 
-    @media (max-width: 950px) {
-      .kc-nav {
-        gap: 2px;
-      }
+    .site-footer p { margin: 4px 0; }
 
-      .kc-nav a {
-        padding: 10px 8px;
-        font-size: 12px;
-      }
-
-      #customer-products {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    @media (max-width: 900px) {
+      .customer-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bag-layout { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 700px) {
-      .kc-header-inner {
-        min-height: 82px;
-        padding: 12px 5%;
-      }
+    @media (max-width: 640px) {
+      .header-inner { flex-wrap: wrap; }
+      .menu-toggle { display: block; }
 
-      .kc-monogram {
-        width: 46px;
-        height: 46px;
-        font-size: 20px;
-      }
-
-      .kc-brand-name {
-        font-size: 18px;
-      }
-
-      .kc-brand-tagline {
-        font-size: 9px;
-        letter-spacing: 1px;
-      }
-
-      .kc-menu-button {
-        display: block;
-      }
-
-      .kc-nav {
+      .nav-links {
         display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        padding: 15px 5% 20px;
-        background: var(--cream);
-        border-bottom: 1px solid #e8d9d1;
-        box-shadow: 0 10px 15px rgba(62, 16, 35, 0.08);
+        width: 100%;
+        flex-direction: column;
         align-items: stretch;
-        flex-direction: column;
+        gap: 0;
       }
 
-      .kc-nav.customer-navigation-open {
-        display: flex;
+      .nav-links.open { display: flex; }
+
+      .nav-links a, .nav-links button {
+        margin-top: 5px;
+        padding: 10px;
       }
 
-      .kc-nav a {
-        padding: 13px 15px;
-        font-size: 15px;
-      }
+      .customer-products { grid-template-columns: 1fr; }
+      .customer-product-image { height: 300px; }
 
-      .kc-nav .kc-button {
-        width: 100%;
-      }
+      .section { padding: 35px 15px; }
+      .hero { padding: 48px 18px; }
+      .panel { padding: 16px; }
 
-      .kc-hero {
-        min-height: 650px;
-        background-position: 58% center;
-      }
-
-      .kc-hero-inner {
-        padding: 65px 6%;
-      }
-
-      .kc-hero h1 {
-        font-size: clamp(40px, 11vw, 62px);
-      }
-
-      .kc-section {
-        padding: 65px 6%;
-      }
-
-      .kc-about-layout,
-      .kc-contact-layout {
+      .form-grid, .contact-grid, .order-list {
         grid-template-columns: 1fr;
       }
 
-      .kc-about-photo {
-        min-height: 300px;
+      .form-grid .span-two { grid-column: auto; }
+
+      .kc-cart-line {
+        grid-template-columns: 82px minmax(0, 1fr);
+        gap: 12px;
       }
 
-      #customer-products {
-        grid-template-columns: 1fr;
+      .kc-cart-line img {
+        width: 82px;
+        height: 105px;
       }
 
-      .customer-product-image {
-        height: 340px;
-      }
-
-      .kc-footer-main {
-        align-items: flex-start;
-        flex-direction: column;
-      }
+      .checkout-actions { flex-direction: column; }
+      .checkout-actions button { width: 100%; }
     }
-
-    @media (max-width: 480px) {
-      .kc-explore-button {
-        width: 100%;
-        min-width: 0;
-        min-height: 70px;
-        padding: 18px;
-        font-size: 15px;
-      }
-    }
-
-
-    /* Shopping cart and checkout */
-    .kc-shopping { background: #fffaf4; }
-    .kc-cart-items { display:grid; gap:14px; margin:24px 0; }
-    .kc-cart-line { display:grid; grid-template-columns:100px minmax(0,1fr); gap:16px; padding:16px; border:1px solid #ead9d2; border-radius:12px; background:#fff; }
-    .kc-cart-line img { width:100px; height:120px; object-fit:cover; border-radius:8px; }
-    .kc-cart-line h3 { margin:0 0 6px; color:var(--burgundy); }
-    .kc-cart-line input,.kc-cart-line select { max-width:130px; padding:8px; border:1px solid #d9c8c4; border-radius:6px; }
-    .kc-cart-line button { margin:8px 8px 0 0; cursor:pointer; }
-    .kc-cart-summary { max-width:520px; margin:20px 0 30px auto; padding:20px; background:#f6eae2; border-radius:12px; }
-    .kc-cart-summary p { display:flex; justify-content:space-between; gap:16px; margin:5px 0; }
-    .kc-cart-summary .kc-total { border-top:1px solid #d8c3b9; padding-top:12px; font-size:1.2rem; color:var(--dark-burgundy); }
-    .kc-checkout-form { max-width:760px; background:white; border:1px solid #ead9d2; padding:22px; border-radius:14px; }
-    .kc-checkout-form h3 { color:var(--burgundy); margin:4px 0 12px; }
-    .kc-checkout-form input,.kc-checkout-form select,.kc-checkout-form textarea { width:100%; padding:11px; border:1px solid #d9c8c4; border-radius:6px; background:#fff; }
-    .kc-notice { background:#fff4df; padding:12px; border-left:4px solid var(--gold); margin:12px 0; }
-    .kc-actions { display:flex; gap:10px; flex-wrap:wrap; }
-    .kc-button-outline { background:#fff; color:var(--burgundy); }
-    .kc-empty { padding:18px; border:1px dashed #c9a46a; border-radius:10px; }
-    .kc-order-card { padding:16px; margin:14px 0; background:white; border:1px solid #ead9d2; border-radius:12px; }
-    .kc-order-card h3 { color:var(--burgundy); }
-    .kc-stock-badge { font-size:.85rem; font-weight:bold; color:#276749; }
-    .kc-stock-badge.out { color:#b42318; }
-    .kc-product-options { display:grid; gap:8px; margin:12px 0; }
-    .kc-product-options label { font-size:.85rem; font-weight:700; }
-    .kc-product-options select,.kc-product-options input { width:100%; padding:9px; border:1px solid #d9c8c4; border-radius:6px; }
-    .kc-add-button:disabled { opacity:.55; cursor:not-allowed; }
-    @media(max-width:520px){ .kc-cart-line{grid-template-columns:75px minmax(0,1fr);padding:10px}.kc-cart-line img{width:75px;height:95px}.kc-cart-summary{margin-left:0}.kc-checkout-form{padding:14px} }
-
   </style>
 </head>
 
 <body>
-  <header class="kc-header">
-    <div class="kc-header-inner">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="customer.html">Kelsiy's <span>Closet</span></a>
 
-      <a class="kc-brand" href="#home" aria-label="Kelsiy's Closet home">
-        <div class="kc-monogram">KC</div>
-        <div>
-          <h2 class="kc-brand-name">KELSIY'S CLOSET</h2>
-          <p class="kc-brand-tagline">Fashion, Style &amp; Elegance</p>
-        </div>
-      </a>
-
-      <button
-        class="kc-menu-button"
-        id="customer-menu-button"
-        type="button"
-        aria-controls="customer-navigation"
-        aria-expanded="false">
-        MENU ☰
+      <button class="menu-toggle" id="menu-toggle"
+              type="button" aria-expanded="false"
+              aria-controls="main-navigation">
+        Menu
       </button>
 
-      <nav class="kc-nav" id="customer-navigation" aria-label="Main navigation">
-        <a href="#home">HOME</a>
-        <a href="#about">ABOUT</a>
-        <a href="#gallery">GALLERY</a>
-        <a href="#shopping-bag" id="bag-nav-link">BAG (<span id="bag-count">0</span>)</a>
-        <a href="#my-orders">MY ORDERS</a>
-        <a href="#contacts">CONTACTS</a>
-
-        <button
-          type="button"
-          id="customer-signout"
-          class="kc-button kc-button-light">
+      <nav class="nav-links" id="main-navigation">
+        <a href="#home">Home</a>
+        <a href="#gallery">Collection</a>
+        <a href="#shopping-bag">My Bag (<span id="bag-count">0</span>)</a>
+        <a href="#my-orders">My Orders</a>
+        <a href="#contact">Contact</a>
+        <button class="kc-button kc-button-light"
+                id="customer-signout" type="button">
           SIGN OUT
         </button>
       </nav>
-
     </div>
   </header>
 
   <main>
-    <!-- HOME SECTION -->
-    <section class="kc-hero" id="home">
-      <div class="kc-hero-inner">
-        <p class="kc-eyebrow">WELCOME TO KELSIY'S CLOSET</p>
-
-        <h1>
-          STYLE THAT SPEAKS.
-          <span>FASHION THAT DEFINES YOU.</span>
-        </h1>
-
-        <p class="kc-hero-copy">
-          Discover your style with our collection of clothing, shoes and
-          accessories. Find pieces that express your personality and make
-          every outfit feel special.
+    <section class="hero" id="home">
+      <div class="hero-inner">
+        <h1>Style That Speaks for You</h1>
+        <p>
+          Discover clothing, shoes and accessories selected to help you
+          express your personal style. Find your next favourite piece
+          at Kelsiy's Closet.
         </p>
-
-        <a class="kc-button kc-explore-button" href="#gallery">
-          EXPLORE OUR COLLECTION <span aria-hidden="true">→</span>
-        </a>
+        <a class="kc-button" href="#gallery">EXPLORE THE COLLECTION</a>
       </div>
     </section>
 
-    <!-- ABOUT SECTION -->
-    <section class="kc-section kc-about" id="about">
-      <div class="kc-section-inner kc-about-layout">
-
-        <div
-          class="kc-about-photo"
-          role="img"
-          aria-label="Fashion clothing and accessories arranged for a boutique display">
-        </div>
-
-        <div>
-          <p class="kc-eyebrow">OUR FASHION HOUSE</p>
-          <h2 class="kc-section-heading">ABOUT KELSIY'S CLOSET</h2>
-          <div class="kc-gold-line"></div>
-
-          <div class="kc-about-copy">
-            <p>
-              Welcome to Kelsiy's Closet, where personal style meets
-              confidence, creativity and elegance.
-            </p>
-
-            <p>
-              Our fashion house brings together women's clothing, men's
-              clothing, shoes and accessories to help customers discover
-              pieces that suit their style.
-            </p>
-
-            <p>
-              We want shopping to be simple and convenient. Explore our
-              collection, check prices and available sizes, and find the
-              pieces that speak to you.
-            </p>
-          </div>
-
-          <a class="kc-button" href="#gallery">
-            DISCOVER OUR COLLECTION →
-          </a>
-        </div>
-
+    <section class="section" id="gallery">
+      <div class="section-heading">
+        <h2>Our Collection</h2>
+        <p>Explore the latest styles and find something you love.</p>
       </div>
+
+      <div class="catalogue-toolbar">
+        <label for="category-filter">Shop by category</label>
+        <select id="category-filter">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+
+      <p class="status-message" id="catalogue-message" role="status"
+         aria-live="polite">Loading our collection...</p>
+
+      <div class="customer-products" id="customer-products"></div>
     </section>
 
-    <!-- PRODUCT GALLERY -->
-    <section class="kc-section kc-gallery" id="gallery">
-      <div class="kc-section-inner">
+    <section class="section soft-section" id="shopping-bag">
+      <div class="section-heading">
+        <h2>Your Shopping Bag</h2>
+        <p>Review your items and continue when you're ready.</p>
+      </div>
 
-        <div class="kc-gallery-top">
-          <div>
-            <p class="kc-eyebrow">CURATED FOR YOUR STYLE</p>
-            <h2 class="kc-section-heading">OUR COLLECTION</h2>
+      <div class="bag-layout">
+        <div class="panel">
+          <h3>Items in Your Bag</h3>
+          <div id="cart-items">
+            <p class="kc-empty">Your bag is empty.</p>
+          </div>
+        </div>
 
-            <p class="kc-section-intro">
-              Explore our available pieces, discover your favorites, and
-              check prices, sizes, colors and stock.
-            </p>
+        <aside class="panel">
+          <h3>Order Summary</h3>
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong id="cart-subtotal">KSh 0</strong>
           </div>
 
-          <label for="category-filter">
-            <span class="kc-eyebrow">SHOP BY CATEGORY</span><br>
+          <div class="summary-row">
+            <span>Discount</span>
+            <strong id="cart-discount">KSh 0</strong>
+          </div>
 
-            <select id="category-filter" class="kc-filter">
-              <option value="all">ALL COLLECTIONS</option>
-              <option value="women">WOMEN</option>
-              <option value="men">MEN</option>
-              <option value="shoes">SHOES</option>
-              <option value="accessories">ACCESSORIES</option>
-              <option value="kids">KIDS</option>
+          <div class="summary-row">
+            <span>Delivery fee</span>
+            <strong id="cart-delivery">KSh 0</strong>
+          </div>
+
+          <div class="summary-row total">
+            <span>Total</span>
+            <strong id="cart-total">KSh 0</strong>
+          </div>
+
+          <label for="discount-code">Discount code</label>
+          <input id="discount-code" type="text"
+                 placeholder="Enter code if available">
+
+          <button class="kc-button full-width" id="checkout-toggle"
+                  type="button">
+            CHECKOUT
+          </button>
+
+          <p class="status-message" id="checkout-status"
+             role="status" aria-live="polite"></p>
+        </aside>
+      </div>
+
+      <form class="panel checkout-form" id="checkout-form" hidden>
+        <div class="section-heading">
+          <h2>Checkout</h2>
+          <p>Enter your details and choose how you'd like to receive your order.</p>
+        </div>
+
+        <div class="form-section">
+          <h3>Customer Details</h3>
+
+          <div class="form-grid">
+            <label for="order-first-name">
+              First name
+              <input id="order-first-name" name="first_name"
+                     type="text" autocomplete="given-name" required>
+            </label>
+
+            <label for="order-last-name">
+              Last name
+              <input id="order-last-name" name="last_name"
+                     type="text" autocomplete="family-name" required>
+            </label>
+
+            <label for="order-phone">
+              Phone number
+              <input id="order-phone" name="phone"
+                     type="tel" inputmode="tel" autocomplete="tel"
+                     placeholder="0712345678" required>
+              <span class="form-help">Use a Kenyan number beginning with 01 or 07.</span>
+            </label>
+
+            <label for="order-email">
+              Email address
+              <input id="order-email" name="email"
+                     type="email" autocomplete="email" required>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Delivery or Pickup</h3>
+
+          <label for="delivery-method">
+            How would you like to receive your order?
+            <select id="delivery-method" name="delivery_method" required>
+              <option value="pickup">Pick up from the shop — Free</option>
+              <option value="delivery">Delivery</option>
             </select>
+          </label>
+
+          <div id="delivery-fields" class="form-section" hidden>
+            <div class="form-grid">
+              <label for="delivery-area">
+                Delivery area
+                <select id="delivery-area" name="delivery_area">
+                  <option value="">Choose your area</option>
+                  <option value="near_shop">Near the shop — KSh 200</option>
+                  <option value="nairobi">Nairobi — KSh 500</option>
+                  <option value="countrywide">Countrywide — from KSh 700</option>
+                </select>
+              </label>
+
+              <label for="delivery-location">
+                County, town and full delivery address
+                <input id="delivery-location" name="delivery_location"
+                       type="text" autocomplete="street-address"
+                       placeholder="e.g. Kiambu, Ruiru, estate and house details">
+              </label>
+
+              <label for="delivery-date">
+                Preferred delivery date
+                <input id="delivery-date" name="delivery_date" type="date">
+              </label>
+
+              <label for="delivery-time">
+                Preferred delivery time
+                <select id="delivery-time" name="delivery_time">
+                  <option value="">Choose a time</option>
+                  <option value="9 am–11 am">9 am–11 am</option>
+                  <option value="11 am–1 pm">11 am–1 pm</option>
+                  <option value="1 pm–3 pm">1 pm–3 pm</option>
+                  <option value="3 pm–5 pm">3 pm–5 pm</option>
+                </select>
+              </label>
+            </div>
+
+            <p class="form-help">
+              The final countrywide delivery charge may depend on your
+              destination and will need to be confirmed by the shop.
+              International delivery is not currently offered.
+            </p>
+          </div>
+
+          <div id="pickup-fields" class="form-section">
+            <div class="form-grid">
+              <label for="pickup-date">
+                Preferred pickup date
+                <input id="pickup-date" name="pickup_date" type="date">
+              </label>
+
+              <label for="pickup-time">
+                Preferred pickup time
+                <select id="pickup-time" name="pickup_time">
+                  <option value="">Choose a time</option>
+                  <option value="9 am–11 am">9 am–11 am</option>
+                  <option value="11 am–1 pm">11 am–1 pm</option>
+                  <option value="1 pm–3 pm">1 pm–3 pm</option>
+                  <option value="3 pm–5 pm">3 pm–5 pm</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Payment Method</h3>
+
+          <label for="payment-method">
+            Choose payment method
+            <select id="payment-method" name="payment_method" required>
+              <option value="">Select a payment method</option>
+              <option value="mpesa">M-Pesa</option>
+              <option value="cash">Cash</option>
+            </select>
+          </label>
+
+          <div id="mpesa-fields" class="form-section" hidden>
+            <label for="mpesa-phone">
+              M-Pesa phone number
+              <input id="mpesa-phone" name="mpesa_phone"
+                     type="tel" inputmode="tel"
+                     placeholder="0712345678">
+            </label>
+            <p class="form-help">
+              Use the phone number registered with M-Pesa.
+              Never enter or share your M-Pesa PIN on this website.
+            </p>
+          </div>
+
+          <p class="form-help">
+            Your selected payment method and payment status will be recorded
+            with your order. Payment remains pending until receipt is verified.
+          </p>
+        </div>
+
+        <div class="form-section">
+          <label for="order-notes">
+            Additional instructions (optional)
+            <textarea id="order-notes" name="order_notes"
+                      placeholder="Any helpful delivery or order instructions"></textarea>
           </label>
         </div>
 
-        <p id="catalogue-message" role="status" aria-live="polite">
-          Loading our collection...
-        </p>
+        <div class="checkout-actions">
+          <button class="kc-button kc-button-outline"
+                  id="back-to-bag" type="button">
+            BACK TO BAG
+          </button>
 
-        <!-- Products from Supabase will appear inside this container. -->
-        <div id="customer-products"></div>
-
-      </div>
+          <button class="kc-button" id="place-order-button" type="submit">
+            PLACE ORDER
+          </button>
+        </div>
+      </form>
     </section>
 
-    <!-- SHOPPING BAG AND CHECKOUT -->
-    <section class="kc-section kc-shopping" id="shopping-bag">
-      <div class="kc-section-inner">
-        <p class="kc-eyebrow">YOUR SELECTION</p>
-        <h2 class="kc-section-heading">YOUR SHOPPING BAG</h2>
-        <p class="kc-section-intro">Review your items, select delivery or pickup, and confirm your order.</p>
-        <div id="cart-items" class="kc-cart-items"></div>
-        <div class="kc-cart-summary">
-          <p>Subtotal: <strong id="cart-subtotal">KES 0</strong></p>
-          <p>Discount: <strong id="cart-discount">KES 0</strong></p>
-          <p>Delivery: <strong id="cart-delivery">KES 0</strong></p>
-          <p class="kc-total">Total: <strong id="cart-total">KES 0</strong></p>
+    <section class="section" id="my-orders">
+      <div class="section-heading">
+        <h2>My Orders</h2>
+        <p>Review your recent orders and their current status.</p>
+      </div>
+
+      <p id="my-orders-status" class="status-message"
+         role="status" aria-live="polite">
+        Loading your order history...
+      </p>
+
+      <div id="my-orders-list" class="order-list"></div>
+    </section>
+
+    <section class="section soft-section" id="contact">
+      <div class="section-heading">
+        <h2>Contact Us</h2>
+        <p>Need help with an item or an order? Send us a message.</p>
+      </div>
+
+      <div class="contact-grid">
+        <div class="panel">
+          <h3>Kelsiy's Closet</h3>
+          <p>We're here to help with product enquiries and order questions.</p>
+          <p>Please include your order reference if you are asking about an existing order.</p>
         </div>
 
-        <form id="checkout-form" class="kc-form kc-checkout-form">
-          <h3>Customer details</h3>
-          <div class="kc-field"><label for="order-name">FULL NAME</label><input id="order-name" required autocomplete="name"></div>
-          <div class="kc-field"><label for="order-phone">PHONE NUMBER</label><input id="order-phone" required type="tel" autocomplete="tel" placeholder="07xx xxx xxx"></div>
-          <div class="kc-field"><label for="order-email">EMAIL</label><input id="order-email" required type="email" autocomplete="email"></div>
-          <div class="kc-field"><label for="delivery-method">DELIVERY OR PICKUP</label>
-            <select id="delivery-method" required><option value="delivery">Delivery within Kenya</option><option value="pickup">Pick up from the shop (free)</option></select>
-          </div>
-          <div id="delivery-fields">
-            <div class="kc-field"><label for="delivery-area">DELIVERY AREA</label>
-              <select id="delivery-area"><option value="near_shop">Near Mama Sita shops — KSh 200</option><option value="nairobi">Other locations in Nairobi — KSh 500</option><option value="countrywide">Countrywide, outside Nairobi — KSh 700–800 (owner confirms)</option></select>
-            </div>
-            <div class="kc-field"><label for="delivery-location">COUNTY, TOWN, ESTATE AND SPECIFIC LOCATION</label><textarea id="delivery-location" placeholder="For example: Kiambu, town/estate, street or landmark" required></textarea></div>
-            <div class="kc-field"><label for="delivery-date">PREFERRED DELIVERY DATE</label><input id="delivery-date" type="date" required></div>
-            <div class="kc-field"><label for="delivery-time">PREFERRED TIME</label><select id="delivery-time" required>
-              <option value="Weekday daytime (11 am–5 pm)">Weekday daytime (11 am–5 pm)</option>
-              <option value="Weekday evening (5 pm–8 pm)">Weekday evening (5 pm–8 pm)</option>
-              <option value="Weekend afternoon (1 pm–5 pm)">Weekend afternoon (1 pm–5 pm)</option>
-              <option value="Weekend evening (5 pm–8 pm)">Weekend evening (5 pm–8 pm)</option>
-            </select></div>
-          </div>
-          <div id="pickup-fields" hidden>
-            <div class="kc-field"><label for="pickup-date">PICKUP DATE</label><input id="pickup-date" type="date"></div>
-            <div class="kc-field"><label for="pickup-time">PICKUP TIME</label><select id="pickup-time"><option value="11 am–1 pm">11 am–1 pm</option><option value="1 pm–3 pm">1 pm–3 pm</option><option value="3 pm–5 pm">3 pm–5 pm</option><option value="5 pm–7 pm">5 pm–7 pm</option></select></div>
-          </div>
-          <div class="kc-field"><label for="discount-code">DISCOUNT CODE (OPTIONAL)</label><input id="discount-code" placeholder="Try KC10"></div>
-          <div class="kc-field"><label for="payment-method">PAYMENT METHOD</label><select id="payment-method"><option value="cod">Cash on Delivery</option><option value="demo_mpesa">Demo M-Pesa (simulated)</option></select></div>
-          <div id="mpesa-fields" hidden>
-            <div class="kc-field"><label for="mpesa-phone">M-PESA PHONE NUMBER FOR DEMO</label><input id="mpesa-phone" type="tel" placeholder="07xx xxx xxx"></div>
-            <p class="kc-notice">Demo only: no real M-Pesa request is sent. Never enter your M-Pesa PIN here.</p>
-            <div class="kc-actions"><button class="kc-button" type="button" id="simulate-mpesa-success">SIMULATE PAYMENT SUCCESS</button><button class="kc-button kc-button-outline" type="button" id="simulate-mpesa-failure">SIMULATE FAILURE</button></div>
-            <p id="mpesa-demo-status" role="status"></p>
-          </div>
-          <div class="kc-field"><label for="order-notes">ORDER NOTES (OPTIONAL)</label><textarea id="order-notes" placeholder="Extra delivery instructions"></textarea></div>
-          <p class="kc-notice">Countrywide delivery is KSh 700–800. The owner will confirm the final charge based on your location before the order is finalised.</p>
-          <button class="kc-button" id="place-order-button" type="submit">PLACE ORDER</button>
-          <p id="checkout-status" role="status" aria-live="polite"></p>
+        <form class="panel" id="customer-contact-form">
+          <label for="contact-name">
+            Your name
+            <input id="contact-name" name="contact_name" type="text" required>
+          </label>
+
+          <label for="contact-email">
+            Email address
+            <input id="contact-email" name="contact_email"
+                   type="email" required>
+          </label>
+
+          <label for="contact-phone">
+            Phone number
+            <input id="contact-phone" name="contact_phone" type="tel">
+          </label>
+
+          <label for="contact-message">
+            Your message
+            <textarea id="contact-message" name="contact_message"
+                      required></textarea>
+          </label>
+
+          <button class="kc-button full-width" type="submit">
+            SEND MESSAGE
+          </button>
+
+          <p class="status-message" id="contact-status"
+             role="status" aria-live="polite"></p>
         </form>
-      </div>
-    </section>
-
-    <section class="kc-section kc-shopping" id="my-orders">
-      <div class="kc-section-inner">
-        <p class="kc-eyebrow">ORDER HISTORY</p><h2 class="kc-section-heading">MY ORDERS</h2>
-        <p id="my-orders-status" role="status">Sign in to view your orders.</p><div id="my-orders-list"></div>
-      </div>
-    </section>
-
-    <!-- CONTACTS SECTION -->
-    <section class="kc-section kc-contact" id="contacts">
-      <div class="kc-section-inner">
-
-        <p class="kc-eyebrow">WE WOULD LOVE TO HEAR FROM YOU</p>
-        <h2 class="kc-section-heading">LET'S TALK STYLE.</h2>
-
-        <p class="kc-section-intro">
-          Have a question about a product, size, color or availability?
-          Send us a message.
-        </p>
-
-        <div class="kc-contact-layout">
-
-          <div class="kc-contact-card">
-            <h3>KELSIY'S CLOSET</h3>
-            <p>Style that speaks. Fashion that defines you.</p>
-            <div class="kc-gold-line"></div>
-
-            <p>
-              Browse our collection and contact us for help choosing
-              your next favorite piece.
-            </p>
-
-            <p><strong>FASHION · STYLE · ELEGANCE</strong></p>
-          </div>
-
-          <form class="kc-form" id="customer-contact-form">
-            <div class="kc-field">
-              <label for="contact-name">YOUR NAME</label>
-              <input
-                id="contact-name"
-                name="name"
-                type="text"
-                autocomplete="name"
-                required>
-            </div>
-
-            <div class="kc-field">
-              <label for="contact-email">EMAIL ADDRESS</label>
-              <input
-                id="contact-email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                required>
-            </div>
-
-            <div class="kc-field">
-              <label for="contact-phone">PHONE NUMBER (OPTIONAL)</label>
-              <input
-                id="contact-phone"
-                name="phone"
-                type="tel"
-                autocomplete="tel">
-            </div>
-
-            <div class="kc-field">
-              <label for="contact-message">YOUR MESSAGE</label>
-              <textarea
-                id="contact-message"
-                name="message"
-                required
-                placeholder="Tell us how we can help..."></textarea>
-            </div>
-
-            <button class="kc-button" type="submit">
-              SEND YOUR MESSAGE →
-            </button>
-
-            <p id="contact-status" role="status" aria-live="polite"></p>
-          </form>
-
-        </div>
       </div>
     </section>
   </main>
 
-  <!-- FOOTER: duplicate navigation links have been removed -->
-  <footer class="kc-footer">
-    <div class="kc-footer-main">
-      <div>
-        <div class="kc-footer-brand">KELSIY'S CLOSET</div>
-        <div class="kc-footer-tagline">FASHION, STYLE &amp; ELEGANCE</div>
-        <p>Style that speaks. Fashion that defines you.</p>
-      </div>
-    </div>
-
-    <div class="kc-copyright">
-      &copy; <span id="kc-year"></span> Kelsiy's Closet. All rights reserved.
-    </div>
+  <footer class="site-footer">
+    <p><strong>Kelsiy's Closet</strong></p>
+    <p>Style that speaks for you.</p>
+    <p>&copy; <span id="current-year"></span> Kelsiy's Closet. All rights reserved.</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="customer.js" defer></script>
+
   <script>
-    document.getElementById("kc-year").textContent =
+    document.getElementById("current-year").textContent =
       new Date().getFullYear();
 
-    const customerMenuButton =
-      document.getElementById("customer-menu-button");
+    const menuButton = document.getElementById("menu-toggle");
+    const navigation = document.getElementById("main-navigation");
 
-    const customerNavigation =
-      document.getElementById("customer-navigation");
-
-    customerMenuButton.addEventListener("click", function () {
-      const isOpen =
-        customerNavigation.classList.toggle("customer-navigation-open");
-
-      customerMenuButton.setAttribute(
-        "aria-expanded",
-        String(isOpen)
-      );
+    menuButton.addEventListener("click", () => {
+      const isOpen = navigation.classList.toggle("open");
+      menuButton.setAttribute("aria-expanded", String(isOpen));
     });
 
-    customerNavigation.querySelectorAll("a").forEach(function (link) {
-      link.addEventListener("click", function () {
-        customerNavigation.classList.remove("customer-navigation-open");
-
-        customerMenuButton.setAttribute(
-          "aria-expanded",
-          "false"
-        );
+    navigation.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        navigation.classList.remove("open");
+        menuButton.setAttribute("aria-expanded", "false");
       });
     });
   </script>
-
-  <!-- Supabase library must load before customer.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-  <!-- This separate file contains the product-loading and sign-out JavaScript -->
-  <script src="customer.js" defer></script>
 </body>
 </html>
