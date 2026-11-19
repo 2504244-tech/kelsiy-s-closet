@@ -1,85 +1,57 @@
-
 "use strict";
-
-/* ==========================================
-   KELSEY'S CLOSET - CUSTOMER SHOPPING SYSTEM
-   ========================================== */
 
 const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const $ = (id) => document.getElementById(id);
-const CART_KEY = "kc-shopping-cart";
+
+const money = (value) =>
+    new Intl.NumberFormat("en-KE", {
+        style: "currency",
+        currency: "KES"
+    }).format(Number(value) || 0);
 
 let currentUser = null;
 let products = [];
 let cart = [];
-let appliedDiscount = 0;
-let appliedDiscountCode = "";
+let discountAmount = 0;
+let discountCode = "";
+let submittingOrder = false;
 
-const money = (amount) =>
-    new Intl.NumberFormat("en-KE", {
-        style: "currency",
-        currency: "KES",
-        maximumFractionDigits: 2
-    }).format(Number(amount) || 0);
-
-function showMessage(id, message, isError = false) {
-    const element = $(id);
-    if (!element) return;
-
-    element.textContent = message;
-    element.style.display = "block";
-    element.style.color = isError ? "#b42318" : "#267347";
+function message(id, text, error = false) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = error ? "#b42318" : "#267347";
 }
 
-function clearMessage(id) {
-    const element = $(id);
-    if (element) element.textContent = "";
-}
-
-function safeText(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;"
-    })[character]);
-}
-
-function getCart() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-        return Array.isArray(saved) ? saved : [];
-    } catch {
-        return [];
-    }
+    })[ch]);
 }
 
 function saveCart() {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    localStorage.setItem("kc-shopping-cart", JSON.stringify(cart));
     renderCart();
 }
 
-function cartQuantity() {
-    return cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-}
-
-function cartSubtotal() {
+function subtotal() {
     return cart.reduce(
-        (sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 0),
+        (sum, item) => sum + Number(item.unit_price) * Number(item.quantity),
         0
     );
 }
 
-function getDeliveryFee() {
-    const method = $("delivery-method")?.value || "pickup";
-    if (method === "pickup") return 0;
+function deliveryFee() {
+    if (($("delivery-method")?.value || "pickup") !== "delivery") return 0;
 
-    const area = $("delivery-area")?.value || "";
+    const area = $("delivery-area")?.value;
     if (area === "near_shop") return 150;
     if (area === "nairobi") return 250;
     if (area === "countrywide") return 400;
@@ -87,54 +59,43 @@ function getDeliveryFee() {
     return 0;
 }
 
-function cartDiscount() {
-    return Math.min(Math.max(0, appliedDiscount), cartSubtotal());
+function total() {
+    return Math.max(0, subtotal() - discountAmount + deliveryFee());
 }
 
-function cartTotal() {
-    return Math.max(0, cartSubtotal() - cartDiscount() + getDeliveryFee());
-}
-
-/* ==========================================
-   LOAD CUSTOMER AND PRODUCTS
-   ========================================== */
-
-async function loadCustomer() {
+async function loadUser() {
     const { data, error } = await db.auth.getUser();
 
     if (error) {
-        console.error("Customer login lookup failed:", error.message);
-        return null;
+        console.error("Customer account:", error.message);
+        currentUser = null;
+        return;
     }
 
     currentUser = data?.user || null;
-    return currentUser;
 }
 
 async function loadProducts() {
     const container = $("customer-products");
-    const message = $("catalogue-message");
+    if (!container) return;
 
-    if (container) {
-        container.innerHTML = "<p>Loading products...</p>";
-    }
+    container.innerHTML = "<p>Loading products...</p>";
 
     const { data, error } = await db
         .from("products")
-        .select("id,name,category,description,size,color,price,stock,image_url,active,created_at")
-        .eq("active", true)
+        .select("*")
         .order("created_at", { ascending: false });
 
     if (error) {
-        console.error("Product loading failed:", error);
-        if (container) {
-            container.innerHTML = "<p>Products could not be loaded. Please refresh the page.</p>";
-        }
-        if (message) message.textContent = "Could not load products: " + error.message;
+        console.error("Products:", error);
+        container.innerHTML = "<p>Products could not be loaded.</p>";
         return;
     }
 
-    products = data || [];
+    products = (data || []).filter(product =>
+        product.active !== false
+    );
+
     displayProducts();
 }
 
@@ -144,40 +105,37 @@ function displayProducts() {
 
     const filter = $("category-filter")?.value || "all";
 
-    const filtered = products.filter((product) => {
-        const category = String(product.category || "").toLowerCase();
-        return filter === "all" || category === filter.toLowerCase();
-    });
+    const visible = products.filter(product =>
+        filter === "all" ||
+        String(product.category || "").toLowerCase() === filter.toLowerCase()
+    );
 
-    if (!filtered.length) {
-        container.innerHTML = "<p>No products are currently available in this category.</p>";
+    if (!visible.length) {
+        container.innerHTML = "<p>No products are currently available.</p>";
         return;
     }
 
-    container.innerHTML = filtered.map((product) => {
-        const image = product.image_url
-            ? `<img src="${safeText(product.image_url)}"
-                    alt="${safeText(product.name)}"
-                    style="width:100%;height:220px;object-fit:cover;"
-                    onerror="this.style.display='none'">`
-            : "";
-
-        const unavailable = Number(product.stock || 0) < 1;
+    container.innerHTML = visible.map(product => {
+        const stock = Number(product.stock ?? 0);
 
         return `
             <article class="product-card">
-                ${image}
+                ${product.image_url ? `
+                    <img src="${escapeHTML(product.image_url)}"
+                         alt="${escapeHTML(product.name)}"
+                         style="width:100%;height:220px;object-fit:cover"
+                         onerror="this.style.display='none'">
+                ` : ""}
                 <div class="product-info">
-                    <h3>${safeText(product.name)}</h3>
-                    <p>${safeText(product.category || "")}</p>
-                    <p>${safeText(product.description || "")}</p>
+                    <h3>${escapeHTML(product.name)}</h3>
+                    <p>${escapeHTML(product.category || "")}</p>
+                    <p>${escapeHTML(product.description || "")}</p>
                     <p><strong>${money(product.price)}</strong></p>
-                    <p>${unavailable ? "Out of stock" : "In stock: " + Number(product.stock)}</p>
+                    <p>${stock > 0 ? "In stock: " + stock : "Out of stock"}</p>
                     <button type="button"
-                        class="add-to-cart-button"
-                        data-product-id="${safeText(product.id)}"
-                        ${unavailable ? "disabled" : ""}>
-                        ${unavailable ? "Out of Stock" : "Add to Bag"}
+                            data-add-product="${escapeHTML(product.id)}"
+                            ${stock < 1 ? "disabled" : ""}>
+                        Add to Bag
                     </button>
                 </div>
             </article>
@@ -185,25 +143,21 @@ function displayProducts() {
     }).join("");
 }
 
-function addProductToCart(productId) {
-    const product = products.find((item) => String(item.id) === String(productId));
+function addToCart(id) {
+    const product = products.find(p => String(p.id) === String(id));
+    if (!product) return;
 
-    if (!product) {
-        alert("This product could not be found. Please refresh the page.");
-        return;
-    }
-
-    const stock = Number(product.stock || 0);
+    const stock = Number(product.stock ?? 0);
     const existing = cart.find(
-        (item) => String(item.product_id) === String(product.id)
+        item => String(item.product_id) === String(product.id)
     );
 
     if (existing) {
-        if (Number(existing.quantity) >= stock) {
-            alert("You cannot add more than the available stock.");
+        if (existing.quantity >= stock) {
+            alert("You have reached the available stock for this product.");
             return;
         }
-        existing.quantity = Number(existing.quantity) + 1;
+        existing.quantity++;
     } else {
         if (stock < 1) {
             alert("This product is out of stock.");
@@ -211,14 +165,13 @@ function addProductToCart(productId) {
         }
 
         cart.push({
-            key: String(product.id),
             product_id: product.id,
             name: product.name,
+            size: product.size || null,
+            color: product.color || null,
             image_url: product.image_url || "",
-            color: product.color || "",
-            size: product.size || "",
-            quantity: 1,
             unit_price: Number(product.price),
+            quantity: 1,
             available_stock: stock
         });
     }
@@ -226,384 +179,269 @@ function addProductToCart(productId) {
     saveCart();
 }
 
-/* ==========================================
-   SHOPPING BAG
-   ========================================== */
-
 function renderCart() {
     const container = $("cart-items");
 
     if (container) {
-        if (!cart.length) {
-            container.innerHTML = "<p>Your shopping bag is empty.</p>";
-        } else {
-            container.innerHTML = cart.map((item, index) => `
-                <div class="cart-item">
-                    ${item.image_url
-                        ? `<img src="${safeText(item.image_url)}"
-                                alt="${safeText(item.name)}"
-                                style="width:75px;height:75px;object-fit:cover;"
-                                onerror="this.style.display='none'">`
-                        : ""}
-                    <div>
-                        <h4>${safeText(item.name)}</h4>
-                        <p>${money(item.unit_price)} each</p>
-                        ${item.size ? `<p>Size: ${safeText(item.size)}</p>` : ""}
-                        ${item.color ? `<p>Colour: ${safeText(item.color)}</p>` : ""}
-                        <label>
-                            Quantity:
-                            <input type="number"
-                                min="1"
-                                max="${Number(item.available_stock)}"
-                                value="${Number(item.quantity)}"
-                                data-cart-quantity="${index}"
-                                style="width:65px">
-                        </label>
-                        <p>Line total: ${money(item.unit_price * item.quantity)}</p>
-                        <button type="button" data-remove-cart="${index}">
-                            Remove
-                        </button>
-                    </div>
+        container.innerHTML = cart.length ? cart.map((item, index) => `
+            <div class="cart-item">
+                ${item.image_url ? `
+                    <img src="${escapeHTML(item.image_url)}"
+                         alt="${escapeHTML(item.name)}"
+                         style="width:75px;height:75px;object-fit:cover">
+                ` : ""}
+                <div>
+                    <h4>${escapeHTML(item.name)}</h4>
+                    <p>${money(item.unit_price)} each</p>
+                    <label>
+                        Quantity:
+                        <input type="number"
+                               min="1"
+                               max="${item.available_stock}"
+                               value="${item.quantity}"
+                               data-quantity="${index}">
+                    </label>
+                    <p>Line total: ${money(item.unit_price * item.quantity)}</p>
+                    <button type="button" data-remove="${index}">Remove</button>
                 </div>
-            `).join("");
-        }
+            </div>
+        `).join("") : "<p>Your shopping bag is empty.</p>";
     }
 
-    if ($("cart-subtotal")) $("cart-subtotal").textContent = money(cartSubtotal());
-    if ($("cart-discount")) $("cart-discount").textContent = money(cartDiscount());
-    if ($("cart-delivery")) $("cart-delivery").textContent = money(getDeliveryFee());
-    if ($("cart-total")) $("cart-total").textContent = money(cartTotal());
-    if ($("checkout-total")) $("checkout-total").textContent = money(cartTotal());
+    if ($("cart-subtotal")) $("cart-subtotal").textContent = money(subtotal());
+    if ($("cart-discount")) $("cart-discount").textContent = money(discountAmount);
+    if ($("cart-delivery")) $("cart-delivery").textContent = money(deliveryFee());
+    if ($("cart-total")) $("cart-total").textContent = money(total());
+    if ($("checkout-total")) $("checkout-total").textContent = money(total());
 
-    document.querySelectorAll("[data-cart-count]").forEach((element) => {
-        element.textContent = String(cartQuantity());
+    document.querySelectorAll("[data-cart-count]").forEach(el => {
+        el.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
     });
 }
 
-function updateCartQuantity(index, quantity) {
-    const item = cart[index];
-    if (!item) return;
-
-    const newQuantity = Number(quantity);
-
-    if (!Number.isInteger(newQuantity) || newQuantity < 1) {
-        alert("Please enter a quantity of at least 1.");
-        renderCart();
-        return;
-    }
-
-    if (newQuantity > Number(item.available_stock)) {
-        alert("Only " + item.available_stock + " item(s) are available.");
-        renderCart();
-        return;
-    }
-
-    item.quantity = newQuantity;
-    saveCart();
-}
-
-function removeCartItem(index) {
-    if (index < 0 || index >= cart.length) return;
-    cart.splice(index, 1);
-    saveCart();
-}
-
-/* ==========================================
-   CHECKOUT FIELDS
-   ========================================== */
-
 function updateCheckoutFields() {
     const method = $("delivery-method")?.value || "pickup";
-    const deliveryFields = $("delivery-fields");
-    const pickupFields = $("pickup-fields");
-    const deliveryArea = $("delivery-area");
 
-    if (deliveryFields) deliveryFields.style.display = method === "delivery" ? "" : "none";
-    if (pickupFields) pickupFields.style.display = method === "pickup" ? "" : "none";
+    if ($("delivery-fields")) {
+        $("delivery-fields").style.display = method === "delivery" ? "" : "none";
+    }
 
-    if (deliveryArea) deliveryArea.required = method === "delivery";
+    if ($("pickup-fields")) {
+        $("pickup-fields").style.display = method === "pickup" ? "" : "none";
+    }
 
-    const address = $("delivery-location");
-    const deliveryDate = $("delivery-date");
-    const deliveryTime = $("delivery-time");
-    const pickupDate = $("pickup-date");
-    const pickupTime = $("pickup-time");
-
-    if (address) address.required = method === "delivery";
-    if (deliveryDate) deliveryDate.required = method === "delivery";
-    if (deliveryTime) deliveryTime.required = false;
-    if (pickupDate) pickupDate.required = method === "pickup";
-    if (pickupTime) pickupTime.required = false;
+    if ($("delivery-area")) $("delivery-area").required = method === "delivery";
+    if ($("delivery-location")) $("delivery-location").required = method === "delivery";
+    if ($("delivery-date")) $("delivery-date").required = method === "delivery";
+    if ($("pickup-date")) $("pickup-date").required = method === "pickup";
 
     renderCart();
 }
 
 function updatePaymentFields() {
     const payment = $("payment-method")?.value || "cash";
-    const mpesaFields = $("mpesa-fields");
 
-    if (mpesaFields) {
-        mpesaFields.style.display = payment === "mpesa" ? "" : "none";
+    if ($("mpesa-fields")) {
+        $("mpesa-fields").style.display = payment === "mpesa" ? "" : "none";
     }
 
-    const phone = $("mpesa-phone");
-    if (phone) phone.required = payment === "mpesa";
+    if ($("mpesa-phone")) {
+        $("mpesa-phone").required = payment === "mpesa";
+    }
 }
 
 function openCheckout() {
     const form = $("checkout-form");
-    if (form) form.style.display = "";
-
-    if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (form) {
+        form.style.display = "";
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 }
 
 function closeCheckout() {
-    const form = $("checkout-form");
-    if (form) form.style.display = "none";
+    if ($("checkout-form")) $("checkout-form").style.display = "none";
 }
-
-/* ==========================================
-   DISCOUNT CODE
-   ========================================== */
-
-function applyDiscountCode() {
-    const input = $("discount-code");
-    if (!input) return;
-
-    const code = input.value.trim().toUpperCase();
-
-    if (!code) {
-        appliedDiscount = 0;
-        appliedDiscountCode = "";
-        showMessage("checkout-status", "Enter a discount code first.", true);
-        renderCart();
-        return;
-    }
-
-    // Discount codes can be configured here.
-    // This default list does not create or alter database records.
-    const discounts = {
-        "KELSEY10": 0.10,
-        "WELCOME10": 0.10
-    };
-
-    if (!Object.prototype.hasOwnProperty.call(discounts, code)) {
-        appliedDiscount = 0;
-        appliedDiscountCode = "";
-        showMessage("checkout-status", "That discount code is not valid.", true);
-        renderCart();
-        return;
-    }
-
-    appliedDiscount = Math.round(cartSubtotal() * discounts[code] * 100) / 100;
-    appliedDiscountCode = code;
-
-    showMessage("checkout-status", "Discount applied successfully.");
-    renderCart();
-}
-
-/* ==========================================
-   ORDER DATA
-   ========================================== */
 
 function buildOrderPayload() {
-    const firstName = $("order-first-name")?.value.trim() || "";
-    const lastName = $("order-last-name")?.value.trim() || "";
-    const fullName = `${firstName} ${lastName}`.trim();
-    const email = $("order-email")?.value.trim() || currentUser?.email || "";
+    const first = $("order-first-name")?.value.trim() || "";
+    const last = $("order-last-name")?.value.trim() || "";
+    const name = `${first} ${last}`.trim();
     const phone = $("order-phone")?.value.trim() || "";
+    const email = $("order-email")?.value.trim() || currentUser?.email || "";
 
     const method = $("delivery-method")?.value || "pickup";
     const payment = $("payment-method")?.value || "cash";
 
+    const date = method === "delivery"
+        ? $("delivery-date")?.value
+        : $("pickup-date")?.value;
+
+    const time = method === "delivery"
+        ? $("delivery-time")?.value
+        : $("pickup-time")?.value;
+
     const area = method === "delivery"
-        ? ($("delivery-area")?.value || "")
+        ? $("delivery-area")?.value || null
         : null;
 
     const address = method === "delivery"
-        ? ($("delivery-location")?.value.trim() || "")
+        ? $("delivery-location")?.value.trim() || ""
         : null;
 
-    const scheduledDate = method === "delivery"
-        ? ($("delivery-date")?.value || "")
-        : ($("pickup-date")?.value || "");
-
-    const selectedTime = method === "delivery"
-        ? ($("delivery-time")?.value || "")
-        : ($("pickup-time")?.value || "");
-
-    if (!fullName) throw new Error("Please enter your first and last name.");
-    if (!phone) throw new Error("Please enter your phone number.");
-    if (!scheduledDate) throw new Error("Please select your delivery or pickup date.");
+    if (!name) throw new Error("Enter your first and last name.");
+    if (!phone) throw new Error("Enter your phone number.");
+    if (!date) throw new Error("Select your delivery or pickup date.");
 
     if (method === "delivery" && !area) {
-        throw new Error("Please select a delivery area.");
+        throw new Error("Select your delivery area.");
     }
 
     if (method === "delivery" && !address) {
-        throw new Error("Please enter your delivery location or address.");
+        throw new Error("Enter your delivery address.");
     }
 
-    if (scheduledDate < new Date().toLocaleDateString("en-CA")) {
-        throw new Error("Please select today or a future date.");
-    }
+    let mpesaPhone = null;
 
     if (payment === "mpesa") {
-        const mpesaPhone = $("mpesa-phone")?.value.trim() || "";
-        if (!mpesaPhone) throw new Error("Please enter the M-Pesa phone number.");
+        mpesaPhone = $("mpesa-phone")?.value.trim() || "";
+        if (!mpesaPhone) throw new Error("Enter the M-Pesa phone number.");
     }
 
-    const deliveryFee = Math.max(0, getDeliveryFee());
-    const subtotal = Math.max(0, cartSubtotal());
-    const discount = Math.max(0, cartDiscount());
-    const total = Math.max(0, subtotal - discount + deliveryFee);
+    const sub = Math.max(0, subtotal());
+    const discount = Math.min(Math.max(0, discountAmount), sub);
+    const fee = Math.max(0, deliveryFee());
 
     return {
         customer_id: currentUser?.id || null,
-        customer_name: fullName,
+        customer_name: name,
         customer_email: email || null,
         customer_phone_number: phone,
 
         fulfillment_type: method,
         delivery_area: area,
-        county: null,
-        town: null,
         delivery_address: address,
-        delivery_fee: deliveryFee,
+        delivery_fee: fee,
 
-        scheduled_date: scheduledDate,
+        scheduled_date: date,
+        scheduled_slot: time || "Time to be confirmed",
+        schedule_slot: time || null,
+        delivery_time: time || null,
 
-        // Both scheduling columns are populated to satisfy the database.
-        scheduled_slot: selectedTime || "Time to be confirmed",
-        schedule_slot: selectedTime || null,
-        delivery_time: selectedTime || null,
-
-        subtotal: subtotal,
-        discount_code: appliedDiscountCode || null,
+        subtotal: sub,
+        discount_code: discountCode || null,
         discount_amount: discount,
-        total: total,
+        total: Math.max(0, sub - discount + fee),
 
-        // Values must match the allowed Supabase check constraints.
         payment_method: payment === "cash"
             ? "cash on delivery"
             : "demo mpesa",
 
-        // The owner confirms payment after checking the order.
         payment_status: "unpaid",
+
+        // IMPORTANT: use a SPACE, not an underscore.
         order_status: "awaiting confirmation",
 
-        mpesa_phone: payment === "mpesa"
-            ? ($("mpesa-phone")?.value.trim() || null)
-            : null
+        mpesa_phone: mpesaPhone
     };
 }
 
-/* ==========================================
-   PLACE ORDER
-   ========================================== */
-
 async function placeOrder(event) {
-    if (event) event.preventDefault();
+    event.preventDefault();
+
+    if (submittingOrder) return;
 
     const button = $("place-order-button");
-    if (button) {
-        button.disabled = true;
-        button.textContent = "Placing Order...";
-    }
 
     try {
-        clearMessage("checkout-status");
+        if (!cart.length) throw new Error("Your shopping bag is empty.");
 
-        if (!cart.length) {
-            throw new Error("Your shopping bag is empty.");
+        submittingOrder = true;
+        if (button) {
+            button.disabled = true;
+            button.textContent = "Placing Order...";
         }
 
-        await loadCustomer();
+        await loadUser();
 
         const payload = buildOrderPayload();
 
-        // Refresh stock before placing the order.
         for (const item of cart) {
             const product = products.find(
-                (p) => String(p.id) === String(item.product_id)
+                p => String(p.id) === String(item.product_id)
             );
 
-            if (product && Number(item.quantity) > Number(product.stock)) {
+            if (product && item.quantity > Number(product.stock ?? 0)) {
                 throw new Error(
-                    `${item.name} no longer has enough stock. Please update your bag.`
+                    `${item.name} does not have enough stock. Please update your bag.`
                 );
             }
         }
 
-        // Insert the order with the exact allowed status values.
+        // Explicitly check the exact value before sending it.
+        if (!["awaiting confirmation", "confirmed"].includes(payload.order_status)) {
+            throw new Error("Invalid order status.");
+        }
+
         const { data: order, error: orderError } = await db
             .from("orders")
             .insert(payload)
-            .select()
+            .select("id")
             .single();
 
         if (orderError) {
-            console.error("Order insert failed:", orderError);
+            console.error("Order creation failed:", orderError);
             throw new Error("Order could not be placed: " + orderError.message);
         }
 
-        const orderItems = cart.map((item) => ({
+        const items = cart.map(item => ({
             order_id: order.id,
             product_id: item.product_id,
             product_name: item.name,
-            size: item.size || null,
-            color: item.color || null,
-            quantity: Number(item.quantity),
-            unit_price: Number(item.unit_price),
-            line_total: Number(item.unit_price) * Number(item.quantity)
+            size: item.size,
+            color: item.color,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            line_total: item.unit_price * item.quantity
         }));
 
         const { error: itemsError } = await db
             .from("order_items")
-            .insert(orderItems);
+            .insert(items);
 
         if (itemsError) {
-            console.error("Order items insert failed:", itemsError);
-
-            showMessage(
-                "checkout-status",
-                "The order record was created, but its items could not be saved. Please contact the store owner and do not place the order again yet.",
-                true
+            console.error("Order items could not be saved:", itemsError);
+            throw new Error(
+                "The order was created, but its items could not be saved. Contact the store owner with order number " +
+                order.id + ". Do not place the order again."
             );
-
-            throw new Error("Order items could not be saved: " + itemsError.message);
         }
 
-        const orderNumber = order.id;
-
         cart = [];
-        appliedDiscount = 0;
-        appliedDiscountCode = "";
+        discountAmount = 0;
+        discountCode = "";
         saveCart();
 
-        const form = $("checkout-form");
-        if (form) form.reset();
-
+        $("checkout-form")?.reset();
         updateCheckoutFields();
         updatePaymentFields();
 
-        showMessage(
+        message(
             "checkout-status",
-            `Your order has been placed successfully. Order number: ${orderNumber}. The store will confirm your order and payment.`
+            "Your order has been placed successfully. Order number: " +
+            order.id + ". Your order is awaiting confirmation."
         );
 
         await loadMyOrders();
 
     } catch (error) {
         console.error("Checkout error:", error);
-
-        showMessage(
+        message(
             "checkout-status",
-            error.message || "An unexpected error occurred while placing your order.",
+            error.message || "Something went wrong while placing your order.",
             true
         );
-
     } finally {
+        submittingOrder = false;
         if (button) {
             button.disabled = false;
             button.textContent = "Place Order";
@@ -611,17 +449,11 @@ async function placeOrder(event) {
     }
 }
 
-/* ==========================================
-   CUSTOMER ORDER HISTORY
-   ========================================== */
-
 async function loadMyOrders() {
-    const container = $("customer-orders");
+    const container = $("my-orders-list");
     if (!container) return;
 
-    if (!currentUser) {
-        await loadCustomer();
-    }
+    if (!currentUser) await loadUser();
 
     if (!currentUser) {
         container.innerHTML = "<p>Please sign in to view your orders.</p>";
@@ -630,220 +462,119 @@ async function loadMyOrders() {
 
     const { data, error } = await db
         .from("orders")
-        .select("id,customer_name,total,payment_method,payment_status,order_status,fulfillment_type,scheduled_date,scheduled_slot,created_at")
+        .select("id,total,payment_method,payment_status,order_status,fulfillment_type,scheduled_date,scheduled_slot,created_at")
         .eq("customer_id", currentUser.id)
         .order("created_at", { ascending: false });
 
     if (error) {
-        console.error("Order history failed:", error);
-        container.innerHTML = "<p>Your orders could not be loaded.</p>";
+        console.error("Order history:", error);
+        container.innerHTML = "<p>Orders could not be loaded.</p>";
         return;
     }
 
-    if (!data || !data.length) {
+    if (!data?.length) {
         container.innerHTML = "<p>You have not placed any orders yet.</p>";
         return;
     }
 
-    container.innerHTML = data.map((order) => `
+    container.innerHTML = data.map(order => `
         <article class="customer-order">
-            <h3>Order #${safeText(order.id)}</h3>
-            <p><strong>Total:</strong> ${money(order.total)}</p>
-            <p><strong>Payment:</strong> ${safeText(order.payment_method)}</p>
-            <p><strong>Payment status:</strong> ${safeText(order.payment_status)}</p>
-            <p><strong>Order status:</strong> ${safeText(order.order_status)}</p>
-            <p><strong>Collection/delivery:</strong> ${safeText(order.fulfillment_type)}</p>
-            <p><strong>Scheduled date:</strong> ${safeText(order.scheduled_date || "Not set")}</p>
-            <p><strong>Scheduled time:</strong> ${safeText(order.scheduled_slot || "To be confirmed")}</p>
+            <h3>Order #${escapeHTML(order.id)}</h3>
+            <p>Total: ${money(order.total)}</p>
+            <p>Payment method: ${escapeHTML(order.payment_method)}</p>
+            <p>Payment status: ${escapeHTML(order.payment_status)}</p>
+            <p>Order status: ${escapeHTML(order.order_status)}</p>
+            <p>Method: ${escapeHTML(order.fulfillment_type)}</p>
+            <p>Date: ${escapeHTML(order.scheduled_date || "Not set")}</p>
+            <p>Time: ${escapeHTML(order.scheduled_slot || "To be confirmed")}</p>
         </article>
     `).join("");
 }
 
-/* ==========================================
-   CUSTOMER MESSAGES / REPLIES
-   ========================================== */
+function applyDiscount() {
+    const code = $("discount-code")?.value.trim().toUpperCase() || "";
+    const discounts = { KELSEY10: 0.10, WELCOME10: 0.10 };
 
-async function loadCustomerMessages() {
-    if (!currentUser) await loadCustomer();
-
-    if (!currentUser) return;
-
-    let section = $("customer-messages-section");
-
-    if (!section) {
-        const ordersSection = $("customer-orders");
-        if (!ordersSection) return;
-
-        section = document.createElement("section");
-        section.id = "customer-messages-section";
-        section.innerHTML = `
-            <h2>Messages from Kelsey's Closet</h2>
-            <div id="customer-messages-list">Loading messages...</div>
-        `;
-        ordersSection.insertAdjacentElement("afterend", section);
+    if (!discounts[code]) {
+        discountAmount = 0;
+        discountCode = "";
+        message("checkout-status", "Invalid discount code.", true);
+    } else {
+        discountCode = code;
+        discountAmount = Math.round(subtotal() * discounts[code] * 100) / 100;
+        message("checkout-status", "Discount applied successfully.");
     }
 
-    const list = $("customer-messages-list");
-    if (!list) return;
-
-    const email = currentUser.email || $("order-email")?.value.trim() || "";
-
-    if (!email) {
-        list.innerHTML = "<p>Sign in with your customer email to view replies.</p>";
-        return;
-    }
-
-    const { data, error } = await db
-        .from("messages")
-        .select("id,customer_name,customer_email,subject,message,created_at,reply,replied_at")
-        .eq("customer_email", email)
-        .order("created_at", { ascending: false });
-
-    if (error) {
-        console.error("Customer messages failed:", error);
-        list.innerHTML = "<p>Messages could not be loaded right now.</p>";
-        return;
-    }
-
-    if (!data || !data.length) {
-        list.innerHTML = "<p>You have no messages yet.</p>";
-        return;
-    }
-
-    list.innerHTML = data.map((message) => `
-        <article class="customer-message">
-            <h3>${safeText(message.subject || "Message")}</h3>
-            <p>${safeText(message.message || "")}</p>
-            <p><small>${safeText(message.created_at || "")}</small></p>
-            <h4>Store reply</h4>
-            <p>${safeText(message.reply || "No reply yet.")}</p>
-            ${message.replied_at
-                ? `<small>Replied: ${safeText(message.replied_at)}</small>`
-                : ""}
-        </article>
-    `).join("");
+    renderCart();
 }
 
-/* ==========================================
-   CONTACT FORM
-   ========================================== */
-
-async function submitContactMessage(event) {
-    event.preventDefault();
-
-    const name = $("contact-name")?.value.trim() || "";
-    const email = $("contact-email")?.value.trim() || currentUser?.email || "";
-    const phone = $("contact-phone")?.value.trim() || "";
-    const message = $("contact-message")?.value.trim() || "";
-
-    if (!name || !email || !message) {
-        showMessage("contact-status", "Please fill in your name, email and message.", true);
-        return;
-    }
-
-    const { error } = await db.from("messages").insert({
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone || null,
-        subject: "Customer enquiry",
-        message: message
-    });
-
-    if (error) {
-        console.error("Contact message failed:", error);
-        showMessage("contact-status", "Your message could not be sent: " + error.message, true);
-        return;
-    }
-
-    showMessage("contact-status", "Your message has been sent successfully.");
-    $("customer-contact-form")?.reset();
-}
-
-/* ==========================================
-   SIGN OUT
-   ========================================== */
-
-async function signOutCustomer() {
-    const { error } = await db.auth.signOut();
-
-    if (error) {
-        alert("Could not sign out: " + error.message);
-        return;
-    }
-
-    window.location.href = "login.html";
-}
-
-/* ==========================================
-   EVENT HANDLERS
-   ========================================== */
-
-function attachCustomerEvents() {
-    $("customer-products")?.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-product-id]");
-        if (button) addProductToCart(button.dataset.productId);
+function attachEvents() {
+    $("customer-products")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-add-product]");
+        if (button) addToCart(button.dataset.addProduct);
     });
 
     $("category-filter")?.addEventListener("change", displayProducts);
 
-    $("cart-items")?.addEventListener("change", (event) => {
-        const input = event.target.closest("[data-cart-quantity]");
-        if (input) {
-            updateCartQuantity(Number(input.dataset.cartQuantity), input.value);
+    $("cart-items")?.addEventListener("change", event => {
+        const input = event.target.closest("[data-quantity]");
+        if (!input) return;
+
+        const item = cart[Number(input.dataset.quantity)];
+        if (!item) return;
+
+        const quantity = Number(input.value);
+
+        if (!Number.isInteger(quantity) || quantity < 1 ||
+            quantity > item.available_stock) {
+            alert("Please enter a valid quantity within the available stock.");
+            renderCart();
+            return;
         }
+
+        item.quantity = quantity;
+        saveCart();
     });
 
-    $("cart-items")?.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-remove-cart]");
-        if (button) removeCartItem(Number(button.dataset.removeCart));
+    $("cart-items")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-remove]");
+        if (!button) return;
+
+        cart.splice(Number(button.dataset.remove), 1);
+        saveCart();
     });
 
     $("checkout-toggle")?.addEventListener("click", openCheckout);
-
     $("checkout-form")?.addEventListener("submit", placeOrder);
-
     $("delivery-method")?.addEventListener("change", updateCheckoutFields);
     $("delivery-area")?.addEventListener("change", renderCart);
     $("payment-method")?.addEventListener("change", updatePaymentFields);
-
-    $("discount-apply")?.addEventListener("click", applyDiscountCode);
-
-    $("customer-signout")?.addEventListener("click", signOutCustomer);
-
-    $("customer-contact-form")?.addEventListener("submit", submitContactMessage);
+    $("discount-apply")?.addEventListener("click", applyDiscount);
 
     $("back-to-bag")?.addEventListener("click", () => {
-        const bag = $("shopping-bag");
-        if (bag) bag.scrollIntoView({ behavior: "smooth", block: "start" });
         closeCheckout();
-    });
-
-    document.querySelectorAll("[data-open-checkout]").forEach((button) => {
-        button.addEventListener("click", openCheckout);
+        $("cart-items")?.scrollIntoView({ behavior: "smooth" });
     });
 }
 
-/* ==========================================
-   START CUSTOMER PAGE
-   ========================================== */
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const saved = JSON.parse(
+            localStorage.getItem("kc-shopping-cart") || "[]"
+        );
+        cart = Array.isArray(saved) ? saved : [];
+    } catch {
+        cart = [];
+    }
 
-async function loadCustomerPage() {
-    cart = getCart();
-
-    attachCustomerEvents();
+    attachEvents();
     updateCheckoutFields();
     updatePaymentFields();
     renderCart();
 
-    await loadCustomer();
+    await loadUser();
     await loadProducts();
     await loadMyOrders();
-    await loadCustomerMessages();
-}
-
-document.addEventListener("DOMContentLoaded", loadCustomerPage);
-
-window.addEventListener("focus", () => {
-    loadMyOrders();
-    loadCustomerMessages();
 });
+
+window.addEventListener("focus", loadMyOrders);
