@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kelsiy's Closet | Style That Speaks</title>
-  <meta name="description" content=" Discover clothing, shoes and accessories at Kelsiy's Closet.">
+  <meta name="description" content="Discover clothing, shoes and accessories at Kelsiy's Closet.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    : root {
+    :root {
       --burgundy: #701b39;
       --dark-burgundy: #3e1023;
       --cream: #faf5ed;
@@ -609,6 +609,18 @@
     #customer-cart-message { color:var(--burgundy); font-weight:600; }
     @media (max-width:600px) { .customer-cart-row { grid-template-columns:68px minmax(0,1fr); gap:10px; } .customer-cart-row img { width:68px; height:88px; } .customer-cart-row > strong { grid-column:2; } }
 
+
+    .customer-cart-checkout-actions,.customer-checkout-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .customer-checkout-form { margin-top:24px; padding:24px; border:1px solid #e4d1c7; border-top:4px solid var(--gold); border-radius:8px; background:#fffaf5; }
+    .customer-checkout-form h3 { margin:0 0 8px; color:var(--burgundy); font-family:"Playfair Display",Georgia,serif; font-size:27px; }
+    .customer-checkout-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:18px; }
+    .customer-checkout-grid label { display:grid; gap:7px; color:var(--dark-burgundy); font-weight:700; font-size:14px; }
+    .customer-checkout-grid input,.customer-checkout-grid select,.customer-checkout-grid textarea { width:100%; padding:12px; border:1px solid #d9c5c8; border-radius:5px; background:white; box-sizing:border-box; }
+    .checkout-notes-label { grid-column:1 / -1; }
+    .customer-checkout-total { display:grid; gap:5px; margin:20px 0; padding:14px; background:#f7eee5; color:var(--burgundy); }
+    .customer-checkout-total small { color:#70636a; }
+    #customer-checkout-status { color:var(--burgundy); font-weight:700; white-space:pre-wrap; }
+    @media(max-width:600px) { .customer-checkout-grid { grid-template-columns:1fr; } .checkout-notes-label { grid-column:auto; } .customer-cart-checkout-actions,.customer-checkout-actions { width:100%; } .customer-cart-checkout-actions button,.customer-checkout-actions button { width:100%; } }
   </style>
 </head>
 
@@ -764,9 +776,44 @@
         <div id="customer-cart-items" aria-live="polite"></div>
         <div id="customer-cart-summary" class="customer-cart-summary">
           <strong>Subtotal: <span id="customer-cart-subtotal">KES 0</span></strong>
-          <button type="button" id="customer-clear-cart" class="kc-button kc-button-light">CLEAR BAG</button>
+          <div class="customer-cart-checkout-actions">
+            <button type="button" id="customer-clear-cart" class="kc-button kc-button-light">CLEAR BAG</button>
+            <button type="button" id="customer-checkout-button" class="kc-button">PROCEED TO CHECKOUT</button>
+          </div>
         </div>
         <p id="customer-cart-message" role="status" aria-live="polite"></p>
+
+        <form id="customer-checkout-form" class="customer-checkout-form" hidden>
+          <p class="kc-eyebrow">COMPLETE YOUR ORDER</p>
+          <h3>CHECKOUT</h3>
+          <p>Your order will be sent to Kelsiy's Closet so the owner can review it.</p>
+          <div class="customer-checkout-grid">
+            <label>Full name *<input id="checkout-customer-name" required autocomplete="name"></label>
+            <label>Phone number *<input id="checkout-customer-phone" required type="tel" inputmode="tel" pattern="(?:\+254|0)?[17][0-9]{8}" placeholder="0712345678" autocomplete="tel"></label>
+            <label>Email address *<input id="checkout-customer-email" required type="email" autocomplete="email" readonly></label>
+            <label>How would you like to receive your order? *
+              <select id="checkout-receiving-method" required>
+                <option value="pickup">Pick up from the shop</option>
+                <option value="delivery">Delivery</option>
+              </select>
+            </label>
+            <label id="checkout-address-wrap" hidden>Delivery address / area *<input id="checkout-address" placeholder="Estate, building, street and area"></label>
+            <label>Payment method *
+              <select id="checkout-payment-method" required>
+                <option value="pay_on_receipt">Pay when collecting / receiving</option>
+                <option value="simulated_mpesa">M-Pesa (simulated payment)</option>
+              </select>
+            </label>
+            <label id="checkout-mpesa-wrap" hidden>M-Pesa phone number *<input id="checkout-mpesa-phone" type="tel" inputmode="tel" placeholder="0712345678"></label>
+            <label class="checkout-notes-label">Order notes (optional)<textarea id="checkout-order-notes" rows="3" placeholder="Any extra information about your order"></textarea></label>
+          </div>
+          <div class="customer-checkout-total"><strong>Order total: <span id="checkout-order-total">KES 0</span></strong><small>Delivery charges, if applicable, will be confirmed by the owner before the order is finalised.</small></div>
+          <div class="customer-checkout-actions">
+            <button type="button" id="customer-back-to-bag" class="kc-button kc-button-light">BACK TO BAG</button>
+            <button type="submit" id="customer-place-order" class="kc-button">PLACE ORDER</button>
+          </div>
+          <p id="customer-checkout-status" role="status" aria-live="polite"></p>
+        </form>
       </div>
     </section>
 
