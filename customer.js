@@ -1,298 +1,270 @@
+
 "use strict";
 
-const CUSTOMER_SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const CUSTOMER_SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
-const customerDB = window.supabase.createClient(
-  CUSTOMER_SUPABASE_URL,
-  CUSTOMER_SUPABASE_KEY
-);
-
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-const money = n => "KSh " + Number(n || 0).toLocaleString("en-KE", {
+const clean = value => String(value ?? "").trim();
+const money = value => "KSh " + Number(value || 0).toLocaleString("en-KE", {
   maximumFractionDigits: 2
 });
 
-let allProducts = [];
-let currentCustomer = null;
+let products = [];
 let cart = [];
+let currentUser = null;
+let submitting = false;
 
-try {
-  cart = JSON.parse(localStorage.getItem("kc-shopping-cart") || "[]");
-  if (!Array.isArray(cart)) cart = [];
-} catch {
-  cart = [];
-}
-
-function status(id, message, error = false) {
+function show(id, text) {
   const node = $(id);
-  if (!node) return;
-  node.textContent = message;
-  node.style.color = error ? "#b42318" : "";
+  if (node) node.textContent = text;
 }
 
-function addText(parent, tag, value, className = "") {
-  const node = document.createElement(tag);
-  node.textContent = value == null ? "" : String(value);
-  if (className) node.className = className;
-  parent.appendChild(node);
-  return node;
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[char]);
 }
 
-function productImagePath(value) {
-  const path = String(value || "").trim();
-  if (!path) return "";
-  if (/^(https?:|data:|blob:)/i.test(path)) return path;
-  return path.startsWith("image/")
-    ? path
-    : "image/" + path.replace(/^\.\//, "");
+function todayLocal() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString().slice(0, 10);
 }
 
-function optionsFrom(value) {
-  if (Array.isArray(value)) {
-    return value.map(String).map(v => v.trim()).filter(Boolean);
-  }
-  return String(value || "")
-    .split(/[,;|]/)
-    .map(v => v.trim())
-    .filter(Boolean);
+function getOptions(value) {
+  if (Array.isArray(value)) return value.map(clean).filter(Boolean);
+  return clean(value).split(/[,/|]/).map(x => x.trim()).filter(Boolean);
 }
 
-function updateBagCount() {
-  const count = cart.reduce(
-    (sum, item) => sum + Number(item.quantity || 0), 0
-  );
-  if ($("bag-count")) $("bag-count").textContent = count;
+function imagePath(product) {
+  return product.image_url || product.image_path || product.image || "";
 }
 
-function saveCart() {
-  localStorage.setItem("kc-shopping-cart", JSON.stringify(cart));
-  updateBagCount();
-  renderCart();
+function stockOf(product) {
+  return Number(product.stock ?? product.quantity_in_stock ?? 0);
 }
 
-function currentCategory() {
-  return String($("category-filter")?.value || "all")
-    .trim().toLowerCase();
+function priceOf(product) {
+  return Number(product.price || 0);
 }
 
-function categoryMatches(product, selected) {
-  if (!selected || selected === "all" || selected === "all items") {
-    return true;
-  }
-
-  const category = String(product.category || "").toLowerCase();
-
-  const groups = {
-    "women's clothes": ["women", "women's clothes", "clothing", "clothes", "female"],
-    "women": ["women", "women's clothes", "clothing", "clothes", "female"],
-    "men's clothes": ["men", "men's clothes", "male"],
-    "men": ["men", "men's clothes", "male"],
-    "kids' clothes": ["kids", "kid", "children", "kids' clothes"],
-    "kids": ["kids", "kid", "children", "kids' clothes"],
-    "shoes": ["shoes", "shoe", "footwear", "heels", "sneakers", "converse"],
-    "accessories": ["accessories", "accessory", "jewellery", "jewelry", "rings", "necklaces", "earrings"]
-  };
-
-  return (groups[selected] || [selected]).some(
-    word => category === word || category.includes(word)
+function phoneIsValid(value) {
+  return /^(?:(?:\+254|254)|0)?[17]\d{8}$/.test(
+    clean(value).replace(/[\s()-]/g, "")
   );
 }
 
-function displayProducts() {
+function formatStatus(value) {
+  return String(value || "Pending")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+/* ACCOUNT */
+async function loadCustomerAccount() {
+  const { data, error } = await db.auth.getUser();
+  if (error) throw error;
+
+  currentUser = data.user;
+  if (!currentUser) {
+    show("catalogue-message", "Please sign in to shop.");
+    return null;
+  }
+
+  return currentUser;
+}
+
+/* PRODUCT CATALOGUE */
+async function loadProducts() {
+  show("catalogue-message", "Loading our collection...");
+
+  try {
+    const { data, error } = await db
+      .from("products")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    products = (data || []).filter(product =>
+      product.active !== false && product.is_active !== false
+    );
+
+    buildCategoryFilter();
+    renderProducts();
+
+    show("catalogue-message", products.length
+      ? products.length + " product(s) available."
+      : "Our collection is being updated.");
+  } catch (error) {
+    console.error("Catalogue error:", error);
+    show("catalogue-message", "Could not load products: " + error.message);
+  }
+}
+
+function buildCategoryFilter() {
+  const select = $("category-filter");
+  if (!select) return;
+
+  const previous = select.value || "all";
+  const categories = [...new Set(products.map(p => clean(p.category)).filter(Boolean))];
+
+  select.replaceChildren(new Option("All Categories", "all"));
+
+  const standard = ["Women", "Men", "Accessories"];
+  const ordered = [
+    ...standard.filter(c => categories.some(x => x.toLowerCase() === c.toLowerCase())),
+    ...categories.filter(c => !standard.some(x => x.toLowerCase() === c.toLowerCase()))
+  ];
+
+  ordered.forEach(category => select.add(new Option(category, category)));
+
+  if ([...select.options].some(option => option.value === previous)) {
+    select.value = previous;
+  }
+}
+
+function renderProducts() {
   const container = $("customer-products");
   if (!container) return;
 
   container.replaceChildren();
 
-  const products = allProducts.filter(
-    product => categoryMatches(product, currentCategory())
+  const category = clean($("category-filter")?.value || "all").toLowerCase();
+
+  const visible = products.filter(product =>
+    category === "all" || clean(product.category).toLowerCase() === category
   );
 
-  if (!products.length) {
-    addText(container, "p", allProducts.length
-      ? "There are no products in this category yet."
-      : "No products are available right now.");
+  if (!visible.length) {
+    const empty = document.createElement("p");
+    empty.className = "kc-empty";
+    empty.textContent = "No products found in this category.";
+    container.appendChild(empty);
     return;
   }
 
-  products.forEach(product => {
+  visible.forEach(product => {
     const card = document.createElement("article");
     card.className = "customer-product-card";
 
-    const image = document.createElement("img");
-    image.className = "customer-product-image";
-    image.alt = product.name || "Fashion product";
-    image.loading = "lazy";
-
-    const path = productImagePath(
-      product.image_url || product.image || product.image_path
+    const sizes = getOptions(product.size || product.sizes);
+    const colours = getOptions(
+      product.color || product.colour || product.colors
     );
+    const stock = stockOf(product);
+    const image = imagePath(product);
 
-    if (path) image.src = path;
-    image.onerror = () => image.removeAttribute("src");
-    card.appendChild(image);
+    card.innerHTML = `
+      <img class="customer-product-image"
+        src="${escapeHTML(image)}"
+        alt="${escapeHTML(product.name || "Clothing item")}"
+        onerror="this.style.display='none'">
 
-    const details = document.createElement("div");
-    details.className = "customer-product-details";
+      <div class="customer-product-details">
+        <h3>${escapeHTML(product.name)}</h3>
+        <p>${escapeHTML(product.description || "")}</p>
+        <p class="customer-product-price">${money(priceOf(product))}</p>
+        <p class="customer-product-stock ${stock <= 0 ? "out-of-stock" : ""}">
+          ${stock > 0 ? stock + " available" : "Out of stock"}
+        </p>
 
-    addText(details, "h3", product.name || "Fashion item");
-    addText(details, "p", money(product.price), "customer-product-price");
+        <div class="kc-product-options">
+          <label>Size
+            <select class="choose-size">
+              <option value="">Choose size</option>
+              ${sizes.map(s =>
+                `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`
+              ).join("")}
+            </select>
+          </label>
 
-    if (product.description) {
-      addText(details, "p", product.description);
-    }
+          <label>Colour
+            <select class="choose-colour">
+              <option value="">Choose colour</option>
+              ${colours.map(c =>
+                `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`
+              ).join("")}
+            </select>
+          </label>
 
-    const stock = Math.max(0, Number(product.stock) || 0);
-    addText(details, "p", stock ? stock + " item(s) available" : "SOLD OUT");
+          <label>Quantity
+            <input class="choose-quantity" type="number"
+              min="1" max="${Math.max(stock, 1)}" value="1">
+          </label>
+        </div>
 
-    const colors = optionsFrom(product.color || product.colour);
-    const sizes = optionsFrom(product.size);
+        <button class="kc-button kc-add-button" type="button"
+          ${stock <= 0 ? "disabled" : ""}>
+          ${stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"}
+        </button>
+      </div>`;
 
-    let colorSelect = null;
-    let sizeSelect = null;
+    card.querySelector(".kc-add-button").addEventListener("click", () => {
+      const size = card.querySelector(".choose-size").value;
+      const colour = card.querySelector(".choose-colour").value;
+      const quantity = Number(card.querySelector(".choose-quantity").value);
 
-    if (colors.length) {
-      const label = addText(details, "label", "Choose colour ");
-      colorSelect = document.createElement("select");
-      colorSelect.setAttribute("aria-label", "Choose colour");
-      colors.forEach(color => colorSelect.add(new Option(color, color)));
-      label.appendChild(colorSelect);
-    }
-
-    if (sizes.length) {
-      const label = addText(details, "label", "Choose size ");
-      sizeSelect = document.createElement("select");
-      sizeSelect.setAttribute("aria-label", "Choose size");
-      sizes.forEach(size => sizeSelect.add(new Option(size, size)));
-      label.appendChild(sizeSelect);
-    }
-
-    const quantityLabel = addText(details, "label", "Quantity ");
-    const quantityInput = document.createElement("input");
-    quantityInput.type = "number";
-    quantityInput.min = "1";
-    quantityInput.max = String(stock);
-    quantityInput.value = "1";
-    quantityInput.required = true;
-    quantityInput.disabled = stock < 1;
-    quantityLabel.appendChild(quantityInput);
-
-    const add = addText(
-      details,
-      "button",
-      stock ? "ADD TO BAG" : "SOLD OUT",
-      "kc-button kc-add-button"
-    );
-    add.type = "button";
-    add.disabled = stock < 1;
-
-    add.addEventListener("click", () => {
-      const quantity = Number(quantityInput.value);
+      if (sizes.length && !size) return alert("Please choose a size.");
+      if (colours.length && !colour) return alert("Please choose a colour.");
 
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
-        alert("Choose a whole-number quantity from 1 to " + stock + ".");
-        return;
+        return alert("Choose a valid quantity within the available stock.");
       }
 
-      const color = colorSelect ? colorSelect.value : "";
-      const size = sizeSelect ? sizeSelect.value : "";
-      const key = String(product.id) + "|" + color + "|" + size;
-      const existing = cart.find(item => item.key === key);
+      const existing = cart.find(item =>
+        String(item.id) === String(product.id) &&
+        item.size === size && item.colour === colour
+      );
 
       if (existing) {
         if (existing.quantity + quantity > stock) {
-          alert("Only " + stock + " item(s) are available.");
-          return;
+          return alert("That quantity exceeds available stock.");
         }
         existing.quantity += quantity;
       } else {
         cart.push({
-          key,
-          product_id: product.id,
+          id: product.id,
           name: product.name,
-          image_url: product.image_url || product.image || product.image_path || "",
-          color,
+          price: priceOf(product),
+          image,
           size,
+          colour,
           quantity,
-          unit_price: Number(product.price) || 0,
-          available_stock: stock
+          stock
         });
       }
 
-      saveCart();
-      add.textContent = "ADDED TO BAG";
+      renderCart();
+      show("checkout-status", "Added to your shopping bag.");
     });
 
-    card.appendChild(details);
     container.appendChild(card);
   });
 }
 
-async function loadCustomerProducts() {
-  const container = $("customer-products");
-  if (!container) return;
-
-  status("catalogue-message", "Loading our collection...");
-
-  const { data, error } = await customerDB
-    .from("products")
-    .select("*")
-    .eq("active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Products:", error);
-    status("catalogue-message", "Products could not load: " + error.message, true);
-    return;
-  }
-
-  allProducts = data || [];
-
-  cart = cart.filter(item =>
-    allProducts.some(p => String(p.id) === String(item.product_id))
-  ).map(item => {
-    const product = allProducts.find(
-      p => String(p.id) === String(item.product_id)
-    );
-
-    return {
-      ...item,
-      name: product.name,
-      image_url: product.image_url || product.image || product.image_path || "",
-      unit_price: Number(product.price) || 0,
-      available_stock: Number(product.stock) || 0
-    };
-  });
-
-  displayProducts();
-  saveCart();
-  status("catalogue-message", allProducts.length + " product(s) available.");
+/* BAG AND ORDER SUMMARY */
+function subtotal() {
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
-function calculateTotals() {
-  const subtotal = cart.reduce(
-    (sum, item) => sum + Number(item.unit_price) * Number(item.quantity), 0
-  );
+function deliveryFee() {
+  if ($("delivery-method")?.value === "pickup") return 0;
 
-  const code = ($("discount-code")?.value || "").trim().toUpperCase();
-  const discount = code === "KC10" ? subtotal * 0.10 : 0;
-  const method = $("delivery-method")?.value || "delivery";
-  const area = $("delivery-area")?.value || "near_shop";
+  switch ($("delivery-area")?.value) {
+    case "near_shop": return 200;
+    case "nairobi": return 500;
+    case "countrywide": return 700;
+    default: return 0;
+  }
+}
 
-  const fee = method === "pickup" ? 0 :
-    area === "near_shop" ? 200 :
-    area === "nairobi" ? 500 : 800;
-
-  return {
-    subtotal,
-    discount,
-    fee,
-    total: Math.max(0, subtotal - discount + fee),
-    code,
-    method,
-    area
-  };
+function discountAmount() {
+  // No discount is applied unless a discount code is configured.
+  return 0;
 }
 
 function renderCart() {
@@ -302,530 +274,522 @@ function renderCart() {
   container.replaceChildren();
 
   if (!cart.length) {
-    addText(container, "p", "Your bag is empty. Add products from Our Collection to begin.");
+    const empty = document.createElement("p");
+    empty.className = "kc-empty";
+    empty.textContent = "Your bag is empty. Explore the collection to get started.";
+    container.appendChild(empty);
   }
 
   cart.forEach((item, index) => {
-    const row = document.createElement("article");
-    row.className = "kc-cart-line";
+    const line = document.createElement("div");
+    line.className = "kc-cart-line";
 
-    const image = document.createElement("img");
-    image.alt = item.name || "Product";
-    const path = productImagePath(item.image_url);
-    if (path) image.src = path;
-    image.onerror = () => image.removeAttribute("src");
-    row.appendChild(image);
+    line.innerHTML = `
+      <img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}"
+        onerror="this.style.display='none'">
+      <div>
+        <h3>${escapeHTML(item.name)}</h3>
+        <p>Size: ${escapeHTML(item.size || "Not specified")}</p>
+        <p>Colour: ${escapeHTML(item.colour || "Not specified")}</p>
+        <p>${money(item.price)} each</p>
+        <label>Quantity
+          <input class="cart-quantity" type="number" min="1"
+            max="${item.stock}" value="${item.quantity}">
+        </label>
+        <p><strong>${money(item.price * item.quantity)}</strong></p>
+        <button class="kc-button kc-button-outline remove-item" type="button">
+          REMOVE
+        </button>
+      </div>`;
 
-    const details = document.createElement("div");
-    addText(details, "h3", item.name);
+    line.querySelector(".cart-quantity").addEventListener("change", event => {
+      const quantity = Number(event.target.value);
 
-    if (item.color) addText(details, "p", "Colour: " + item.color);
-    if (item.size) addText(details, "p", "Size: " + item.size);
-
-    addText(details, "p", money(item.unit_price) + " each");
-
-    const label = addText(details, "label", "Quantity ");
-    const quantity = document.createElement("input");
-    quantity.type = "number";
-    quantity.min = "1";
-    quantity.max = String(Math.max(1, Number(item.available_stock) || 1));
-    quantity.value = String(item.quantity);
-    label.appendChild(quantity);
-
-    quantity.addEventListener("change", () => {
-      const value = Number(quantity.value);
-      const stock = Number(item.available_stock) || 0;
-
-      if (!Number.isInteger(value) || value < 1 || value > stock) {
-        alert("Quantity must be between 1 and " + stock + ".");
-        quantity.value = String(item.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1 ||
+          quantity > item.stock) {
+        alert("Choose a valid quantity within available stock.");
+        event.target.value = item.quantity;
         return;
       }
 
-      cart[index].quantity = value;
-      saveCart();
+      cart[index].quantity = quantity;
+      renderCart();
     });
 
-    const remove = addText(
-      details, "button", "REMOVE", "kc-button kc-button-outline"
-    );
-    remove.type = "button";
-    remove.addEventListener("click", () => {
+    line.querySelector(".remove-item").addEventListener("click", () => {
       cart.splice(index, 1);
-      saveCart();
+      renderCart();
     });
 
-    row.appendChild(details);
-    container.appendChild(row);
+    container.appendChild(line);
   });
 
-  const totals = calculateTotals();
+  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const sub = subtotal();
+  const discount = discountAmount();
+  const fee = deliveryFee();
 
-  if ($("cart-subtotal")) $("cart-subtotal").textContent = money(totals.subtotal);
-  if ($("cart-discount")) {
-    $("cart-discount").textContent = totals.discount
-      ? "−" + money(totals.discount) + " (KC10)"
-      : money(0);
-  }
-  if ($("cart-delivery")) {
-    $("cart-delivery").textContent = totals.method === "pickup"
-      ? "Free pickup" : money(totals.fee);
-  }
-  if ($("cart-total")) $("cart-total").textContent = money(totals.total);
-
-  updateBagCount();
+  show("bag-count", count);
+  show("cart-subtotal", money(sub));
+  show("cart-discount", money(discount));
+  show("cart-delivery", money(fee));
+  show("cart-total", money(Math.max(0, sub - discount + fee)));
 }
 
-async function loadCustomerAccount() {
-  const { data, error } = await customerDB.auth.getUser();
-
-  if (error || !data?.user) {
-    currentCustomer = null;
-    return null;
-  }
-
-  currentCustomer = data.user;
-  return currentCustomer;
-}
-
-function updateCustomerInfo() {
-  if (!currentCustomer) return;
-
-  if ($("order-email") && !$("order-email").value) {
-    $("order-email").value = currentCustomer.email || "";
-  }
-
-  if ($("contact-email") && !$("contact-email").value) {
-    $("contact-email").value = currentCustomer.email || "";
-  }
-}
-
-function setMinimumDates() {
-  const now = new Date();
-  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString().slice(0, 10);
-
-  ["delivery-date", "pickup-date"].forEach(id => {
-    const input = $(id);
-    if (input) {
-      input.min = today;
-      if (!input.value) input.value = today;
-    }
-  });
-}
-
-function updateCheckoutFields() {
+/* CHECKOUT DISPLAY */
+function updateFulfilment() {
   const pickup = $("delivery-method")?.value === "pickup";
 
   if ($("delivery-fields")) $("delivery-fields").hidden = pickup;
   if ($("pickup-fields")) $("pickup-fields").hidden = !pickup;
 
+  if ($("delivery-area")) $("delivery-area").required = !pickup;
   if ($("delivery-location")) $("delivery-location").required = !pickup;
   if ($("delivery-date")) $("delivery-date").required = !pickup;
   if ($("delivery-time")) $("delivery-time").required = !pickup;
+
   if ($("pickup-date")) $("pickup-date").required = pickup;
   if ($("pickup-time")) $("pickup-time").required = pickup;
 
   renderCart();
 }
 
-async function loadMyOrders() {
-  const list = $("my-orders-list");
-  if (!list) return;
+function updatePayment() {
+  const isMpesa = $("payment-method")?.value === "mpesa";
+  if ($("mpesa-fields")) $("mpesa-fields").hidden = !isMpesa;
+  if ($("mpesa-phone")) $("mpesa-phone").required = isMpesa;
+}
 
-  list.replaceChildren();
-  const user = currentCustomer || await loadCustomerAccount();
+function setDateLimits() {
+  const today = todayLocal();
 
-  if (!user) {
-    status("my-orders-status", "Please sign in to view your orders.");
-    return;
-  }
+  ["delivery-date", "pickup-date"].forEach(id => {
+    const field = $(id);
+    if (!field) return;
 
-  status("my-orders-status", "Loading your orders...");
+    field.min = today;
 
-  const { data, error } = await customerDB
-    .from("orders")
-    .select("*")
-    .eq("customer_id", user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    status("my-orders-status", "Orders could not load: " + error.message, true);
-    return;
-  }
-
-  if (!data?.length) {
-    status("my-orders-status", "You have not placed any orders yet.");
-    return;
-  }
-
-  status("my-orders-status", data.length + " order(s) found.");
-
-  for (const order of data) {
-    const card = document.createElement("article");
-    card.className = "kc-order-card";
-
-    addText(card, "h3", "Order " + String(order.id).slice(0, 8).toUpperCase());
-    addText(card, "p", "Placed: " + new Date(order.created_at).toLocaleString("en-KE"));
-    addText(card, "p", "Total: " + money(order.total));
-    addText(card, "p", "Payment: " + (order.payment_method || "Not specified") +
-      " — " + (order.payment_status || "unpaid"));
-    addText(card, "p", "Order status: " +
-      (order.order_status || "awaiting confirmation"));
-
-    const destination = order.fulfillment_type === "pickup"
-      ? "Shop pickup"
-      : [order.delivery_address, order.town, order.county].filter(Boolean).join(", ");
-
-    addText(card, "p",
-      (order.fulfillment_type || "delivery") + ": " +
-      (destination || "Address not provided") + " · " +
-      (order.scheduled_date || "Date not set") + " " +
-      (order.scheduled_slot || order.schedule_slot || "Time not set")
-    );
-
-    const { data: items, error: itemError } = await customerDB
-      .from("order_items")
-      .select("product_name,color,size,quantity,unit_price,line_total")
-      .eq("order_id", order.id);
-
-    if (itemError) {
-      addText(card, "p", "Order items could not load: " + itemError.message);
-    } else {
-      (items || []).forEach(item => {
-        addText(card, "p",
-          item.product_name +
-          (item.color ? " (" + item.color + ")" : "") +
-          (item.size ? " / " + item.size : "") +
-          " × " + item.quantity + " — " +
-          money(item.line_total ?? Number(item.unit_price) * Number(item.quantity))
-        );
-      });
+    if (!field.value || field.value < today) {
+      field.value = today;
     }
+  });
+}
 
-    list.appendChild(card);
+function setCheckoutVisible(visible) {
+  const form = $("checkout-form");
+  if (!form) return;
+
+  form.hidden = !visible;
+
+  if (visible) {
+    setDateLimits();
+    updateFulfilment();
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    $("shopping-bag")?.scrollIntoView({ behavior: "smooth" });
   }
+}
+
+/* ORDER SUBMISSION */
+function orderPayloadVariants(details) {
+  const common = {
+    customer_id: details.user.id,
+    customer_name: details.name,
+    customer_email: details.email,
+    fulfillment_type: details.method,
+    delivery_area: details.area,
+    county: details.county,
+    town: details.town,
+    delivery_address: details.address,
+    delivery_fee: details.fee,
+    subtotal: details.subtotal,
+    discount_code: null,
+    discount_amount: 0,
+    total: details.total,
+    payment_method: details.paymentMethod,
+    payment_status: "unpaid",
+    order_status: "awaiting_confirmation",
+    order_notes: details.notes || null
+  };
+
+  // The project has had both newer and older column names.
+  // Each variant includes a real date and time, never null.
+  return [
+    {
+      ...common,
+      customer_phone_number: details.phone,
+      schedule_date: details.date,
+      schedule_slot: details.slot,
+      mpesa_phone_number: details.mpesaPhone
+    },
+    {
+      ...common,
+      customer_phone: details.phone,
+      scheduled_date: details.date,
+      scheduled_slot: details.slot,
+      mpesa_phone: details.mpesaPhone
+    },
+    {
+      ...common,
+      customer_phone: details.phone,
+      customer_phone_number: details.phone,
+      schedule_date: details.date,
+      scheduled_date: details.date,
+      schedule_slot: details.slot,
+      scheduled_slot: details.slot,
+      delivery_date: details.date,
+      delivery_time: details.slot,
+      mpesa_phone: details.mpesaPhone,
+      mpesa_phone_number: details.mpesaPhone
+    }
+  ];
+}
+
+function canRetrySchema(error) {
+  const text = String(error?.message || "").toLowerCase();
+  return error?.code === "PGRST204" ||
+    error?.code === "42703" ||
+    error?.code === "23502" ||
+    text.includes("schema cache") ||
+    text.includes("does not exist") ||
+    text.includes("could not find") ||
+    text.includes("not-null constraint") ||
+    text.includes("violates not-null");
+}
+
+async function insertOrder(details) {
+  const variants = orderPayloadVariants(details);
+  let lastError = null;
+
+  for (const payload of variants) {
+    const result = await db.from("orders")
+      .insert(payload)
+      .select("id,created_at")
+      .single();
+
+    if (!result.error) return result.data;
+
+    lastError = result.error;
+    console.error("Order insert attempt failed:", result.error);
+
+    if (!canRetrySchema(result.error)) break;
+  }
+
+  throw lastError || new Error("Could not save your order.");
 }
 
 async function placeOrder(event) {
   event.preventDefault();
+  if (submitting) return;
 
   if (!cart.length) {
-    status("checkout-status", "Your bag is empty. Add a product first.", true);
+    show("checkout-status", "Your bag is empty. Add a product first.");
     return;
   }
-
-  const user = currentCustomer || await loadCustomerAccount();
-
-  if (!user) {
-    status("checkout-status",
-      "Please sign in to your customer account before placing an order.", true);
-    return;
-  }
-
-  const totals = calculateTotals();
-
-  if (totals.code && totals.code !== "KC10") {
-    status("checkout-status",
-      "That discount code is not valid. Use KC10 or remove the code.", true);
-    return;
-  }
-
-  const name = (
-    ($("order-first-name")?.value.trim() || "") + " " +
-    ($("order-last-name")?.value.trim() || "")
-  ).trim();
-
-  const phone = $("order-phone")?.value.trim() || "";
-  const email = $("order-email")?.value.trim() || user.email || "";
-  const fulfillment = $("delivery-method")?.value || "delivery";
-  const paymentChoice = ($("payment-method")?.value || "cash").toLowerCase();
-  const area = $("delivery-area")?.value || "near_shop";
-  const pickup = fulfillment === "pickup";
-
-  const date = pickup ? $("pickup-date")?.value : $("delivery-date")?.value;
-  const time = pickup ? $("pickup-time")?.value : $("delivery-time")?.value;
-  const address = pickup ? null : ($("delivery-location")?.value.trim() || "");
-
-  if (!name || !phone || !email) {
-    status("checkout-status", "Enter your name, phone number and email.", true);
-    return;
-  }
-
-  if (!date || !time) {
-    status("checkout-status", "Choose your preferred date and time.", true);
-    return;
-  }
-
-  if (!pickup && !address) {
-    status("checkout-status", "Enter your delivery address or location.", true);
-    return;
-  }
-
-  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-    .toISOString().slice(0, 10);
-
-  if (date < today) {
-    status("checkout-status", "Choose today or a future date.", true);
-    return;
-  }
-
-  const button = $("place-order-button");
-  if (button) button.disabled = true;
-  status("checkout-status", "Checking stock and saving your order...");
-
-  let savedOrder = null;
 
   try {
+    const user = currentUser || await loadCustomerAccount();
+
+    if (!user) {
+      show("checkout-status", "Please sign in before placing an order.");
+      return;
+    }
+
+    const firstName = clean($("order-first-name")?.value);
+    const lastName = clean($("order-last-name")?.value);
+    const name = [firstName, lastName].filter(Boolean).join(" ");
+    const phone = clean($("order-phone")?.value);
+    const email = clean($("order-email")?.value);
+    const pickup = $("delivery-method")?.value === "pickup";
+    const method = pickup ? "pickup" : "delivery";
+    const area = pickup ? "pickup" : clean($("delivery-area")?.value);
+    const address = pickup ? "Shop pickup" : clean($("delivery-location")?.value);
+    const dateField = pickup ? $("pickup-date") : $("delivery-date");
+    const timeField = pickup ? $("pickup-time") : $("delivery-time");
+    const date = clean(dateField?.value);
+    const slot = clean(timeField?.value);
+    const paymentChoice = clean($("payment-method")?.value);
+    const mpesaPhone = paymentChoice === "mpesa"
+      ? clean($("mpesa-phone")?.value) : null;
+
+    if (!name || !phone || !email) {
+      show("checkout-status", "Complete your name, phone number and email.");
+      return;
+    }
+
+    if (!phoneIsValid(phone)) {
+      show("checkout-status",
+        "Enter a valid Kenyan phone number, such as 0712345678.");
+      return;
+    }
+
+    if (!date || date < todayLocal()) {
+      show("checkout-status", "Choose today or a future date.");
+      return;
+    }
+
+    if (!slot) {
+      show("checkout-status", "Choose a date and time slot.");
+      return;
+    }
+
+    if (!paymentChoice) {
+      show("checkout-status", "Choose a payment method.");
+      return;
+    }
+
+    if (!pickup && (!area || !address)) {
+      show("checkout-status", "Complete your delivery area and address.");
+      return;
+    }
+
+    if (paymentChoice === "mpesa" && !phoneIsValid(mpesaPhone)) {
+      show("checkout-status", "Enter a valid M-Pesa phone number.");
+      return;
+    }
+
+    // Do not claim that an online payment has been received.
+    // Map the form's values to the allowed values in the original schema.
+    const paymentMethod = paymentChoice === "mpesa"
+      ? "demo_mpesa" : "cash_on_delivery";
+
+    const fee = pickup ? 0 : deliveryFee();
+    const sub = subtotal();
+    const discount = discountAmount();
+    const total = Math.max(0, sub - discount + fee);
+
+    const details = {
+      user, name, phone, email, method, area, address, date, slot,
+      paymentMethod, mpesaPhone,
+      county: pickup ? null : address.split(",")[0]?.trim() || null,
+      town: pickup ? null : address.split(",")[1]?.trim() || null,
+      fee, subtotal: sub, total, notes: clean($("order-notes")?.value)
+    };
+
+    submitting = true;
+    if ($("place-order-button")) $("place-order-button").disabled = true;
+    show("checkout-status", "Saving your order...");
+
+    // Check stock again before accepting the order.
     for (const item of cart) {
-      const { data: product, error } = await customerDB
-        .from("products")
-        .select("id,name,stock,active,price")
-        .eq("id", item.product_id)
-        .maybeSingle();
+      const { data, error } = await db.from("products")
+        .select("*").eq("id", item.id).maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error(item.name + " is no longer available.");
 
-      if (!product || product.active === false ||
-          Number(product.stock) < Number(item.quantity)) {
+      const currentStock = stockOf(data);
+      if (data.active === false || currentStock < item.quantity) {
         throw new Error("Stock changed for " + item.name +
-          ". Refresh the collection and review your bag.");
+          ". Refresh the collection and update your bag.");
       }
     }
 
-    const fee = pickup ? 0 :
-      area === "near_shop" ? 200 :
-      area === "nairobi" ? 500 : 800;
+    const order = await insertOrder(details);
 
-    const total = Math.max(0, totals.subtotal - totals.discount + fee);
-    const mpesa = paymentChoice === "mpesa" || paymentChoice === "demo mpesa";
-
-    const payload = {
-      customer_id: user.id,
-      customer_name: name,
-      customer_email: email,
-      customer_phone_number: phone,
-      fulfillment_type: fulfillment,
-      delivery_area: pickup ? "pickup" : area,
-      county: null,
-      town: null,
-      delivery_address: address,
-      delivery_fee: fee,
-      scheduled_date: date,
-      scheduled_slot: time,
-      schedule_slot: time,
-      subtotal: totals.subtotal,
-      discount_code: totals.discount ? totals.code : null,
-      discount_amount: totals.discount,
-      total,
-      payment_method: mpesa ? "demo mpesa" : "cash on delivery",
-      payment_status: mpesa ? "simulated" : "unpaid",
-      mpesa_phone: mpesa ? phone : null,
-      order_status: "awaiting confirmation"
-    };
-
-    const { data: order, error: orderError } = await customerDB
-      .from("orders")
-      .insert(payload)
-      .select("*")
-      .single();
-
-    if (orderError) throw orderError;
-    savedOrder = order;
-
-    const items = cart.map(item => ({
+    const orderItems = cart.map(item => ({
       order_id: order.id,
-      product_id: String(item.product_id),
+      product_id: String(item.id),
       product_name: item.name,
       size: item.size || null,
-      color: item.color || null,
-      quantity: Number(item.quantity),
-      unit_price: Number(item.unit_price),
-      line_total: Number(item.unit_price) * Number(item.quantity)
+      color: item.colour || null,
+      unit_price: item.price,
+      quantity: item.quantity,
+      line_total: item.price * item.quantity
     }));
 
-    const { error: itemsError } = await customerDB
-      .from("order_items")
-      .insert(items);
+    const { error: itemsError } = await db.from("order_items").insert(orderItems);
 
     if (itemsError) {
-      throw new Error("Order " + String(order.id).slice(0, 8).toUpperCase() +
-        " was created, but item details failed to save: " + itemsError.message);
+      console.error("Order items error:", itemsError);
+      show("checkout-status",
+        "Your order was saved, but the items could not be attached. " +
+        "Please contact the shop with reference " +
+        String(order.id).slice(0, 8).toUpperCase() + ". Do not submit again.");
+      return;
     }
 
     cart = [];
-    saveCart();
+    renderCart();
+    $("checkout-form")?.reset();
+    setDateLimits();
+    updateFulfilment();
+    updatePayment();
+    setCheckoutVisible(false);
 
-    if ($("checkout-form")) $("checkout-form").reset();
-
-    setMinimumDates();
-    updateCheckoutFields();
-    updateCustomerInfo();
-
-    status("checkout-status",
-      "Order placed successfully! Reference: " +
+    show("checkout-status",
+      "Thank you! Your order reference is " +
       String(order.id).slice(0, 8).toUpperCase() +
-      ". Payment status: " + order.payment_status +
-      ". The owner will confirm your order.");
+      ". Your order is awaiting confirmation; payment has not been marked as received.");
 
     await loadMyOrders();
   } catch (error) {
     console.error("Checkout error:", error);
-    status("checkout-status",
-      (savedOrder
-        ? "Order was created, but a later step failed: "
-        : "Order could not be placed: ") +
-      (error.message || "Unknown error"), true);
+    show("checkout-status", "Order could not be placed: " + error.message);
   } finally {
-    if (button) button.disabled = false;
+    submitting = false;
+    if ($("place-order-button")) $("place-order-button").disabled = false;
   }
 }
 
-/* Checkout and category controls */
-$("category-filter")?.addEventListener("change", displayProducts);
-
-document.querySelectorAll("[data-category]").forEach(button => {
-  button.addEventListener("click", () => {
-    const filter = $("category-filter");
-    if (filter) filter.value = button.dataset.category;
-    displayProducts();
-  });
-});
-
-$("delivery-method")?.addEventListener("change", updateCheckoutFields);
-$("delivery-area")?.addEventListener("change", renderCart);
-$("discount-code")?.addEventListener("input", renderCart);
-
-$("checkout-toggle")?.addEventListener("click", () => {
-  if (!cart.length) {
-    status("checkout-status", "Your shopping bag is empty. Add a product first.", true);
-    $("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
-
-  const form = $("checkout-form");
-
-  if (!form) {
-    status("checkout-status", "Checkout form is missing from customer.html.", true);
-    return;
-  }
-
-  form.hidden = false;
-  updateCheckoutFields();
-  form.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-
-$("back-to-bag")?.addEventListener("click", () => {
-  if ($("checkout-form")) $("checkout-form").hidden = true;
-  $("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-
-$("checkout-form")?.addEventListener("submit", placeOrder);
-
-/* Customer messages */
-$("customer-contact-form")?.addEventListener("submit", async event => {
-  event.preventDefault();
-
-  const user = currentCustomer || await loadCustomerAccount();
-
-  if (!user) {
-    status("contact-status", "Please sign in before sending a message.", true);
-    return;
-  }
-
-  const button = event.currentTarget.querySelector('button[type="submit"]');
-  if (button) button.disabled = true;
-
-  status("contact-status", "Sending message...");
+/* CUSTOMER ORDER HISTORY */
+async function loadMyOrders() {
+  const container = $("my-orders-list");
+  if (!container) return;
+  container.replaceChildren();
 
   try {
-    const { error } = await customerDB.from("messages").insert({
-      customer_name: $("contact-name")?.value.trim() || "",
-      customer_email: user.email,
-      subject: "Customer enquiry",
-      message: $("contact-message")?.value.trim() || ""
-    });
+    const user = currentUser || await loadCustomerAccount();
+    if (!user) {
+      show("my-orders-status", "Please sign in to view your orders.");
+      return;
+    }
+
+    const { data: orders, error } = await db.from("orders")
+      .select("*")
+      .eq("customer_id", user.id)
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    event.currentTarget.reset();
-    status("contact-status", "Your message was sent successfully.");
+    if (!orders?.length) {
+      show("my-orders-status", "You have no orders yet.");
+      return;
+    }
+
+    for (const order of orders) {
+      const card = document.createElement("article");
+      card.className = "kc-order-card";
+
+      const heading = document.createElement("h3");
+      heading.textContent =
+        "Order " + String(order.id).slice(0, 8).toUpperCase();
+
+      const status = document.createElement("p");
+      status.textContent =
+        "Order status: " + formatStatus(order.order_status);
+
+      const payment = document.createElement("p");
+      payment.textContent =
+        "Payment: " + formatStatus(order.payment_status);
+
+      const total = document.createElement("p");
+      total.textContent = "Total: " + money(order.total);
+
+      const schedule = document.createElement("p");
+      schedule.textContent =
+        (order.fulfillment_type || order.delivery_method || "delivery") +
+        " · " +
+        (order.schedule_date || order.scheduled_date || order.delivery_date || "") +
+        " · " +
+        (order.schedule_slot || order.scheduled_slot || order.delivery_time || "");
+
+      card.append(heading, status, payment, total, schedule);
+
+      const itemLine = document.createElement("p");
+      itemLine.textContent = "Loading items...";
+      card.appendChild(itemLine);
+
+      container.appendChild(card);
+
+      const { data: items, error: itemsError } = await db.from("order_items")
+        .select("*").eq("order_id", order.id);
+
+      if (itemsError) {
+        itemLine.textContent = "Order items could not load.";
+      } else {
+        itemLine.textContent = (items || []).map(item =>
+          item.product_name +
+          (item.color || item.colour ? " (" + (item.color || item.colour) + ")" : "") +
+          (item.size ? " / " + item.size : "") +
+          " × " + item.quantity + " — " + money(item.unit_price)
+        ).join("; ") || "No item details.";
+      }
+    }
+
+    show("my-orders-status", "Your order history is up to date.");
   } catch (error) {
-    status("contact-status", "Message could not be sent: " + error.message, true);
-  } finally {
-    if (button) button.disabled = false;
+    console.error("My Orders error:", error);
+    show("my-orders-status", "Could not load orders: " + error.message);
   }
-});
+}
 
-/* FIXED CUSTOMER SIGN OUT */
-document.addEventListener("click", async event => {
-  const button = event.target.closest("#customer-signout");
-  if (!button) return;
+/* CONTACT FORM */
+function setupContactForm() {
+  const form = $("customer-contact-form");
+  if (!form) return;
 
-  event.preventDefault();
-  event.stopPropagation();
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    show("contact-status", "Sending your message...");
 
-  if (button.dataset.signingOut === "true") return;
+    try {
+      const user = currentUser || await loadCustomerAccount();
+      if (!user) throw new Error("Please sign in again.");
 
-  button.dataset.signingOut = "true";
-  button.disabled = true;
+      const payload = {
+        customer_name: clean($("contact-name")?.value),
+        customer_email: clean($("contact-email")?.value),
+        subject: "Website enquiry",
+        message: clean($("contact-message")?.value),
+        is_read: false
+      };
 
-  const originalText = button.textContent;
-  button.textContent = "Signing out...";
+      const { error } = await db.from("messages").insert(payload);
+      if (error) throw error;
 
+      form.reset();
+      show("contact-status", "Your message has been sent.");
+    } catch (error) {
+      console.error("Contact form error:", error);
+      show("contact-status", "Could not send message: " + error.message);
+    }
+  });
+}
+
+/* SIGN OUT */
+async function signOutCustomer() {
   try {
-    const { error } = await customerDB.auth.signOut();
+    const { error } = await db.auth.signOut();
     if (error) throw error;
-
-    localStorage.removeItem("kc-shopping-cart");
     window.location.replace("index.html");
   } catch (error) {
-    console.error("Customer sign-out failed:", error);
-    button.disabled = false;
-    button.dataset.signingOut = "false";
-    button.textContent = originalText;
-    alert("Could not sign out: " + (error.message || "Please try again."));
+    show("my-orders-status", "Could not sign out: " + error.message);
   }
-});
-
-async function loadCustomerPage() {
-  await loadCustomerAccount();
-  updateCustomerInfo();
-  setMinimumDates();
-  updateCheckoutFields();
-
-  if (currentCustomer) {
-    const fullName = String(
-      currentCustomer.user_metadata?.full_name || ""
-    ).trim();
-
-    const parts = fullName ? fullName.split(/\s+/) : [];
-
-    if ($("order-first-name") && !$("order-first-name").value) {
-      $("order-first-name").value = parts.shift() || "";
-    }
-
-    if ($("order-last-name") && !$("order-last-name").value) {
-      $("order-last-name").value = parts.join(" ");
-    }
-  }
-
-  await loadCustomerProducts();
-  renderCart();
-  await loadMyOrders();
 }
 
-loadCustomerPage();
+/* STARTUP */
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    setDateLimits();
+    updateFulfilment();
+    updatePayment();
+    renderCart();
 
-window.addEventListener("focus", () => {
-  loadCustomerProducts();
-  loadMyOrders();
+    $("category-filter")?.addEventListener("change", renderProducts);
+    $("delivery-method")?.addEventListener("change", updateFulfilment);
+    $("delivery-area")?.addEventListener("change", renderCart);
+    $("payment-method")?.addEventListener("change", updatePayment);
+
+    $("checkout-toggle")?.addEventListener("click", () => {
+      if (!cart.length) {
+        show("checkout-status", "Add products to your bag first.");
+        return;
+      }
+      setCheckoutVisible(true);
+    });
+
+    $("back-to-bag")?.addEventListener("click", () => setCheckoutVisible(false));
+    $("checkout-form")?.addEventListener("submit", placeOrder);
+    $("customer-signout")?.addEventListener("click", signOutCustomer);
+
+    setupContactForm();
+
+    await loadCustomerAccount();
+    await loadProducts();
+    await loadMyOrders();
+  } catch (error) {
+    console.error("Customer startup error:", error);
+    show("catalogue-message", "Could not start the shop: " + error.message);
+  }
 });
-
-customerDB.channel("kc-customer-product-updates")
-  .on("postgres_changes", {
-    event: "*",
-    schema: "public",
-    table: "products"
-  }, loadCustomerProducts)
-  .subscribe();
