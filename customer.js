@@ -1,7 +1,10 @@
 
 "use strict";
 
-/* KELSIY'S CLOSET — CUSTOMER SHOPPING SYSTEM */
+/* =========================================================
+   KELSIY'S CLOSET — CUSTOMER SHOPPING SYSTEM
+   Complete customer.js replacement
+   ========================================================= */
 
 const CUSTOMER_SUPABASE_URL =
   "https://zqvjaqpqtctnvylgtwjg.supabase.co";
@@ -16,15 +19,17 @@ const customerDB = window.supabase.createClient(
 
 const $ = id => document.getElementById(id);
 
-const money = value =>
-  "KSh " + Number(value || 0).toLocaleString("en-KE", {
+const money = amount =>
+  "KSh " + Number(amount || 0).toLocaleString("en-KE", {
     maximumFractionDigits: 2
   });
 
 const safeText = (parent, tag, value, className) => {
   const element = document.createElement(tag);
   element.textContent = value == null ? "" : String(value);
+
   if (className) element.className = className;
+
   parent.appendChild(element);
   return element;
 };
@@ -35,16 +40,25 @@ let cart = [];
 let orderSubmitting = false;
 
 try {
-  cart = JSON.parse(localStorage.getItem("kc-shopping-cart") || "[]");
+  cart = JSON.parse(
+    localStorage.getItem("kc-shopping-cart") || "[]"
+  );
+
   if (!Array.isArray(cart)) cart = [];
 } catch {
   cart = [];
 }
 
-/* ---------------- SHOPPING BAG ---------------- */
+/* =========================================================
+   SHOPPING BAG
+   ========================================================= */
 
 function saveCart() {
-  localStorage.setItem("kc-shopping-cart", JSON.stringify(cart));
+  localStorage.setItem(
+    "kc-shopping-cart",
+    JSON.stringify(cart)
+  );
+
   updateBagCount();
   renderCart();
 }
@@ -55,14 +69,19 @@ function updateBagCount() {
     0
   );
 
-  if ($("bag-count")) $("bag-count").textContent = count;
+  if ($("bag-count")) {
+    $("bag-count").textContent = count;
+  }
 }
 
 function resolveProductImage(value) {
   const path = String(value || "").trim();
 
   if (!path) return "";
-  if (/^(https?:|data:|blob:)/i.test(path)) return path;
+
+  if (/^(https?:|data:|blob:)/i.test(path)) {
+    return path;
+  }
 
   return path.startsWith("image/")
     ? path
@@ -80,26 +99,27 @@ function makeSelect(options, label) {
   const select = document.createElement("select");
   select.setAttribute("aria-label", label);
 
-  const placeholder = new Option("Choose " + label.toLowerCase(), "");
-  placeholder.disabled = true;
-  placeholder.selected = true;
-  select.add(placeholder);
+  options.forEach(value => {
+    select.add(new Option(value, value));
+  });
 
-  options.forEach(value => select.add(new Option(value, value)));
   return select;
 }
 
 function productImage(product) {
   const image = document.createElement("img");
+
   image.className = "customer-product-image";
   image.alt = product.name || "Fashion product";
   image.loading = "lazy";
 
-  const path = resolveProductImage(
-    product.image_url || product.image || product.image_path
+  const source = resolveProductImage(
+    product.image_url ||
+    product.image ||
+    product.image_path
   );
 
-  if (path) image.src = path;
+  if (source) image.src = source;
 
   image.onerror = () => {
     image.removeAttribute("src");
@@ -109,7 +129,9 @@ function productImage(product) {
   return image;
 }
 
-/* ---------------- PRODUCTS ---------------- */
+/* =========================================================
+   PRODUCT COLLECTION
+   ========================================================= */
 
 function displayProducts() {
   const container = $("customer-products");
@@ -119,7 +141,9 @@ function displayProducts() {
 
   container.replaceChildren();
 
-  const category = ($("category-filter")?.value || "all").toLowerCase();
+  const category = (
+    $("category-filter")?.value || "all"
+  ).toLowerCase();
 
   const products = allProducts.filter(product =>
     category === "all" ||
@@ -127,11 +151,15 @@ function displayProducts() {
   );
 
   if (!products.length) {
-    message.textContent = "No products are available in this category.";
+    message.textContent = allProducts.length
+      ? "There are no products in this category yet."
+      : "No active products are available yet.";
+
     return;
   }
 
-  message.textContent = products.length + " product(s) available.";
+  message.textContent =
+    products.length + " product(s) available.";
 
   products.forEach(product => {
     const card = document.createElement("article");
@@ -142,108 +170,163 @@ function displayProducts() {
     details.className = "customer-product-details";
 
     safeText(details, "h3", product.name || "Fashion item");
-    safeText(details, "p", money(product.price), "customer-product-price");
+
+    safeText(
+      details,
+      "p",
+      money(product.price),
+      "customer-product-price"
+    );
 
     if (product.description) {
       safeText(details, "p", product.description);
     }
 
-    const stock = Math.max(0, Number(product.stock) || 0);
+    if (product.category) {
+      safeText(
+        details,
+        "p",
+        "Category: " + product.category
+      );
+    }
+
+    const stock = Math.max(
+      0,
+      Number(product.stock) || 0
+    );
 
     safeText(
       details,
       "p",
-      stock ? stock + " item(s) available" : "SOLD OUT"
+      stock ? stock + " item(s) available" : "SOLD OUT",
+      "customer-product-stock" +
+        (stock ? "" : " out-of-stock")
     );
 
     const options = document.createElement("div");
     options.className = "kc-product-options";
 
-    const colors = parseOptions(product.color || product.colour);
+    const colours = parseOptions(
+      product.color || product.colour
+    );
+
     const sizes = parseOptions(product.size);
 
-    let colorSelect = null;
+    let colourSelect = null;
     let sizeSelect = null;
 
-    if (colors.length) {
-      const label = safeText(options, "label", "Choose colour ");
-      colorSelect = makeSelect(colors, "Colour");
-      label.appendChild(colorSelect);
+    if (colours.length) {
+      const label = safeText(
+        options,
+        "label",
+        "Choose colour"
+      );
+
+      colourSelect = makeSelect(colours, "Colour");
+      label.appendChild(colourSelect);
     }
 
     if (sizes.length) {
-      const label = safeText(options, "label", "Choose size ");
+      const label = safeText(
+        options,
+        "label",
+        "Choose size"
+      );
+
       sizeSelect = makeSelect(sizes, "Size");
       label.appendChild(sizeSelect);
     }
 
-    const quantityLabel = safeText(options, "label", "Quantity ");
+    const quantityLabel = safeText(
+      options,
+      "label",
+      "Quantity"
+    );
+
     const quantity = document.createElement("input");
+
     quantity.type = "number";
     quantity.min = "1";
     quantity.max = String(Math.max(1, stock));
     quantity.value = "1";
     quantity.disabled = stock < 1;
-    quantityLabel.appendChild(quantity);
 
+    quantityLabel.appendChild(quantity);
     details.appendChild(options);
 
-    const add = safeText(
+    const addButton = safeText(
       details,
       "button",
       stock ? "ADD TO BAG" : "SOLD OUT",
       "kc-button kc-add-button"
     );
 
-    add.type = "button";
-    add.disabled = stock < 1;
+    addButton.type = "button";
+    addButton.disabled = stock < 1;
 
-    add.addEventListener("click", () => {
-      const qty = Number(quantity.value);
+    addButton.addEventListener("click", () => {
+      const quantityValue = Number(quantity.value);
 
-      if (!Number.isInteger(qty) || qty < 1 || qty > stock) {
-        alert("Choose a valid quantity within the available stock.");
+      if (
+        !Number.isInteger(quantityValue) ||
+        quantityValue < 1 ||
+        quantityValue > stock
+      ) {
+        alert(
+          "Please choose a quantity between 1 and " +
+          stock + "."
+        );
+
         return;
       }
 
-      if (colors.length && !colorSelect.value) {
-        alert("Please choose a colour.");
-        return;
-      }
+      const colour = colourSelect
+        ? colourSelect.value
+        : "";
 
-      if (sizes.length && !sizeSelect.value) {
-        alert("Please choose a size.");
-        return;
-      }
+      const size = sizeSelect
+        ? sizeSelect.value
+        : "";
 
-      const color = colorSelect?.value || "";
-      const size = sizeSelect?.value || "";
-      const key = product.id + "|" + color + "|" + size;
-      const existing = cart.find(item => item.key === key);
+      const key =
+        product.id + "|" + colour + "|" + size;
+
+      const existing = cart.find(
+        item => item.key === key
+      );
 
       if (existing) {
-        if (existing.quantity + qty > stock) {
-          alert("Only " + stock + " item(s) are available.");
+        if (existing.quantity + quantityValue > stock) {
+          alert(
+            "Only " + stock +
+            " item(s) are currently available."
+          );
+
           return;
         }
-        existing.quantity += qty;
+
+        existing.quantity += quantityValue;
       } else {
         cart.push({
           key,
           product_id: product.id,
           name: product.name,
           image_url:
-            product.image_url || product.image || product.image_path || "",
-          color,
+            product.image_url ||
+            product.image ||
+            product.image_path ||
+            "",
+          colour,
+          color: colour,
           size,
-          quantity: qty,
+          quantity: quantityValue,
           unit_price: Number(product.price) || 0,
           available_stock: stock
         });
       }
 
       saveCart();
-      add.textContent = "ADDED TO BAG";
+      addButton.textContent = "ADDED TO BAG";
     });
 
     card.appendChild(details);
@@ -253,7 +336,10 @@ function displayProducts() {
 
 async function loadCustomerProducts() {
   const message = $("catalogue-message");
-  if (message) message.textContent = "Loading our collection...";
+
+  if (!message) return;
+
+  message.textContent = "Loading our collection...";
 
   const { data, error } = await customerDB
     .from("products")
@@ -263,7 +349,10 @@ async function loadCustomerProducts() {
 
   if (error) {
     console.error("Products error:", error);
-    showStatus("catalogue-message", "Products could not load: " + error.message, true);
+
+    message.textContent =
+      "Products could not load: " + error.message;
+
     return;
   }
 
@@ -271,7 +360,8 @@ async function loadCustomerProducts() {
 
   cart = cart.map(item => {
     const product = allProducts.find(
-      product => String(product.id) === String(item.product_id)
+      product =>
+        String(product.id) === String(item.product_id)
     );
 
     if (!product) return item;
@@ -280,7 +370,10 @@ async function loadCustomerProducts() {
       ...item,
       name: product.name,
       image_url:
-        product.image_url || product.image || product.image_path || "",
+        product.image_url ||
+        product.image ||
+        product.image_path ||
+        "",
       unit_price: Number(product.price) || 0,
       available_stock: Number(product.stock) || 0
     };
@@ -290,31 +383,50 @@ async function loadCustomerProducts() {
   saveCart();
 }
 
-/* ---------------- TOTALS AND CART ---------------- */
+/* =========================================================
+   CART TOTALS
+   ========================================================= */
 
 function cartTotals() {
   const subtotal = cart.reduce(
     (sum, item) =>
-      sum + Number(item.unit_price) * Number(item.quantity),
+      sum +
+      Number(item.unit_price) *
+      Number(item.quantity),
     0
   );
 
-  const code = ($("discount-code")?.value || "").trim().toUpperCase();
-  const discount = code === "KC10" ? subtotal * 0.10 : 0;
-  const method = $("delivery-method")?.value || "delivery";
-  const area = $("delivery-area")?.value || "near_shop";
+  const code = (
+    $("discount-code")?.value || ""
+  ).trim().toUpperCase();
 
-  const fee = method === "pickup"
-    ? 0
-    : area === "near_shop" ? 200
-    : area === "nairobi" ? 500
-    : 800;
+  const discount = code === "KC10"
+    ? subtotal * 0.10
+    : 0;
+
+  const method =
+    $("delivery-method")?.value || "pickup";
+
+  const area = $("delivery-area")?.value || "";
+
+  let fee = 0;
+
+  if (method === "delivery") {
+    fee = area === "near_shop"
+      ? 200
+      : area === "nairobi"
+        ? 500
+        : 800;
+  }
 
   return {
     subtotal,
     discount,
     fee,
-    total: Math.max(0, subtotal - discount + fee),
+    total: Math.max(
+      0,
+      subtotal - discount + fee
+    ),
     code,
     area,
     method
@@ -323,12 +435,18 @@ function cartTotals() {
 
 function renderCart() {
   const container = $("cart-items");
+
   if (!container) return;
 
   container.replaceChildren();
 
   if (!cart.length) {
-    safeText(container, "p", "Your shopping bag is empty.");
+    safeText(
+      container,
+      "p",
+      "Your bag is empty. Add products from Our Collection to begin.",
+      "kc-empty"
+    );
   }
 
   cart.forEach((item, index) => {
@@ -337,31 +455,68 @@ function renderCart() {
 
     const image = document.createElement("img");
     image.alt = item.name || "Product";
-    const path = resolveProductImage(item.image_url);
-    if (path) image.src = path;
+
+    const source = resolveProductImage(item.image_url);
+
+    if (source) image.src = source;
+
     image.onerror = () => image.removeAttribute("src");
+
     row.appendChild(image);
 
     const info = document.createElement("div");
-    safeText(info, "h3", item.name);
-    if (item.color) safeText(info, "p", "Colour: " + item.color);
-    if (item.size) safeText(info, "p", "Size: " + item.size);
-    safeText(info, "p", money(item.unit_price) + " each");
 
-    const label = safeText(info, "label", "Quantity ");
+    safeText(info, "h3", item.name);
+
+    if (item.color || item.colour) {
+      safeText(
+        info,
+        "p",
+        "Colour: " + (item.color || item.colour)
+      );
+    }
+
+    if (item.size) {
+      safeText(info, "p", "Size: " + item.size);
+    }
+
+    safeText(
+      info,
+      "p",
+      money(item.unit_price) + " each"
+    );
+
+    const quantityLabel = safeText(
+      info,
+      "label",
+      "Quantity "
+    );
+
     const quantity = document.createElement("input");
+
     quantity.type = "number";
     quantity.min = "1";
-    quantity.max = String(Math.max(1, Number(item.available_stock) || 1));
+    quantity.max = String(
+      Math.max(1, item.available_stock || 1)
+    );
     quantity.value = item.quantity;
-    label.appendChild(quantity);
+
+    quantityLabel.appendChild(quantity);
 
     quantity.addEventListener("change", () => {
       const value = Number(quantity.value);
       const stock = Number(item.available_stock) || 0;
 
-      if (!Number.isInteger(value) || value < 1 || value > stock) {
-        alert("Choose a quantity within the available stock.");
+      if (
+        !Number.isInteger(value) ||
+        value < 1 ||
+        value > stock
+      ) {
+        alert(
+          "Quantity must be between 1 and the available stock (" +
+          stock + ")."
+        );
+
         quantity.value = item.quantity;
         return;
       }
@@ -370,14 +525,16 @@ function renderCart() {
       saveCart();
     });
 
-    const remove = safeText(
+    const removeButton = safeText(
       info,
       "button",
       "REMOVE",
       "kc-button kc-button-outline"
     );
-    remove.type = "button";
-    remove.addEventListener("click", () => {
+
+    removeButton.type = "button";
+
+    removeButton.addEventListener("click", () => {
       cart.splice(index, 1);
       saveCart();
     });
@@ -389,28 +546,35 @@ function renderCart() {
   const totals = cartTotals();
 
   if ($("cart-subtotal")) {
-    $("cart-subtotal").textContent = money(totals.subtotal);
+    $("cart-subtotal").textContent =
+      money(totals.subtotal);
   }
 
   if ($("cart-discount")) {
-    $("cart-discount").textContent = totals.discount
-      ? "−" + money(totals.discount)
-      : money(0);
+    $("cart-discount").textContent =
+      totals.discount
+        ? "−" + money(totals.discount) + " (KC10)"
+        : money(0);
   }
 
   if ($("cart-delivery")) {
     $("cart-delivery").textContent =
-      totals.method === "pickup" ? "Free pickup" : money(totals.fee);
+      totals.method === "pickup"
+        ? "Free pickup"
+        : money(totals.fee);
   }
 
   if ($("cart-total")) {
-    $("cart-total").textContent = money(totals.total);
+    $("cart-total").textContent =
+      money(totals.total);
   }
 
   updateBagCount();
 }
 
-/* ---------------- CUSTOMER ACCOUNT ---------------- */
+/* =========================================================
+   CUSTOMER ACCOUNT AND STATUS
+   ========================================================= */
 
 async function loadCustomerAccount() {
   const { data, error } = await customerDB.auth.getUser();
@@ -426,6 +590,7 @@ async function loadCustomerAccount() {
 
 function showStatus(id, message, isError = false) {
   const element = $(id);
+
   if (!element) return;
 
   element.textContent = message;
@@ -436,11 +601,13 @@ function updateCustomerInfo() {
   if (!currentCustomer) return;
 
   if ($("order-email")) {
-    $("order-email").value = currentCustomer.email || "";
+    $("order-email").value =
+      currentCustomer.email || "";
   }
 
   if ($("contact-email")) {
-    $("contact-email").value = currentCustomer.email || "";
+    $("contact-email").value =
+      currentCustomer.email || "";
   }
 
   const fullName = String(
@@ -449,91 +616,132 @@ function updateCustomerInfo() {
 
   const parts = fullName ? fullName.split(/\s+/) : [];
 
-  if ($("order-first-name") && !$("order-first-name").value) {
+  if (
+    $("order-first-name") &&
+    !$("order-first-name").value
+  ) {
     $("order-first-name").value =
-      currentCustomer.user_metadata?.first_name || parts.shift() || "";
+      currentCustomer.user_metadata?.first_name ||
+      parts.shift() ||
+      "";
   }
 
-  if ($("order-last-name") && !$("order-last-name").value) {
+  if (
+    $("order-last-name") &&
+    !$("order-last-name").value
+  ) {
     $("order-last-name").value =
-      currentCustomer.user_metadata?.last_name || parts.join(" ");
+      currentCustomer.user_metadata?.last_name ||
+      parts.join(" ");
   }
 }
 
+/* =========================================================
+   CHECKOUT FIELDS
+   ========================================================= */
+
 function setMinimumDates() {
   const now = new Date();
+
   const today = new Date(
     now.getTime() - now.getTimezoneOffset() * 60000
   ).toISOString().slice(0, 10);
 
   ["delivery-date", "pickup-date"].forEach(id => {
-    const field = $(id);
-    if (!field) return;
+    const input = $(id);
 
-    field.min = today;
-    if (!field.value) field.value = today;
+    if (input) {
+      input.min = today;
+
+      if (!input.value) {
+        input.value = today;
+      }
+    }
   });
 }
 
 function updateCheckoutFields() {
-  const pickup = $("delivery-method")?.value === "pickup";
+  const pickup =
+    $("delivery-method")?.value === "pickup";
 
-  if ($("delivery-fields")) $("delivery-fields").hidden = pickup;
-  if ($("pickup-fields")) $("pickup-fields").hidden = !pickup;
-
-  ["delivery-area", "delivery-location", "delivery-date", "delivery-time"]
-    .forEach(id => {
-      const field = $(id);
-      if (!field) return;
-      field.disabled = pickup;
-      field.required = !pickup;
-    });
-
-  ["pickup-date", "pickup-time"].forEach(id => {
-    const field = $(id);
-    if (!field) return;
-    field.disabled = !pickup;
-    field.required = pickup;
-  });
-
-  if ($("mpesa-fields")) {
-    $("mpesa-fields").hidden = $("payment-method")?.value !== "mpesa";
+  if ($("delivery-fields")) {
+    $("delivery-fields").hidden = pickup;
   }
 
-  if ($("mpesa-phone")) {
-    $("mpesa-phone").required = $("payment-method")?.value === "mpesa";
-    $("mpesa-phone").disabled = $("payment-method")?.value !== "mpesa";
+  if ($("pickup-fields")) {
+    $("pickup-fields").hidden = !pickup;
+  }
+
+  if ($("delivery-location")) {
+    $("delivery-location").required = !pickup;
+  }
+
+  if ($("delivery-area")) {
+    $("delivery-area").required = !pickup;
+  }
+
+  if ($("delivery-date")) {
+    $("delivery-date").required = !pickup;
+  }
+
+  if ($("delivery-time")) {
+    $("delivery-time").required = !pickup;
+  }
+
+  if ($("pickup-date")) {
+    $("pickup-date").required = pickup;
+  }
+
+  if ($("pickup-time")) {
+    $("pickup-time").required = pickup;
+  }
+
+  if ($("mpesa-fields")) {
+    $("mpesa-fields").hidden =
+      $("payment-method")?.value !== "mpesa";
   }
 
   renderCart();
 }
 
 function normaliseKenyanPhone(value) {
-  let phone = String(value || "").replace(/[\s-]/g, "");
+  let phone = String(value || "")
+    .replace(/[\s-]/g, "");
 
-  if (phone.startsWith("+254")) phone = "0" + phone.slice(4);
-  else if (phone.startsWith("254")) phone = "0" + phone.slice(3);
+  if (phone.startsWith("+254")) {
+    phone = "0" + phone.slice(4);
+  } else if (phone.startsWith("254")) {
+    phone = "0" + phone.slice(3);
+  }
 
   return phone;
 }
 
 function validKenyanPhone(value) {
-  return /^0[17]\d{8}$/.test(normaliseKenyanPhone(value));
+  return /^0[17]\d{8}$/.test(
+    normaliseKenyanPhone(value)
+  );
 }
 
-/* ---------------- ORDER HISTORY ---------------- */
+/* =========================================================
+   ORDER HISTORY
+   ========================================================= */
 
 async function loadMyOrders() {
   const list = $("my-orders-list");
   const status = $("my-orders-status");
+
   if (!list || !status) return;
 
   list.replaceChildren();
 
-  const user = currentCustomer || await loadCustomerAccount();
+  const user =
+    currentCustomer || await loadCustomerAccount();
 
   if (!user) {
-    status.textContent = "Please sign in to view your orders.";
+    status.textContent =
+      "Please sign in to view your orders.";
+
     return;
   }
 
@@ -546,16 +754,21 @@ async function loadMyOrders() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    status.textContent = "Orders could not load: " + error.message;
+    status.textContent =
+      "Orders could not load: " + error.message;
+
     return;
   }
 
   if (!data?.length) {
-    status.textContent = "You have not placed any orders yet.";
+    status.textContent =
+      "You have not placed any orders yet.";
+
     return;
   }
 
-  status.textContent = data.length + " order(s) found.";
+  status.textContent =
+    data.length + " order(s) found.";
 
   for (const order of data) {
     const card = document.createElement("article");
@@ -564,14 +777,16 @@ async function loadMyOrders() {
     safeText(
       card,
       "h3",
-      "Order " + String(order.id).slice(0, 8).toUpperCase()
+      "Order " +
+      String(order.id).slice(0, 8).toUpperCase()
     );
 
     if (order.created_at) {
       safeText(
         card,
         "p",
-        "Placed: " + new Date(order.created_at).toLocaleString("en-KE")
+        "Placed: " +
+        new Date(order.created_at).toLocaleString("en-KE")
       );
     }
 
@@ -579,18 +794,41 @@ async function loadMyOrders() {
       card,
       "p",
       "Total: " + money(order.total) +
-      " · Payment: " + (order.payment_status || "unpaid") +
-      " · Order status: " + (order.order_status || "Awaiting confirmation")
+      " · Payment: " + (order.payment_method || "") +
+      " · Payment status: " + (order.payment_status || "")
     );
 
     safeText(
       card,
       "p",
-      "Preferred date: " + (order.scheduled_date || "") +
-      " · Preferred time: " + (order.schedule_slot || order.delivery_time || "")
+      "Order status: " +
+      (order.order_status || "Awaiting confirmation")
     );
 
-    const itemStatus = safeText(card, "p", "Loading order items...");
+    const date =
+      order.scheduled_date || "";
+
+    const time =
+      order.schedule_slot ||
+      order.delivery_time ||
+      "";
+
+    safeText(
+      card,
+      "p",
+      (order.fulfillment_type === "pickup"
+        ? "Pickup"
+        : "Delivery") +
+      ": " +
+      (order.delivery_address || "Shop pickup") +
+      " · " + date + " " + time
+    );
+
+    const itemLine = safeText(
+      card,
+      "p",
+      "Loading items..."
+    );
 
     const result = await customerDB
       .from("order_items")
@@ -598,20 +836,26 @@ async function loadMyOrders() {
       .eq("order_id", order.id);
 
     if (result.error) {
-      itemStatus.textContent = "Order items could not load.";
+      itemLine.textContent =
+        "Items could not load: " + result.error.message;
     } else {
-      itemStatus.textContent = (result.data || []).map(item =>
-        (item.product_name || "Product") +
-        " × " + item.quantity +
-        " — " + money(item.unit_price)
-      ).join("; ") || "No item details.";
+      itemLine.textContent =
+        (result.data || []).map(item =>
+          (item.product_name || "Product") +
+          (item.color ? " (" + item.color + ")" : "") +
+          (item.size ? " / " + item.size : "") +
+          " × " + item.quantity +
+          " — " + money(item.unit_price)
+        ).join("; ") || "No item details.";
     }
 
     list.appendChild(card);
   }
 }
 
-/* ---------------- PLACE ORDER ---------------- */
+/* =========================================================
+   PLACE ORDER — COMPLETE CHECKOUT
+   ========================================================= */
 
 async function placeOrder(event) {
   event.preventDefault();
@@ -619,94 +863,137 @@ async function placeOrder(event) {
   if (orderSubmitting) return;
 
   if (!cart.length) {
-    showStatus("checkout-status", "Your shopping bag is empty.", true);
+    showStatus(
+      "checkout-status",
+      "Your bag is empty. Add at least one product first.",
+      true
+    );
+
     return;
   }
 
-  const user = currentCustomer || await loadCustomerAccount();
+  const user =
+    currentCustomer || await loadCustomerAccount();
 
   if (!user) {
-    showStatus("checkout-status", "Please sign in before placing your order.", true);
+    showStatus(
+      "checkout-status",
+      "Please sign in to your customer account before placing an order.",
+      true
+    );
+
     return;
   }
 
-  const firstName = ($("order-first-name")?.value || "").trim();
-  const lastName = ($("order-last-name")?.value || "").trim();
-  const name = (firstName + " " + lastName).trim();
-  const phone = normaliseKenyanPhone($("order-phone")?.value || "");
-  const email = ($("order-email")?.value || "").trim();
+  const firstName = (
+    $("order-first-name")?.value || ""
+  ).trim();
 
-  const method = $("delivery-method")?.value || "delivery";
-  const payment = $("payment-method")?.value || "";
-  const area = $("delivery-area")?.value || null;
+  const lastName = (
+    $("order-last-name")?.value || ""
+  ).trim();
+
+  const name = (firstName + " " + lastName).trim();
+
+  const phone = normaliseKenyanPhone(
+    $("order-phone")?.value || ""
+  );
+
+  const email = (
+    $("order-email")?.value || ""
+  ).trim();
+
+  const method =
+    $("delivery-method")?.value || "pickup";
+
+  const payment =
+    $("payment-method")?.value || "";
+
+  const area =
+    $("delivery-area")?.value || "";
 
   const location = method === "pickup"
-    ? null
+    ? "Shop pickup"
     : ($("delivery-location")?.value || "").trim();
 
-  const dateField = method === "pickup"
-    ? $("pickup-date")
-    : $("delivery-date");
+  const date = method === "pickup"
+    ? ($("pickup-date")?.value || "")
+    : ($("delivery-date")?.value || "");
 
-  const timeField = method === "pickup"
-    ? $("pickup-time")
-    : $("delivery-time");
+  const time = method === "pickup"
+    ? ($("pickup-time")?.value || "")
+    : ($("delivery-time")?.value || "");
 
-  const date = String(dateField?.value || "").trim();
-  const time = String(timeField?.value || "").trim();
+  const totals = cartTotals();
 
   if (!firstName || !lastName || !phone || !email) {
     showStatus(
       "checkout-status",
-      "Complete your first name, last name, phone number and email.",
+      "Please complete your first name, last name, phone number and email.",
       true
     );
+
     return;
   }
 
   if (!validKenyanPhone(phone)) {
     showStatus(
       "checkout-status",
-      "Enter a valid Kenyan phone number, for example 0712345678.",
+      "Enter a valid Kenyan phone number, such as 0712345678.",
       true
     );
+
     return;
   }
 
   if (!payment) {
-    showStatus("checkout-status", "Please choose a payment method.", true);
+    showStatus(
+      "checkout-status",
+      "Please choose a payment method.",
+      true
+    );
+
     return;
   }
 
-  if (method === "delivery" && (!area || !location)) {
+  if (
+    method === "delivery" &&
+    (!area || !location)
+  ) {
     showStatus(
       "checkout-status",
-      "Select your delivery area and enter your delivery address.",
+      "Please select a delivery area and enter your delivery address.",
       true
     );
+
     return;
   }
 
   if (!date || !time) {
     showStatus(
       "checkout-status",
-      "Please select your preferable delivery date and time.",
+      "Please select your preferred date and time.",
       true
     );
+
     return;
   }
 
   const now = new Date();
+
   const today = new Date(
     now.getTime() - now.getTimezoneOffset() * 60000
   ).toISOString().slice(0, 10);
 
   if (date < today) {
-    showStatus("checkout-status", "Choose today or a future date.", true);
+    showStatus(
+      "checkout-status",
+      "Please choose today or a future date.",
+      true
+    );
+
     return;
   }
-
-  const totals = cartTotals();
 
   if (totals.code && totals.code !== "KC10") {
     showStatus(
@@ -714,33 +1001,41 @@ async function placeOrder(event) {
       "That discount code is not valid. Remove it or use KC10.",
       true
     );
+
     return;
   }
 
-  let mpesaPhone = null;
+  const mpesaInput =
+    $("mpesa-phone")?.value || "";
 
-  if (payment === "mpesa") {
-    mpesaPhone = normaliseKenyanPhone($("mpesa-phone")?.value || "");
+  if (
+    payment === "mpesa" &&
+    !validKenyanPhone(mpesaInput)
+  ) {
+    showStatus(
+      "checkout-status",
+      "Enter a valid Kenyan M-Pesa phone number.",
+      true
+    );
 
-    if (!validKenyanPhone(mpesaPhone)) {
-      showStatus(
-        "checkout-status",
-        "Enter a valid Kenyan M-Pesa phone number.",
-        true
-      );
-      return;
-    }
+    return;
   }
 
   const button = $("place-order-button");
+
   orderSubmitting = true;
+
   if (button) button.disabled = true;
+
+  showStatus(
+    "checkout-status",
+    "Checking stock and saving your order..."
+  );
 
   let orderCreated = false;
 
   try {
-    showStatus("checkout-status", "Checking stock and placing your order...");
-
+    /* Verify current product availability and price. */
     for (const item of cart) {
       const { data, error } = await customerDB
         .from("products")
@@ -751,61 +1046,120 @@ async function placeOrder(event) {
       if (error) throw error;
 
       if (!data || data.active === false) {
-        throw new Error(item.name + " is no longer available.");
+        throw new Error(
+          item.name + " is no longer available."
+        );
       }
 
-      if (Number(data.stock) < Number(item.quantity)) {
-        throw new Error("Insufficient stock for " + item.name + ".");
+      if (
+        Number(data.stock) < Number(item.quantity)
+      ) {
+        throw new Error(
+          "Insufficient stock for " + item.name +
+          ". Please update your bag."
+        );
       }
 
-      if (Number(data.price) !== Number(item.unit_price)) {
-        throw new Error("The price of " + item.name + " has changed. Refresh your bag.");
+      if (
+        Number(data.price) !== Number(item.unit_price)
+      ) {
+        throw new Error(
+          "The price of " + item.name +
+          " has changed. Refresh and review your bag."
+        );
       }
     }
 
     const fee = method === "pickup"
       ? 0
-      : area === "near_shop" ? 200
-      : area === "nairobi" ? 500
-      : 800;
+      : area === "near_shop"
+        ? 200
+        : area === "nairobi"
+          ? 500
+          : 800;
 
     const total = Math.max(
       0,
       totals.subtotal - totals.discount + fee
     );
 
+    const mpesaPhone = payment === "mpesa"
+      ? normaliseKenyanPhone(mpesaInput)
+      : null;
+
+    /*
+      Split the delivery address into county, town and
+      remaining address details.
+
+      For pickup, required location fields receive
+      "Pickup" rather than NULL.
+    */
+    let county = "Pickup";
+    let town = "Pickup";
+    let deliveryAddress = "Pickup";
+
+    if (method === "delivery") {
+      const addressParts = location
+        .split(",")
+        .map(part => part.trim())
+        .filter(Boolean);
+
+      county = addressParts[0] || location;
+      town = addressParts[1] || addressParts[0] || location;
+
+      deliveryAddress = addressParts.length > 2
+        ? addressParts.slice(2).join(", ")
+        : location;
+    }
+
     /*
       IMPORTANT:
-      Use the exact order table columns.
-      scheduled_date receives the selected date.
-      schedule_slot receives the selected time.
+      This payload uses the actual orders column names
+      discussed for your Supabase table.
+
+      delivery_area is NEVER NULL.
+      scheduled_date and schedule_slot receive the
+      customer's selected date and time.
     */
     const orderPayload = {
       customer_id: user.id,
       customer_name: name,
       customer_email: email,
       customer_phone_number: phone,
+
       fulfillment_type: method,
-      delivery_area: method === "pickup" ? null : area,
-      delivery_address: location,
+
+      delivery_area: method === "pickup"
+        ? "Pickup"
+        : area,
+
+      county,
+      town,
+      delivery_address: deliveryAddress,
       delivery_fee: fee,
+
       scheduled_date: date,
       schedule_slot: time,
+      delivery_time: time,
+
       subtotal: totals.subtotal,
-      discount_code: totals.discount ? totals.code : null,
+      discount_code: totals.discount
+        ? totals.code
+        : null,
       discount_amount: totals.discount,
-      total: total,
+      total,
+
       payment_method: payment,
       payment_status: "unpaid",
       mpesa_phone: mpesaPhone,
+
       order_status: "awaiting_confirmation"
     };
 
-    console.log("Submitting order date:", date);
-    console.log("Submitting order time:", time);
-    console.log("Order data:", orderPayload);
-
-    const { data: order, error: orderError } = await customerDB
+    const {
+      data: order,
+      error: orderError
+    } = await customerDB
       .from("orders")
       .insert(orderPayload)
       .select("*")
@@ -815,42 +1169,58 @@ async function placeOrder(event) {
 
     orderCreated = true;
 
-    const orderItems = cart.map(item => ({
+    /* Save the items associated with this order. */
+    const items = cart.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
       product_name: item.name,
       size: item.size || null,
-      color: item.color || null,
+      color: item.color || item.colour || null,
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
-      line_total: Number(item.unit_price) * Number(item.quantity)
+      line_total:
+        Number(item.unit_price) *
+        Number(item.quantity)
     }));
 
     const { error: itemsError } = await customerDB
       .from("order_items")
-      .insert(orderItems);
+      .insert(items);
 
     if (itemsError) {
       throw new Error(
-        "The order was created, but its item details could not be saved: " +
+        "Order " +
+        String(order.id).slice(0, 8).toUpperCase() +
+        " was created, but its item details could not be saved. " +
         itemsError.message
       );
     }
 
-    const reference = String(order.id).slice(0, 8).toUpperCase();
+    const receipt = cart.map(item =>
+      item.name +
+      ((item.color || item.colour)
+        ? " (" + (item.color || item.colour) + ")"
+        : "") +
+      (item.size ? " / " + item.size : "") +
+      " × " + item.quantity
+    ).join("; ");
 
     cart = [];
     saveCart();
 
     $("checkout-form")?.reset();
+
     setMinimumDates();
     updateCheckoutFields();
     updateCustomerInfo();
 
     showStatus(
       "checkout-status",
-      "Order placed successfully! Reference: " + reference +
-      ". Payment remains unpaid until verified."
+      "Order placed successfully! Reference: " +
+      String(order.id).slice(0, 8).toUpperCase() +
+      ". Items: " + receipt +
+      ". Your order is awaiting confirmation. " +
+      "Payment remains unpaid until verified."
     );
 
     await loadMyOrders();
@@ -861,47 +1231,89 @@ async function placeOrder(event) {
     showStatus(
       "checkout-status",
       (orderCreated
-        ? "Your order was created, but another step failed: "
-        : "Order could not be placed: ") + error.message,
+        ? "Your order was created, but another step failed. "
+        : "Order could not be placed. ") +
+      error.message,
       true
     );
 
   } finally {
     orderSubmitting = false;
+
     if (button) button.disabled = false;
   }
 }
 
-/* ---------------- CHECKOUT EVENTS ---------------- */
+/* =========================================================
+   CHECKOUT CONTROLS
+   ========================================================= */
 
-$("category-filter")?.addEventListener("change", displayProducts);
-$("delivery-method")?.addEventListener("change", updateCheckoutFields);
-$("delivery-area")?.addEventListener("change", renderCart);
-$("discount-code")?.addEventListener("input", renderCart);
-$("payment-method")?.addEventListener("change", updateCheckoutFields);
+$("category-filter")?.addEventListener(
+  "change",
+  displayProducts
+);
+
+$("delivery-method")?.addEventListener(
+  "change",
+  updateCheckoutFields
+);
+
+$("delivery-area")?.addEventListener(
+  "change",
+  renderCart
+);
+
+$("discount-code")?.addEventListener(
+  "input",
+  renderCart
+);
+
+$("payment-method")?.addEventListener(
+  "change",
+  updateCheckoutFields
+);
 
 $("checkout-toggle")?.addEventListener("click", () => {
   const form = $("checkout-form");
 
-  if (!form) return;
+  if (!form) {
+    console.error(
+      "Checkout form not found in customer.html."
+    );
 
-  if (!cart.length) {
-    showStatus("checkout-status", "Add a product before checking out.", true);
     return;
   }
 
+  if (!cart.length) {
+    showStatus(
+      "checkout-status",
+      "Your shopping bag is empty. Add a product before checking out.",
+      true
+    );
+
+    $("shopping-bag")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+    return;
+  }
+
+  showStatus("checkout-status", "");
+
   form.hidden = false;
-  form.style.display = "block";
   updateCheckoutFields();
-  form.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  form.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 });
 
 $("back-to-bag")?.addEventListener("click", () => {
   const form = $("checkout-form");
-  if (form) {
-    form.hidden = true;
-    form.style.display = "none";
-  }
+
+  if (form) form.hidden = true;
 
   $("shopping-bag")?.scrollIntoView({
     behavior: "smooth",
@@ -909,60 +1321,109 @@ $("back-to-bag")?.addEventListener("click", () => {
   });
 });
 
-$("checkout-form")?.addEventListener("submit", placeOrder);
+$("checkout-form")?.addEventListener(
+  "submit",
+  placeOrder
+);
 
-/* ---------------- CONTACT FORM ---------------- */
+/* =========================================================
+   CUSTOMER CONTACT FORM
+   ========================================================= */
 
-$("customer-contact-form")?.addEventListener("submit", async event => {
-  event.preventDefault();
+$("customer-contact-form")?.addEventListener(
+  "submit",
+  async event => {
+    event.preventDefault();
 
-  const status = $("contact-status");
-  const user = currentCustomer || await loadCustomerAccount();
+    const status = $("contact-status");
 
-  if (!user) {
-    if (status) status.textContent = "Please sign in before sending a message.";
-    return;
+    const user =
+      currentCustomer || await loadCustomerAccount();
+
+    if (!user) {
+      if (status) {
+        status.textContent =
+          "Please sign in before sending a message.";
+      }
+
+      return;
+    }
+
+    const button = event.currentTarget.querySelector(
+      'button[type="submit"]'
+    );
+
+    if (button) button.disabled = true;
+
+    if (status) status.textContent = "Sending...";
+
+    try {
+      const { error } = await customerDB
+        .from("messages")
+        .insert({
+          customer_name:
+            $("contact-name")?.value.trim() || "",
+          customer_email: user.email,
+          subject: "Customer enquiry",
+          message:
+            $("contact-message")?.value.trim() || ""
+        });
+
+      if (error) throw error;
+
+      event.currentTarget.reset();
+      updateCustomerInfo();
+
+      if (status) {
+        status.textContent =
+          "Your message was sent successfully.";
+      }
+
+      await loadCustomerMessages();
+
+    } catch (error) {
+      if (status) {
+        status.textContent =
+          "Could not send message: " + error.message;
+      }
+
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
+);
 
-  const message = ($("contact-message")?.value || "").trim();
+/* =========================================================
+   CUSTOMER SIGN OUT
+   ========================================================= */
 
-  if (!message) {
-    if (status) status.textContent = "Please enter your message.";
-    return;
+$("customer-signout")?.addEventListener(
+  "click",
+  async () => {
+    const button = $("customer-signout");
+
+    if (button) button.disabled = true;
+
+    const { error } = await customerDB.auth.signOut();
+
+    if (error) {
+      if (button) button.disabled = false;
+
+      alert("Could not sign out: " + error.message);
+      return;
+    }
+
+    window.location.replace("index.html");
   }
+);
 
-  const button = event.currentTarget.querySelector('button[type="submit"]');
-  if (button) button.disabled = true;
-  if (status) status.textContent = "Sending your message...";
-
-  try {
-    const { error } = await customerDB.from("messages").insert({
-      customer_name: $("contact-name")?.value.trim() || "",
-      customer_email: user.email,
-      subject: "Customer enquiry",
-      message
-    });
-
-    if (error) throw error;
-
-    event.currentTarget.reset();
-    updateCustomerInfo();
-
-    if (status) status.textContent = "Your message was sent successfully.";
-    await loadCustomerMessages();
-
-  } catch (error) {
-    console.error("Contact message error:", error);
-    if (status) status.textContent = "Could not send message: " + error.message;
-  } finally {
-    if (button) button.disabled = false;
-  }
-});
-
-/* ---------------- CUSTOMER MESSAGES ---------------- */
+/* =========================================================
+   CUSTOMER MESSAGES
+   ========================================================= */
 
 async function loadCustomerMessages() {
   const form = $("customer-contact-form");
+
   if (!form) return;
 
   let section = $("customer-messages-section");
@@ -977,19 +1438,21 @@ async function loadCustomerMessages() {
       '<h2 class="kc-section-heading">MY MESSAGES</h2>' +
       '<p id="customer-messages-status"></p>' +
       '<div id="customer-messages-list"></div>' +
-      '</div>';
+      "</div>";
 
     form.insertAdjacentElement("afterend", section);
   }
 
-  const user = currentCustomer || await loadCustomerAccount();
+  const user =
+    currentCustomer || await loadCustomerAccount();
+
   const list = $("customer-messages-list");
   const status = $("customer-messages-status");
 
   if (!list || !status) return;
 
   if (!user) {
-    status.textContent = "Sign in to view your messages.";
+    status.textContent = "Sign in to view messages.";
     return;
   }
 
@@ -1002,7 +1465,9 @@ async function loadCustomerMessages() {
   list.replaceChildren();
 
   if (error) {
-    status.textContent = "Messages unavailable: " + error.message;
+    status.textContent =
+      "Messages unavailable: " + error.message;
+
     return;
   }
 
@@ -1014,8 +1479,14 @@ async function loadCustomerMessages() {
     const card = document.createElement("article");
     card.className = "kc-order-card";
 
-    safeText(card, "h3", message.subject || "Enquiry");
+    safeText(
+      card,
+      "h3",
+      message.subject || "Enquiry"
+    );
+
     safeText(card, "p", message.message || "");
+
     safeText(
       card,
       "p",
@@ -1028,24 +1499,9 @@ async function loadCustomerMessages() {
   });
 }
 
-/* ---------------- SIGN OUT ---------------- */
-
-$("customer-signout")?.addEventListener("click", async () => {
-  const button = $("customer-signout");
-  if (button) button.disabled = true;
-
-  const { error } = await customerDB.auth.signOut();
-
-  if (error) {
-    if (button) button.disabled = false;
-    alert("Could not sign out: " + error.message);
-    return;
-  }
-
-  window.location.replace("index.html");
-});
-
-/* ---------------- START CUSTOMER PAGE ---------------- */
+/* =========================================================
+   INITIALISE CUSTOMER PAGE
+   ========================================================= */
 
 async function loadCustomerPage() {
   await loadCustomerAccount();
@@ -1055,13 +1511,16 @@ async function loadCustomerPage() {
   updateCheckoutFields();
 
   await loadCustomerProducts();
+
   renderCart();
+
   await loadMyOrders();
   await loadCustomerMessages();
 }
 
 loadCustomerPage().catch(error => {
   console.error("Customer page error:", error);
+
   showStatus(
     "catalogue-message",
     "The shopping page could not finish loading. Refresh and try again.",
@@ -1069,11 +1528,14 @@ loadCustomerPage().catch(error => {
   );
 });
 
+/* Refresh products and order history when the customer
+   returns to the page. */
 window.addEventListener("focus", () => {
   loadCustomerProducts();
   loadMyOrders();
 });
 
+/* Keep the customer catalogue updated when products change. */
 customerDB
   .channel("customer-product-updates")
   .on(
@@ -1083,6 +1545,8 @@ customerDB
       schema: "public",
       table: "products"
     },
-    loadCustomerProducts
+    () => {
+      loadCustomerProducts();
+    }
   )
   .subscribe();
