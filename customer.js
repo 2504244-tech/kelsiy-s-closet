@@ -1,279 +1,240 @@
 "use strict";
 
-const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const CUSTOMER_SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const CUSTOMER_SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const customerDB = window.supabase.createClient(CUSTOMER_SUPABASE_URL, CUSTOMER_SUPABASE_KEY);
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-const clean = value => String(value ?? "").trim();
-const money = value => "KSh " + Number(value || 0).toLocaleString("en-KE", {
-  maximumFractionDigits: 2
-});
+const money = n => "KSh " + Number(n || 0).toLocaleString("en-KE", {maximumFractionDigits: 2});
+const safeText = (parent, tag, text, cls) => {
+  const node = document.createElement(tag);
+  node.textContent = text == null ? "" : String(text);
+  if (cls) node.className = cls;
+  parent.appendChild(node);
+  return node;
+};
 
-let products = [];
+let allProducts = [];
+let currentCustomer = null;
 let cart = [];
-let submitting = false;
 
-function message(id, text) {
-  const element = $(id);
-  if (element) element.textContent = text;
+try {
+  cart = JSON.parse(localStorage.getItem("kc-shopping-cart") || "[]");
+  if (!Array.isArray(cart)) cart = [];
+} catch {
+  cart = [];
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[character]);
+function saveCart() {
+  localStorage.setItem("kc-shopping-cart", JSON.stringify(cart));
+  updateBagCount();
+  renderCart();
 }
 
-function optionsFrom(value) {
-  if (Array.isArray(value)) return value.map(clean).filter(Boolean);
-  return clean(value).split(/[,/|]/).map(value => value.trim()).filter(Boolean);
+function updateBagCount() {
+  const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  if ($("bag-count")) $("bag-count").textContent = count;
 }
 
-function todayLocal() {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString().slice(0, 10);
+function resolveProductImage(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  return raw.startsWith("image/") ? raw : "image/" + raw.replace(/^\.\//, "");
+}
+
+function parseOptions(value) {
+  return String(value || "").split(/[,;|]/).map(x => x.trim()).filter(Boolean);
+}
+
+function makeSelect(options, label, selected) {
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", label);
+  if (!options.length) options = ["Not specified"];
+  options.forEach(value => select.add(new Option(value, value)));
+  if (selected && options.includes(selected)) select.value = selected;
+  return select;
 }
 
 function productImage(product) {
-  return product.image_url || product.image || product.image_path || "";
+  const img = document.createElement("img");
+  img.className = "customer-product-image";
+  img.alt = product.name || "Fashion product";
+  img.loading = "lazy";
+  const src = resolveProductImage(product.image_url || product.image || product.image_path);
+  if (src) img.src = src;
+  img.onerror = () => {
+    img.removeAttribute("src");
+    img.alt = "Product image unavailable";
+  };
+  return img;
 }
 
-function productStock(product) {
-  return Number(product.stock ?? product.quantity_in_stock ?? 0);
-}
-
-function productPrice(product) {
-  return Number(product.price ?? 0);
-}
-
-function validKenyanPhone(value) {
-  const phone = clean(value).replace(/[\s()-]/g, "");
-  return /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/.test(phone);
-}
-
-function paymentMethod() {
-  const value = clean($("payment-method")?.value).toLowerCase();
-
-  if (value.includes("mpesa") || value.includes("m-pesa")) return "M-Pesa";
-  if (value.includes("cash")) return "Cash";
-
-  return "";
-}
-
-async function loadProducts() {
-  message("catalogue-message", "Loading our collection...");
-
-  try {
-    const { data, error } = await db
-      .from("products")
-      .select("*")
-      .order("name", { ascending: true });
-
-    if (error) throw error;
-
-    products = (data || []).filter(product =>
-      product.is_active !== false && product.active !== false
-    );
-
-    populateCategories();
-    renderProducts();
-
-    message(
-      "catalogue-message",
-      products.length
-        ? `${products.length} product(s) in our collection.`
-        : "Our collection is currently empty. Please check back soon."
-    );
-  } catch (error) {
-    console.error("Product loading error:", error);
-    message(
-      "catalogue-message",
-      "We couldn't load the collection. Please refresh the page."
-    );
-  }
-}
-
-function populateCategories() {
-  const select = $("category-filter");
-  if (!select) return;
-
-  const selected = select.value || "all";
-  const categories = [...new Set(
-    products.map(product => clean(product.category)).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b));
-
-  select.replaceChildren();
-
-  const allOption = document.createElement("option");
-  allOption.value = "all";
-  allOption.textContent = "All Categories";
-  select.appendChild(allOption);
-
-  categories.forEach(category => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    select.appendChild(option);
-  });
-
-  if (categories.includes(selected)) select.value = selected;
-  else select.value = "all";
-}
-
-function renderProducts() {
+function displayProducts() {
   const container = $("customer-products");
-  if (!container) return;
+  const message = $("catalogue-message");
+  if (!container || !message) return;
 
   container.replaceChildren();
-
-  const selectedCategory = clean($("category-filter")?.value || "all");
-  const visibleProducts = products.filter(product =>
-    selectedCategory === "all" ||
-    clean(product.category) === selectedCategory
+  const selected = ($("category-filter")?.value || "all").toLowerCase();
+  const products = allProducts.filter(p =>
+    selected === "all" || String(p.category || "").toLowerCase() === selected
   );
 
-  if (!visibleProducts.length) {
-    const empty = document.createElement("p");
-    empty.className = "kc-empty";
-    empty.textContent = "No products are available in this category yet.";
-    container.appendChild(empty);
+  if (!products.length) {
+    message.textContent = allProducts.length
+      ? "There are no products in this category yet."
+      : "No active products are available yet.";
     return;
   }
 
-  visibleProducts.forEach(product => {
+  message.textContent = products.length + " product(s) available.";
+
+  products.forEach(product => {
     const card = document.createElement("article");
     card.className = "customer-product-card";
+    card.appendChild(productImage(product));
 
-    const image = productImage(product);
-    const stock = productStock(product);
-    const sizes = optionsFrom(product.size || product.sizes);
-    const colours = optionsFrom(
-      product.color || product.colour || product.colors
+    const details = document.createElement("div");
+    details.className = "customer-product-details";
+    safeText(details, "h3", product.name || "Fashion item");
+    safeText(details, "p", money(product.price), "customer-product-price");
+    if (product.description) safeText(details, "p", product.description);
+    if (product.category) safeText(details, "p", "Category: " + product.category);
+
+    const stock = Math.max(0, Number(product.stock) || 0);
+    safeText(
+      details, "p",
+      stock ? stock + " item(s) available" : "SOLD OUT",
+      "customer-product-stock" + (stock ? "" : " out-of-stock")
     );
 
-    card.innerHTML = `
-      <img class="customer-product-image"
-           src="${escapeHtml(image)}"
-           alt="${escapeHtml(product.name || "Clothing item")}"
-           onerror="this.style.display='none'">
+    const options = document.createElement("div");
+    options.className = "kc-product-options";
+    const colors = parseOptions(product.color || product.colour);
+    const sizes = parseOptions(product.size);
+    let colorSelect = null;
+    let sizeSelect = null;
 
-      <div class="customer-product-details">
-        <h3>${escapeHtml(product.name || "Clothing item")}</h3>
-        <p>${escapeHtml(product.description || "")}</p>
-        <p class="customer-product-price">${money(productPrice(product))}</p>
-        <p class="customer-product-stock ${stock < 1 ? "out-of-stock" : ""}">
-          ${stock > 0 ? `${stock} in stock` : "Out of stock"}
-        </p>
+    if (colors.length) {
+      const label = safeText(options, "label", "Choose colour");
+      colorSelect = makeSelect(colors, "Colour");
+      label.appendChild(colorSelect);
+    }
 
-        <div class="kc-product-options">
-          <label>Size
-            <select class="choose-size">
-              <option value="">Choose size</option>
-              ${sizes.map(size =>
-                `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`
-              ).join("")}
-            </select>
-          </label>
+    if (sizes.length) {
+      const label = safeText(options, "label", "Choose size");
+      sizeSelect = makeSelect(sizes, "Size");
+      label.appendChild(sizeSelect);
+    }
 
-          <label>Colour
-            <select class="choose-color">
-              <option value="">Choose colour</option>
-              ${colours.map(colour =>
-                `<option value="${escapeHtml(colour)}">${escapeHtml(colour)}</option>`
-              ).join("")}
-            </select>
-          </label>
+    const quantityLabel = safeText(options, "label", "Quantity");
+    const quantity = document.createElement("input");
+    quantity.type = "number";
+    quantity.min = "1";
+    quantity.max = String(Math.max(1, stock));
+    quantity.value = "1";
+    quantity.disabled = stock < 1;
+    quantityLabel.appendChild(quantity);
+    details.appendChild(options);
 
-          <label>Quantity
-            <input class="choose-quantity" type="number"
-                   min="1" max="${Math.max(1, stock)}" value="1">
-          </label>
-        </div>
+    const add = safeText(
+      details, "button", stock ? "ADD TO BAG" : "SOLD OUT",
+      "kc-button kc-add-button"
+    );
+    add.type = "button";
+    add.disabled = stock < 1;
 
-        <button class="kc-button kc-add-button" type="button"
-                ${stock < 1 ? "disabled" : ""}>
-          ${stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"}
-        </button>
-      </div>`;
-
-    card.querySelector(".kc-add-button").addEventListener("click", () => {
-      const size = card.querySelector(".choose-size").value;
-      const colour = card.querySelector(".choose-color").value;
-      const quantity = Number(card.querySelector(".choose-quantity").value);
-
-      if (sizes.length && !size) {
-        alert("Please select a size.");
+    add.addEventListener("click", () => {
+      const qty = Number(quantity.value);
+      if (!Number.isInteger(qty) || qty < 1 || qty > stock) {
+        alert("Please choose a quantity between 1 and " + stock + ".");
         return;
       }
 
-      if (colours.length && !colour) {
-        alert("Please select a colour.");
-        return;
-      }
-
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
-        alert("Please enter a valid quantity within available stock.");
-        return;
-      }
-
-      const existing = cart.find(item =>
-        String(item.id) === String(product.id) &&
-        item.size === size &&
-        item.color === colour
-      );
+      const color = colorSelect ? colorSelect.value : "";
+      const size = sizeSelect ? sizeSelect.value : "";
+      const key = product.id + "|" + color + "|" + size;
+      const existing = cart.find(i => i.key === key);
 
       if (existing) {
-        if (existing.quantity + quantity > stock) {
-          alert("That quantity exceeds the available stock.");
+        if (existing.quantity + qty > stock) {
+          alert("Only " + stock + " item(s) are currently available.");
           return;
         }
-        existing.quantity += quantity;
+        existing.quantity += qty;
       } else {
         cart.push({
-          id: product.id,
+          key,
+          product_id: product.id,
           name: product.name,
-          price: productPrice(product),
-          image,
+          image_url: product.image_url || product.image || product.image_path || "",
+          color,
           size,
-          color: colour,
-          quantity,
-          stock
+          quantity: qty,
+          unit_price: Number(product.price) || 0,
+          available_stock: stock
         });
       }
 
-      renderCart();
-      message("checkout-status", "");
+      saveCart();
+      add.textContent = "ADDED TO BAG";
     });
 
+    card.appendChild(details);
     container.appendChild(card);
   });
 }
 
-function subtotal() {
-  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-}
+async function loadCustomerProducts() {
+  const message = $("catalogue-message");
+  if (!message) return;
 
-function deliveryFee() {
-  if ($("delivery-method")?.value === "pickup") return 0;
+  message.textContent = "Loading our collection...";
 
-  switch ($("delivery-area")?.value) {
-    case "near_shop": return 200;
-    case "nairobi": return 500;
-    case "countrywide": return 700;
-    default: return 0;
+  const {data, error} = await customerDB.from("products")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", {ascending: false});
+
+  if (error) {
+    console.error("Products error:", error);
+    message.textContent = "Products could not load: " + error.message;
+    return;
   }
+
+  allProducts = data || [];
+
+  cart = cart.map(item => {
+    const p = allProducts.find(x => String(x.id) === String(item.product_id));
+    return p ? {
+      ...item,
+      name: p.name,
+      image_url: p.image_url || p.image || p.image_path || "",
+      unit_price: Number(p.price) || 0,
+      available_stock: Number(p.stock) || 0
+    } : item;
+  });
+
+  displayProducts();
+  saveCart();
 }
 
-function discountAmount() {
-  return clean($("discount-code")?.value).toUpperCase() === "KC10"
-    ? subtotal() * 0.10
-    : 0;
+function cartTotals() {
+  const subtotal = cart.reduce(
+    (sum, i) => sum + Number(i.unit_price) * Number(i.quantity), 0
+  );
+  const code = ($("discount-code")?.value || "").trim().toUpperCase();
+  const discount = code === "KC10" ? subtotal * 0.10 : 0;
+  const method = $("delivery-method")?.value || "delivery";
+  const area = $("delivery-area")?.value || "near_shop";
+
+  let fee = 0;
+  if (method === "delivery") {
+    fee = area === "near_shop" ? 200 : area === "nairobi" ? 500 : 800;
+  }
+
+  return {subtotal, discount, fee, total: Math.max(0, subtotal - discount + fee), code, area, method};
 }
 
 function renderCart() {
@@ -283,436 +244,404 @@ function renderCart() {
   container.replaceChildren();
 
   if (!cart.length) {
-    const empty = document.createElement("p");
-    empty.className = "kc-empty";
-    empty.textContent = "Your bag is empty. Explore our collection to get started.";
-    container.appendChild(empty);
+    safeText(container, "p", "Your bag is empty. Add products from Our Collection to begin.", "kc-empty");
   }
 
   cart.forEach((item, index) => {
-    const line = document.createElement("div");
-    line.className = "kc-cart-line";
+    const row = document.createElement("article");
+    row.className = "kc-cart-line";
 
-    line.innerHTML = `
-      <img src="${escapeHtml(item.image)}"
-           alt="${escapeHtml(item.name)}"
-           onerror="this.style.display='none'">
+    const img = document.createElement("img");
+    img.alt = item.name || "Product";
+    const src = resolveProductImage(item.image_url);
+    if (src) img.src = src;
+    img.onerror = () => img.removeAttribute("src");
+    row.appendChild(img);
 
-      <div>
-        <h3>${escapeHtml(item.name)}</h3>
-        <p>Size: ${escapeHtml(item.size || "Not specified")}</p>
-        <p>Colour: ${escapeHtml(item.color || "Not specified")}</p>
-        <p>${money(item.price)} each</p>
+    const info = document.createElement("div");
+    safeText(info, "h3", item.name);
+    if (item.color) safeText(info, "p", "Colour: " + item.color);
+    if (item.size) safeText(info, "p", "Size: " + item.size);
+    safeText(info, "p", money(item.unit_price) + " each");
 
-        <label>Quantity
-          <input class="cart-quantity" type="number"
-                 min="1" max="${item.stock}" value="${item.quantity}">
-        </label>
+    const qtyLabel = safeText(info, "label", "Quantity ");
+    const qty = document.createElement("input");
+    qty.type = "number";
+    qty.min = "1";
+    qty.max = String(Math.max(1, item.available_stock || 1));
+    qty.value = item.quantity;
+    qtyLabel.appendChild(qty);
 
-        <p><strong>${money(item.price * item.quantity)}</strong></p>
-        <button class="kc-button kc-button-outline remove-item" type="button">
-          REMOVE
-        </button>
-      </div>`;
-
-    line.querySelector(".cart-quantity").addEventListener("change", event => {
-      const quantity = Number(event.target.value);
-
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > item.stock) {
-        alert("Please enter a valid quantity within available stock.");
-        event.target.value = item.quantity;
+    qty.addEventListener("change", () => {
+      const value = Number(qty.value);
+      const stock = Number(item.available_stock) || 0;
+      if (!Number.isInteger(value) || value < 1 || value > stock) {
+        alert("Quantity must be between 1 and the available stock (" + stock + ").");
+        qty.value = item.quantity;
         return;
       }
-
-      cart[index].quantity = quantity;
-      renderCart();
+      cart[index].quantity = value;
+      saveCart();
     });
 
-    line.querySelector(".remove-item").addEventListener("click", () => {
+    const remove = safeText(info, "button", "REMOVE", "kc-button kc-button-outline");
+    remove.type = "button";
+    remove.addEventListener("click", () => {
       cart.splice(index, 1);
-      renderCart();
+      saveCart();
     });
 
-    container.appendChild(line);
+    row.appendChild(info);
+    container.appendChild(row);
   });
 
-  const sub = subtotal();
-  const discount = discountAmount();
-  const fee = deliveryFee();
-
-  message("bag-count", cart.reduce((sum, item) => sum + item.quantity, 0));
-  message("cart-subtotal", money(sub));
-  message("cart-discount", money(discount));
-  message("cart-delivery", money(fee));
-  message("cart-total", money(Math.max(0, sub - discount + fee)));
+  const totals = cartTotals();
+  if ($("cart-subtotal")) $("cart-subtotal").textContent = money(totals.subtotal);
+  if ($("cart-discount")) $("cart-discount").textContent = totals.discount ? "−" + money(totals.discount) + " (KC10)" : money(0);
+  if ($("cart-delivery")) $("cart-delivery").textContent = totals.method === "pickup" ? "Free pickup" : money(totals.fee);
+  if ($("cart-total")) $("cart-total").textContent = money(totals.total);
+  updateBagCount();
 }
 
-function updateFulfilmentFields() {
-  const pickup = $("delivery-method")?.value === "pickup";
+async function loadCustomerAccount() {
+  const {data, error} = await customerDB.auth.getUser();
+  if (error || !data?.user) {
+    currentCustomer = null;
+    return null;
+  }
+  currentCustomer = data.user;
+  return currentCustomer;
+}
 
+function showStatus(id, text, isError = false) {
+  const element = $(id);
+  if (element) {
+    element.textContent = text;
+    element.style.color = isError ? "#b42318" : "";
+  }
+}
+
+function setMinimumDates() {
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  ["delivery-date", "pickup-date"].forEach(id => {
+    const element = $(id);
+    if (element) {
+      element.min = today;
+      if (!element.value) element.value = today;
+    }
+  });
+}
+
+function updateCheckoutFields() {
+  const pickup = $("delivery-method")?.value === "pickup";
   if ($("delivery-fields")) $("delivery-fields").hidden = pickup;
   if ($("pickup-fields")) $("pickup-fields").hidden = !pickup;
-
-  if ($("delivery-area")) $("delivery-area").required = !pickup;
   if ($("delivery-location")) $("delivery-location").required = !pickup;
   if ($("delivery-date")) $("delivery-date").required = !pickup;
   if ($("delivery-time")) $("delivery-time").required = !pickup;
   if ($("pickup-date")) $("pickup-date").required = pickup;
   if ($("pickup-time")) $("pickup-time").required = pickup;
-
   renderCart();
 }
 
-function updatePaymentFields() {
-  const mpesa = paymentMethod() === "M-Pesa";
-
-  if ($("mpesa-fields")) $("mpesa-fields").hidden = !mpesa;
-  if ($("mpesa-phone")) $("mpesa-phone").required = mpesa;
+function updateCustomerInfo() {
+  if (!currentCustomer) return;
+  if ($("order-email")) $("order-email").value = currentCustomer.email || "";
+  if ($("contact-email")) $("contact-email").value = currentCustomer.email || "";
 }
 
-function setDateLimits() {
-  const today = todayLocal();
+async function loadMyOrders() {
+  const list = $("my-orders-list");
+  const status = $("my-orders-status");
+  if (!list || !status) return;
 
-  ["delivery-date", "pickup-date"].forEach(id => {
-    const field = $(id);
-    if (!field) return;
-
-    field.min = today;
-    if (!field.value || field.value < today) field.value = today;
-  });
-}
-
-function openCheckout() {
-  if (!cart.length) {
-    message("checkout-status", "Add an item to your bag before checking out.");
+  list.replaceChildren();
+  const user = currentCustomer || await loadCustomerAccount();
+  if (!user) {
+    status.textContent = "Please sign in to view your orders.";
     return;
   }
 
-  if ($("checkout-form")) $("checkout-form").hidden = false;
+  status.textContent = "Loading your orders...";
+  const {data, error} = await customerDB.from("orders")
+    .select("*").eq("customer_id", user.id).order("created_at", {ascending: false});
 
-  $("checkout-form")?.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
-}
+  if (error) {
+    status.textContent = "Orders could not load: " + error.message;
+    return;
+  }
+  if (!data?.length) {
+    status.textContent = "You have not placed any orders yet.";
+    return;
+  }
 
-function setupCheckoutNavigation() {
-  $("checkout-toggle")?.addEventListener("click", openCheckout);
+  status.textContent = data.length + " order(s) found.";
 
-  $("back-to-bag")?.addEventListener("click", () => {
-    if ($("checkout-form")) $("checkout-form").hidden = true;
+  for (const order of data) {
+    const card = document.createElement("article");
+    card.className = "kc-order-card";
+    safeText(card, "h3", "Order " + String(order.id).slice(0, 8).toUpperCase());
+    safeText(card, "p", "Placed: " + new Date(order.created_at).toLocaleString("en-KE"));
+    safeText(card, "p", "Total: " + money(order.total) + " · Payment: " + order.payment_method + " · Status: " + order.payment_status);
+    safeText(card, "p", "Order status: " + order.order_status);
+    safeText(card, "p", ((order.fulfillment_type || order.delivery_method) === "pickup" ? "Pickup" : "Delivery") + ": " + (order.delivery_address || order.delivery_location || "Shop pickup") + " · " + (order.schedule_date || order.delivery_date || "") + " " + (order.schedule_slot || order.delivery_time || ""));
 
-    $("shopping-bag")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  });
+    const itemLine = safeText(card, "p", "Loading items...");
+    const result = await customerDB.from("order_items").select("*").eq("order_id", order.id);
+    if (result.error) itemLine.textContent = "Items could not load: " + result.error.message;
+    else itemLine.textContent = (result.data || []).map(i =>
+      i.product_name + (i.color || i.colour ? " (" + (i.color || i.colour) + ")" : "") +
+      (i.size ? " / " + i.size : "") + " × " + i.quantity + " — " + money(i.unit_price)
+    ).join("; ") || "No item details.";
+
+    list.appendChild(card);
+  }
 }
 
 async function placeOrder(event) {
   event.preventDefault();
 
-  if (submitting) return;
-
   if (!cart.length) {
-    message("checkout-status", "Your bag is empty.");
+    showStatus("checkout-status", "Your bag is empty. Add at least one product first.", true);
     return;
   }
 
-  const firstName = clean($("order-first-name")?.value);
-  const lastName = clean($("order-last-name")?.value);
-  const name = `${firstName} ${lastName}`.trim();
-  const phone = clean($("order-phone")?.value);
-  const email = clean($("order-email")?.value);
-  const pickup = $("delivery-method")?.value === "pickup";
-  const area = pickup ? "pickup" : clean($("delivery-area")?.value);
-  const location = pickup ? "Shop pickup" : clean($("delivery-location")?.value);
-  const method = paymentMethod();
-
-  const dateField = pickup ? $("pickup-date") : $("delivery-date");
-  const timeField = pickup ? $("pickup-time") : $("delivery-time");
-  const date = clean(dateField?.value);
-  const slot = clean(timeField?.value);
-  const mpesaPhone = clean($("mpesa-phone")?.value);
-
-  if (!firstName || !lastName) {
-    message("checkout-status", "Enter your first name and last name.");
+  const user = currentCustomer || await loadCustomerAccount();
+  if (!user) {
+    showStatus("checkout-status", "Please sign in to your customer account before placing an order.", true);
     return;
   }
 
-  if (!validKenyanPhone(phone)) {
-    message("checkout-status", "Enter a valid Kenyan phone number starting with 01 or 07.");
+  const totals = cartTotals();
+  if (totals.code && totals.code !== "KC10") {
+    showStatus("checkout-status", "That discount code is not valid. Remove it or try KC10.", true);
     return;
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    message("checkout-status", "Enter a valid email address.");
+  const name = $("order-name").value.trim();
+  const phone = $("order-phone").value.trim();
+  const email = $("order-email").value.trim();
+  const method = $("delivery-method").value;
+  const payment = $("payment-method").value;
+  const area = $("delivery-area")?.value || "near_shop";
+  const location = method === "pickup" ? "Shop pickup" : $("delivery-location").value.trim();
+  const date = method === "pickup" ? $("pickup-date").value : $("delivery-date").value;
+  const time = method === "pickup" ? $("pickup-time").value : $("delivery-time").value;
+
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  if (date && date < today) {
+    showStatus("checkout-status", "Please choose today or a future date.", true);
     return;
   }
 
-  if (!method) {
-    message("checkout-status", "Choose M-Pesa or Cash.");
-    return;
-  }
+  const button = $("place-order-button");
+  button.disabled = true;
+  showStatus("checkout-status", "Saving your order...");
 
-  if (method === "M-Pesa" && !validKenyanPhone(mpesaPhone)) {
-    message("checkout-status", "Enter a valid M-Pesa number starting with 01 or 07.");
-    return;
-  }
-
-  if (!pickup && (!area || !location)) {
-    message("checkout-status", "Complete your delivery area and address.");
-    return;
-  }
-
-  if (!date || date < todayLocal()) {
-    message("checkout-status", "Choose today or a future date.");
-    return;
-  }
-
-  if (!slot) {
-    message("checkout-status", "Choose a pickup or delivery time.");
-    return;
-  }
-
-  const sub = subtotal();
-  const discount = discountAmount();
-  const fee = deliveryFee();
-  const total = Math.max(0, sub - discount + fee);
-
-  submitting = true;
-  if ($("place-order-button")) $("place-order-button").disabled = true;
-  message("checkout-status", "Submitting your order...");
-
-  let orderId = null;
+  let orderCreated = false;
 
   try {
-    const { data: authData, error: authError } = await db.auth.getUser();
-    if (authError) throw authError;
+    for (const item of cart) {
+      const {data, error} = await customerDB.from("products")
+        .select("id,name,stock,active,price").eq("id", item.product_id).maybeSingle();
 
-    const user = authData?.user || null;
+      if (error) throw error;
+      if (!data || data.active === false || Number(data.stock) < item.quantity) {
+        throw new Error("Stock changed for " + item.name + ". Refresh the page and review your bag.");
+      }
+    }
+
+    const fee = method === "pickup" ? 0 : area === "near_shop" ? 200 : area === "nairobi" ? 500 : 800;
+    const total = Math.max(0, totals.subtotal - totals.discount + fee);
 
     const orderPayload = {
-      customer_id: user?.id || null,
+      customer_id: user.id,
       customer_name: name,
       customer_email: email,
       customer_phone_number: phone,
-      fulfillment_type: pickup ? "pickup" : "delivery",
-      delivery_method: pickup ? "pickup" : "delivery",
-      delivery_area: area,
-      county: pickup ? null : location.split(",")[0].trim(),
-      town: pickup ? null : (location.split(",")[1] || "").trim() || null,
+      fulfillment_type: method,
+      delivery_method: method,
+      delivery_area: method === "pickup" ? "pickup" : area,
+      delivery_fee: fee,
+      subtotal: totals.subtotal,
+      discount_code: totals.discount ? totals.code : null,
+      discount_amount: totals.discount,
+      total,
+      payment_method: payment,
+      payment_status: "unpaid",
       delivery_address: location,
       delivery_location: location,
-      delivery_fee: fee,
-      schedule_date: date,
-      schedule_slot: slot,
-      delivery_date: date,
-      delivery_time: slot,
-      subtotal: sub,
-      discount_code: clean($("discount-code")?.value).toUpperCase() || null,
-      discount_amount: discount,
-      total,
-      payment_method: method,
-      payment_status: "pending",
-      mpesa_phone: method === "M-Pesa" ? mpesaPhone : null,
-      order_status: "awaiting confirmation",
-      order_notes: clean($("order-notes")?.value) || null
+      schedule_date: date || null,
+      schedule_slot: time || null,
+      delivery_date: date || null,
+      delivery_time: time || null,
+      order_status: "awaiting_confirmation",
+      order_notes: $("order-notes")?.value.trim() || null
     };
 
-    const { data: order, error: orderError } = await db
-      .from("orders")
-      .insert(orderPayload)
-      .select("id")
-      .single();
+    const {data: order, error: orderError} = await customerDB
+      .from("orders").insert(orderPayload).select("*").single();
 
     if (orderError) throw orderError;
-    orderId = order.id;
+    orderCreated = true;
 
     const items = cart.map(item => ({
-      order_id: orderId,
-      product_id: String(item.id),
+      order_id: order.id,
+      product_id: String(item.product_id),
       product_name: item.name,
-      size: item.size || "",
-      color: item.color || "",
-      unit_price: item.price,
+      size: item.size || null,
+      color: item.color || null,
       quantity: item.quantity,
-      line_total: item.price * item.quantity
+      unit_price: item.unit_price,
+      line_total: item.unit_price * item.quantity
     }));
 
-    const { error: itemsError } = await db.from("order_items").insert(items);
-
+    const {error: itemsError} = await customerDB.from("order_items").insert(items);
     if (itemsError) {
-      console.error("Order items error:", itemsError);
-      message(
-        "checkout-status",
-        "Order reference " + orderId.slice(0, 8).toUpperCase() +
-        " was created, but its item details could not be saved. Please contact the shop."
-      );
-      return;
+      throw new Error("Order reference " + String(order.id).slice(0, 8).toUpperCase() +
+        " was created, but the item details could not be saved. " + itemsError.message);
     }
 
+    const receipt = cart.map(i => i.name + (i.color ? " (" + i.color + ")" : "") +
+      (i.size ? " / " + i.size : "") + " × " + i.quantity).join("; ");
+
     cart = [];
-    renderCart();
+    saveCart();
+    $("checkout-form").reset();
+    setMinimumDates();
+    updateCheckoutFields();
+    updateCustomerInfo();
 
-    $("checkout-form")?.reset();
-    if ($("checkout-form")) $("checkout-form").hidden = true;
-
-    setDateLimits();
-    updateFulfilmentFields();
-    updatePaymentFields();
-
-    message(
-      "checkout-status",
-      "Your order has been received. Reference: " +
-      orderId.slice(0, 8).toUpperCase() +
-      ". Payment is pending confirmation."
-    );
-
+    showStatus("checkout-status", "Order placed successfully! Reference: " +
+      String(order.id).slice(0, 8).toUpperCase() + ". Items: " + receipt +
+      ". Your order is awaiting confirmation. Payment remains unpaid until verified.");
     await loadMyOrders();
 
   } catch (error) {
-    console.error("Order submission error:", error);
-
-    message(
-      "checkout-status",
-      orderId
-        ? "Your order reference is " + orderId.slice(0, 8).toUpperCase() +
-          ". Please contact the shop to confirm the order."
-        : "We couldn't place your order. Please try again."
-    );
+    console.error("Order placement error:", error);
+    showStatus("checkout-status",
+      (orderCreated ? "Your order was created, but another step failed. " : "Order could not be placed. ") +
+      error.message, true);
   } finally {
-    submitting = false;
-    if ($("place-order-button")) $("place-order-button").disabled = false;
+    button.disabled = false;
   }
 }
 
-async function loadMyOrders() {
-  const container = $("my-orders-list");
-  if (!container) return;
+$("category-filter")?.addEventListener("change", displayProducts);
+$("delivery-method")?.addEventListener("change", updateCheckoutFields);
+$("delivery-area")?.addEventListener("change", renderCart);
+$("discount-code")?.addEventListener("input", renderCart);
+$("payment-method")?.addEventListener("change", updateCheckoutFields);
+$("checkout-form")?.addEventListener("submit", placeOrder);
 
-  container.replaceChildren();
+$("customer-contact-form")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const status = $("contact-status");
+  const user = currentCustomer || await loadCustomerAccount();
+
+  if (!user) {
+    status.textContent = "Please sign in before sending a message.";
+    return;
+  }
+
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
+  status.textContent = "Sending...";
 
   try {
-    const { data: authData, error: authError } = await db.auth.getUser();
-    if (authError) throw authError;
-
-    const user = authData?.user;
-
-    if (!user) {
-      message("my-orders-status", "Sign in to view your order history.");
-      return;
-    }
-
-    const { data, error } = await db.from("orders")
-      .select("*")
-      .eq("customer_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    if (!data?.length) {
-      message("my-orders-status", "You have no orders yet.");
-      return;
-    }
-
-    data.forEach(order => {
-      const card = document.createElement("article");
-      card.className = "kc-order-card";
-
-      const heading = document.createElement("h3");
-      heading.textContent = "Order " + String(order.id).slice(0, 8).toUpperCase();
-
-      const details = document.createElement("p");
-      details.textContent =
-        "Placed: " + new Date(order.created_at).toLocaleString() +
-        " | Total: " + money(order.total) +
-        " | Payment method: " + (order.payment_method || "Not specified") +
-        " | Payment status: " + (order.payment_status || "pending") +
-        " | Order status: " + (order.order_status || "pending");
-
-      const fulfilment = document.createElement("p");
-      fulfilment.textContent =
-        (order.fulfillment_type || order.delivery_method || "delivery") +
-        " | " + (order.schedule_date || order.delivery_date || "") +
-        " | " + (order.schedule_slot || order.delivery_time || "");
-
-      card.append(heading, details, fulfilment);
-      container.appendChild(card);
+    const {error} = await customerDB.from("messages").insert({
+      customer_name: $("contact-name").value.trim(),
+      customer_email: user.email,
+      subject: "Customer enquiry",
+      message: $("contact-message").value.trim()
     });
 
-    message("my-orders-status", "Your order history is up to date.");
-  } catch (error) {
-    console.error("Order history error:", error);
-    message("my-orders-status", "Could not load your order history. Please try again.");
-  }
-}
-
-async function signOutCustomer(event) {
-  event?.preventDefault();
-
-  const button = $("customer-signout");
-  if (button) button.disabled = true;
-
-  try {
-    const { error } = await db.auth.signOut();
     if (error) throw error;
-
-    window.location.replace("index.html");
+    event.currentTarget.reset();
+    updateCustomerInfo();
+    status.textContent = "Your message was sent successfully.";
   } catch (error) {
-    console.error("Sign-out error:", error);
-    message("my-orders-status", "Sign out failed. Please try again.");
+    status.textContent = "Could not send message: " + error.message;
+  } finally {
     if (button) button.disabled = false;
   }
-}
+});
 
-function setupContactForm() {
+$("customer-signout")?.addEventListener("click", async () => {
+  const button = $("customer-signout");
+  button.disabled = true;
+  const {error} = await customerDB.auth.signOut();
+  if (error) {
+    button.disabled = false;
+    alert("Could not sign out: " + error.message);
+    return;
+  }
+  window.location.replace("index.html");
+});
+
+async function loadCustomerMessages() {
   const form = $("customer-contact-form");
   if (!form) return;
 
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
-    message("contact-status", "Sending message...");
+  let section = $("customer-messages-section");
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "customer-messages-section";
+    section.className = "kc-section";
+    section.innerHTML = '<div class="kc-section-inner"><h2 class="kc-section-heading">MY MESSAGES</h2><p id="customer-messages-status"></p><div id="customer-messages-list"></div></div>';
+    form.insertAdjacentElement("afterend", section);
+  }
 
-    try {
-      const payload = {
-        customer_name: clean($("contact-name")?.value),
-        customer_email: clean($("contact-email")?.value),
-        customer_phone: clean($("contact-phone")?.value),
-        message: clean($("contact-message")?.value),
-        subject: "Website enquiry",
-        is_read: false
-      };
+  const user = currentCustomer || await loadCustomerAccount();
+  const list = $("customer-messages-list");
+  if (!list) return;
+  if (!user) {
+    $("customer-messages-status").textContent = "Sign in to view messages.";
+    return;
+  }
 
-      const { error } = await db.from("messages").insert(payload);
-      if (error) throw error;
+  const {data, error} = await customerDB.from("messages")
+    .select("id,subject,message,created_at,reply,replied_at")
+    .eq("customer_email", user.email).order("created_at", {ascending: false});
 
-      form.reset();
-      message("contact-status", "Your message has been sent.");
-    } catch (error) {
-      console.error("Contact form error:", error);
-      message("contact-status", "We couldn't send your message. Please try again.");
-    }
+  list.replaceChildren();
+  if (error) {
+    $("customer-messages-status").textContent = "Messages unavailable: " + error.message;
+    return;
+  }
+
+  $("customer-messages-status").textContent = data?.length ? data.length + " message(s)" : "No messages yet.";
+  (data || []).forEach(m => {
+    const card = document.createElement("article");
+    card.className = "kc-order-card";
+    safeText(card, "h3", m.subject || "Enquiry");
+    safeText(card, "p", m.message);
+    safeText(card, "p", m.reply ? "Owner reply: " + m.reply : "Awaiting owner reply.");
+    list.appendChild(card);
   });
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadProducts();
-
+async function loadCustomerPage() {
+  await loadCustomerAccount();
+  updateCustomerInfo();
+  setMinimumDates();
+  updateCheckoutFields();
+  if ($("order-name") && currentCustomer) {
+    $("order-name").value = currentCustomer.user_metadata?.full_name || "";
+  }
+  await loadCustomerProducts();
   renderCart();
-  setDateLimits();
-  updateFulfilmentFields();
-  updatePaymentFields();
-  setupCheckoutNavigation();
-
-  $("category-filter")?.addEventListener("change", renderProducts);
-  $("delivery-method")?.addEventListener("change", updateFulfilmentFields);
-  $("delivery-area")?.addEventListener("change", renderCart);
-  $("discount-code")?.addEventListener("input", renderCart);
-  $("payment-method")?.addEventListener("change", updatePaymentFields);
-  $("checkout-form")?.addEventListener("submit", placeOrder);
-  $("customer-signout")?.addEventListener("click", signOutCustomer);
-
-  setupContactForm();
   await loadMyOrders();
+  await loadCustomerMessages();
+}
+
+loadCustomerPage();
+window.addEventListener("focus", () => {
+  loadCustomerProducts();
+  loadMyOrders();
 });
+customerDB.channel("customer-product-updates")
+  .on("postgres_changes", {event: "*", schema: "public", table: "products"}, loadCustomerProducts)
+  .subscribe();
