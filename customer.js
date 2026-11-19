@@ -12,7 +12,6 @@ const money = n => "KSh " + Number(n || 0).toLocaleString("en-KE", {
 
 let products = [];
 let cart = [];
-let mpesaDemoResult = null;
 let submitting = false;
 
 function message(id, text) {
@@ -69,7 +68,7 @@ async function loadProducts() {
       : "No products are currently available.");
   } catch (error) {
     console.error("Product loading error:", error);
-    message("catalogue-message", "Could not load products: " + error.message);
+    message("catalogue-message", "Could not load products. Please try again later.");
   }
 }
 
@@ -173,9 +172,11 @@ function subtotal() {
 
 function deliveryFee() {
   if ($("delivery-method")?.value === "pickup") return 0;
+
   const area = $("delivery-area")?.value;
   if (area === "near_shop") return 200;
   if (area === "nairobi") return 500;
+
   return 700;
 }
 
@@ -219,11 +220,13 @@ function renderCart() {
 
     line.querySelector(".cart-quantity").addEventListener("change", event => {
       const qty = Number(event.target.value);
+
       if (!Number.isInteger(qty) || qty < 1 || qty > item.stock) {
         alert("Enter a valid quantity within available stock.");
         event.target.value = item.quantity;
         return;
       }
+
       cart[index].quantity = qty;
       renderCart();
     });
@@ -263,10 +266,10 @@ function updateFulfilmentFields() {
 }
 
 function updatePaymentFields() {
-  const isMpesa = $("payment-method")?.value === "demo_mpesa";
+  const method = clean($("payment-method")?.value).toLowerCase();
+  const isMpesa = method.includes("mpesa") || method.includes("m-pesa");
+
   if ($("mpesa-fields")) $("mpesa-fields").hidden = !isMpesa;
-  mpesaDemoResult = null;
-  message("mpesa-demo-status", "");
 }
 
 function setDateLimits() {
@@ -285,6 +288,20 @@ function validKenyanPhone(value) {
   return /^(?:\+254|254|0)?[17]\d{8}$/.test(phone);
 }
 
+function normalisePaymentMethod(value) {
+  const method = clean(value).toLowerCase();
+
+  if (method.includes("mpesa") || method.includes("m-pesa")) {
+    return "M-Pesa";
+  }
+
+  if (method.includes("cash")) {
+    return "Cash on delivery";
+  }
+
+  return clean(value);
+}
+
 async function placeOrder(event) {
   event.preventDefault();
   if (submitting) return;
@@ -300,15 +317,13 @@ async function placeOrder(event) {
   const pickup = $("delivery-method")?.value === "pickup";
   const area = pickup ? "pickup" : clean($("delivery-area")?.value);
   const location = pickup ? "Shop pickup" : clean($("delivery-location")?.value);
-  const method = clean($("payment-method")?.value);
+  const rawMethod = clean($("payment-method")?.value);
+  const method = normalisePaymentMethod(rawMethod);
 
   const dateField = pickup ? $("pickup-date") : $("delivery-date");
   const timeField = pickup ? $("pickup-time") : $("delivery-time");
-
-  // Never submit a missing or past schedule date.
-  const date = clean(dateField?.value) || todayLocal();
-  const slot = clean(timeField?.value) ||
-    (pickup ? "11 am–1 pm" : "Weekday daytime (11 am–5 pm)");
+  const date = clean(dateField?.value);
+  const slot = clean(timeField?.value);
 
   if (!name || !phone || !email) {
     message("checkout-status", "Complete your name, phone number and email.");
@@ -321,23 +336,35 @@ async function placeOrder(event) {
     return;
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    message("checkout-status", "Enter a valid email address.");
+    return;
+  }
+
+  if (!rawMethod) {
+    message("checkout-status", "Please select a payment method.");
+    return;
+  }
+
   if (!pickup && (!area || !location)) {
     message("checkout-status", "Please complete your delivery area and address.");
     return;
   }
 
-  if (date < todayLocal()) {
+  if (!date || date < todayLocal()) {
     message("checkout-status", "Choose today or a future date.");
     return;
   }
 
-  if (method === "demo_mpesa" && mpesaDemoResult !== "success") {
-    message("checkout-status",
-      "Complete the payment step or choose cash on delivery. A demo does not confirm real payment.");
+  if (!slot) {
+    message("checkout-status", "Please select a collection or delivery time.");
     return;
   }
 
-  if (method === "demo_mpesa" && !validKenyanPhone($("mpesa-phone")?.value)) {
+  const isMpesa = method === "M-Pesa";
+  const mpesaPhone = clean($("mpesa-phone")?.value);
+
+  if (isMpesa && mpesaPhone && !validKenyanPhone(mpesaPhone)) {
     message("checkout-status", "Enter a valid Kenyan M-Pesa phone number.");
     return;
   }
@@ -351,35 +378,33 @@ async function placeOrder(event) {
   if ($("place-order-button")) $("place-order-button").disabled = true;
   message("checkout-status", "Submitting your order...");
 
+  let orderId = null;
+
   try {
     const { data: authData, error: authError } = await db.auth.getUser();
     if (authError) throw authError;
     const user = authData?.user || null;
 
+    // Use the actual orders table columns, not guessed alternatives.
     const orderPayload = {
       customer_id: user?.id || null,
       customer_name: name,
       customer_email: email,
-
-      // Both fields support databases with either phone column.
       customer_phone_number: phone,
-      customer_phone: phone,
 
       fulfillment_type: pickup ? "pickup" : "delivery",
-      customer_fulfillment_type: pickup ? "pickup" : "delivery",
       delivery_method: pickup ? "pickup" : "delivery",
       delivery_area: area,
-      county: pickup ? "" : location.split(",")[0].trim(),
-      town: pickup ? "" : location.split(",").slice(1, 2).join(",").trim(),
+      county: pickup ? null : location.split(",")[0].trim(),
+      town: pickup ? null : (location.split(",")[1] || "").trim() || null,
       delivery_address: location,
       delivery_location: location,
       delivery_fee: fee,
 
       schedule_date: date,
-      delivery_date: date,
       schedule_slot: slot,
+      delivery_date: date,
       delivery_time: slot,
-      fulfillment_time: slot,
 
       subtotal: sub,
       discount_code: clean($("discount-code")?.value).toUpperCase() || null,
@@ -388,10 +413,10 @@ async function placeOrder(event) {
 
       payment_method: method,
       payment_status: "pending",
-      mpesa_phone_number: method === "demo_mpesa"
-        ? clean($("mpesa-phone")?.value) : null,
-      order_status: "pending",
-      order_notes: clean($("order-notes")?.value)
+      mpesa_phone: isMpesa ? (mpesaPhone || phone) : null,
+
+      order_status: "awaiting confirmation",
+      order_notes: clean($("order-notes")?.value) || null
     };
 
     const { data: order, error: orderError } = await db
@@ -401,7 +426,7 @@ async function placeOrder(event) {
       .single();
 
     if (orderError) throw orderError;
-    const orderId = order.id;
+    orderId = order.id;
 
     const items = cart.map(item => ({
       order_id: orderId,
@@ -419,8 +444,8 @@ async function placeOrder(event) {
     if (itemError) {
       console.error("Order items insert error:", itemError);
       message("checkout-status",
-        "The order was created, but its items could not be saved. Contact the shop with reference " +
-        orderId);
+        "Your order reference is " + orderId.slice(0, 8).toUpperCase() +
+        ", but its items could not be saved. Please contact the shop before placing another order.");
       return;
     }
 
@@ -432,14 +457,22 @@ async function placeOrder(event) {
     updatePaymentFields();
 
     message("checkout-status",
-      "Order placed successfully. Reference: " +
+      "Your order has been received. Reference: " +
       orderId.slice(0, 8).toUpperCase() +
-      ". Payment remains pending until the shop confirms receipt.");
+      ". Payment status: Pending. The shop will confirm the next payment steps.");
 
     await loadMyOrders();
   } catch (error) {
     console.error("Checkout error:", error);
-    message("checkout-status", "Order could not be placed: " + error.message);
+
+    if (orderId) {
+      message("checkout-status",
+        "Order reference " + orderId.slice(0, 8).toUpperCase() +
+        " was created, but a later step failed. Please contact the shop before retrying.");
+    } else {
+      message("checkout-status",
+        "We could not place your order. Please try again or contact the shop.");
+    }
   } finally {
     submitting = false;
     if ($("place-order-button")) $("place-order-button").disabled = false;
@@ -483,7 +516,8 @@ async function loadMyOrders() {
       details.textContent =
         "Placed: " + new Date(order.created_at).toLocaleString() +
         " | Total: " + money(order.total) +
-        " | Payment: " + (order.payment_status || "pending") +
+        " | Payment method: " + (order.payment_method || "Not specified") +
+        " | Payment status: " + (order.payment_status || "pending") +
         " | Order status: " + (order.order_status || "pending");
 
       const fulfilment = document.createElement("p");
@@ -499,7 +533,7 @@ async function loadMyOrders() {
     message("my-orders-status", "Your order history is up to date.");
   } catch (error) {
     console.error("Order history error:", error);
-    message("my-orders-status", "Could not load order history: " + error.message);
+    message("my-orders-status", "Could not load order history. Please try again.");
   }
 }
 
@@ -509,7 +543,7 @@ async function signOutCustomer() {
     if (error) throw error;
     window.location.href = "index.html";
   } catch (error) {
-    message("my-orders-status", "Sign out failed: " + error.message);
+    message("my-orders-status", "Sign out failed. Please try again.");
   }
 }
 
@@ -538,7 +572,7 @@ function setupContactForm() {
       message("contact-status", "Your message has been sent.");
     } catch (error) {
       console.error("Contact form error:", error);
-      message("contact-status", "Could not send your message: " + error.message);
+      message("contact-status", "Could not send your message. Please try again.");
     }
   });
 }
@@ -558,18 +592,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("checkout-form")?.addEventListener("submit", placeOrder);
   $("customer-signout")?.addEventListener("click", signOutCustomer);
 
-  $("simulate-mpesa-success")?.addEventListener("click", () => {
-    mpesaDemoResult = "success";
-    message("mpesa-demo-status",
-      "Demo marked successful. No real M-Pesa payment was received.");
-  });
-
-  $("simulate-mpesa-failure")?.addEventListener("click", () => {
-    mpesaDemoResult = "failure";
-    message("mpesa-demo-status",
-      "Demo payment failed. You may choose cash on delivery.");
-  });
-
+  // No simulated payment-success buttons are registered here.
   setupContactForm();
   await loadMyOrders();
 });
