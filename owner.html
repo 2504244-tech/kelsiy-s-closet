@@ -1,378 +1,867 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kelsiy's Closet | Owner Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
-*{box-sizing:border-box}
-body{margin:0;background:var(--c);color:#292126;font:16px Arial,sans-serif}
-header,footer{background:var(--d);color:white;padding:20px 5%}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:4px solid var(--g)}
-header h1{margin:0;color:white}header p{color:#e9c88e}
-h1,h2{color:var(--b)}
-button{padding:11px 14px;background:var(--b);color:white;border:1px solid var(--g);border-radius:5px;cursor:pointer;font-weight:bold}
-button:disabled{opacity:.6;cursor:wait}
-main{width:94%;max-width:1250px;margin:25px auto;min-height:60vh}
-.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px}
-nav,.panel{background:white;padding:18px;border:1px solid #eadbd5;border-radius:8px;margin-bottom:16px}
-nav button{display:block;width:100%;text-align:left;margin:5px 0}
-[hidden]{display:none!important}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
-.stat{background:#fffaf5;border-top:4px solid var(--g);padding:14px;overflow-wrap:anywhere}
-.stat strong{display:block;color:var(--b);font-size:22px;margin-top:8px}
-.field{display:grid;gap:6px;margin:10px 0}
-label{font-weight:bold;color:var(--d)}
-input,select,textarea{width:100%;padding:11px;border:1px solid #d9c8c4;border-radius:5px;font:inherit}
-textarea{min-height:75px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
-.table-wrap{overflow-x:auto}
-table{width:100%;min-width:500px;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top;white-space:pre-line}
-th{background:#f5e9e2}.photo{width:65px;height:75px;object-fit:cover;border-radius:4px}
-.small{padding:7px;margin:2px;font-size:13px}.delete{background:#a21b2d}
-.status{overflow-wrap:anywhere;white-space:pre-wrap}
-#sale-receipt{background:#fffaf5;border:1px solid var(--g);padding:14px;margin-top:15px}
-footer{text-align:center;border-top:4px solid var(--g)}
-@media(max-width:700px){.layout{grid-template-columns:1fr}nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}nav button{margin:0}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:450px){.grid{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelsey's Closet | Owner Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --burgundy: #701f36;
+      --dark: #451321;
+      --cream: #fff8ed;
+      --gold: #c9a45c;
+      --text: #35252a;
+      --white: #ffffff;
+      --border: #eadbd5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--dark);
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    header h1 { margin: 0; font-size: 23px; }
+    header p { margin: 6px 0 0; color: #f3dfd4; }
+
+    button, input, select {
+      font: inherit;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    button {
+      background: var(--burgundy);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover { background: var(--dark); }
+    button:disabled { opacity: .6; cursor: wait; }
+
+    .logout { background: #fff; color: var(--dark); }
+
+    .login-box {
+      max-width: 420px;
+      margin: 55px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px #00000012;
+    }
+
+    .login-box input { width: 100%; margin: 8px 0 15px; }
+    .login-box button { width: 100%; }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      padding: 15px;
+      background: white;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav button { white-space: nowrap; }
+
+    main { padding: 20px; max-width: 1500px; margin: auto; }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: white;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--gold);
+      border-radius: 9px;
+      padding: 18px;
+    }
+
+    .stat span { display: block; color: #76656a; margin-bottom: 8px; }
+    .stat strong { font-size: 23px; color: var(--burgundy); }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { background: #f7eee7; color: var(--dark); }
+
+    td input, td select { width: 100%; min-width: 115px; }
+    td button { margin: 4px 0; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .toolbar input, .toolbar select { max-width: 260px; }
+
+    .message { margin: 12px 0; font-size: 14px; white-space: pre-wrap; }
+    .error { color: #b42318; }
+    .success { color: #176b3a; }
+    .muted { color: #76656a; }
+    .hidden { display: none !important; }
+    .status-pill { font-weight: bold; color: var(--burgundy); }
+
+    @media (max-width: 600px) {
+      main { padding: 12px; }
+      header { padding: 16px; }
+      header h1 { font-size: 19px; }
+      .panel { padding: 12px; }
+    }
+  </style>
 </head>
+
 <body>
+
 <header>
- <div><h1>KELSIY'S CLOSET</h1><p>STYLE THAT SPEAKS</p></div>
- <button id="sign-out" type="button">SIGN OUT</button>
+  <div>
+    <h1>Kelsey's Closet</h1>
+    <p>Owner Management Dashboard</p>
+  </div>
+  <button id="logout-button" class="logout hidden">Sign out</button>
 </header>
-<main>
-<h1>Owner's Dashboard</h1>
-<p>Manage products, stock, sales and customer messages.</p>
-<p id="status" class="status" role="status">Connecting...</p>
-<div class="layout">
-<nav>
- <button type="button" data-section="home">HOME</button>
- <button type="button" data-section="inventory">INVENTORY</button>
- <button type="button" data-section="sales">SALES</button>
- <button type="button" data-section="orders">CUSTOMER ORDERS</button>
- <button type="button" data-section="reports">SALES REPORTS</button>
- <button type="button" data-section="messages">MESSAGES</button>
-</nav>
-<div>
-<section class="panel" data-panel="home">
- <h2>Business Overview</h2>
- <div class="stats">
-  <div class="stat">Active Products<strong id="stat-products">0</strong></div>
-  <div class="stat">Total Stock<strong id="stat-stock">0</strong></div>
-  <div class="stat">Out of Stock<strong id="stat-empty">0</strong></div>
- </div>
- <button type="button" data-go="inventory">MANAGE INVENTORY</button>
+
+<section id="login-section" class="login-box">
+  <h2>Owner Sign In</h2>
+  <p class="muted">Sign in using your existing Supabase account.</p>
+
+  <form id="login-form">
+    <label for="login-email">Email address</label>
+    <input id="login-email" type="email" required autocomplete="username">
+
+    <label for="login-password">Password</label>
+    <input id="login-password" type="password" required autocomplete="current-password">
+
+    <button id="login-button" type="submit">Sign In</button>
+  </form>
+
+  <p id="login-message" class="message"></p>
 </section>
-<section class="panel" data-panel="inventory" hidden>
-<h2>Product Inventory</h2>
-<form id="product-form">
-<input type="hidden" id="product-id">
-<div class="grid">
- <div class="field"><label for="product-name">Product name *</label><input id="product-name" required></div>
- <div class="field"><label for="product-category">Category *</label><select id="product-category"><option>Women</option><option>Men</option><option>Shoes</option><option>Kids</option><option>Accessories</option></select></div>
- <div class="field"><label for="product-price">Price (KES) *</label><input id="product-price" type="number" min="0" step=".01" required></div>
- <div class="field"><label for="product-stock">Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
- <div class="field"><label for="product-size">Sizes</label><input id="product-size" placeholder="S, M, L, XL"></div>
- <div class="field"><label for="product-colour">Colours</label><input id="product-colour" placeholder="Black, cream"></div>
- <div class="field"><label for="product-image">Image filename or path</label><input id="product-image" placeholder="t-shirts.jpeg or image/t-shirts.jpeg"><small>Use the existing image/ folder.</small></div>
- <div class="field"><label for="product-description">Description</label><textarea id="product-description"></textarea></div>
+
+<div id="dashboard" class="hidden">
+
+  <nav>
+    <button data-view="overview">Overview</button>
+    <button data-view="orders">Customer Orders</button>
+    <button data-view="inventory">Inventory</button>
+    <button data-view="sales">Sales</button>
+  </nav>
+
+  <main>
+    <section id="view-overview" class="view">
+      <h2>Dashboard Overview</h2>
+
+      <div class="stats">
+        <div class="stat">
+          <span>Products</span>
+          <strong id="product-count">—</strong>
+        </div>
+        <div class="stat">
+          <span>Customer Orders</span>
+          <strong id="order-count">—</strong>
+        </div>
+        <div class="stat">
+          <span>Awaiting Confirmation</span>
+          <strong id="pending-count">—</strong>
+        </div>
+        <div class="stat">
+          <span>Recorded Sales</span>
+          <strong id="sales-count">—</strong>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>System Status</h3>
+        <p id="overview-message" class="message">Loading dashboard...</p>
+        <button id="refresh-all">Refresh Dashboard</button>
+      </div>
+    </section>
+
+    <section id="view-orders" class="view hidden">
+      <div class="panel">
+        <h2>Customer Orders</h2>
+        <p class="muted">
+          Review customer details, ordered items, scheduled delivery or pickup,
+          totals and payment status.
+        </p>
+
+        <div class="toolbar">
+          <input id="order-search" type="search"
+                 placeholder="Search customer or order ID">
+          <button id="refresh-orders">Refresh Orders</button>
+        </div>
+
+        <p id="orders-status" class="message"></p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Delivery / Pickup</th>
+                <th>Total (KES)</th>
+                <th>Payment</th>
+                <th>Order Status</th>
+                <th>Update Order</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table">
+              <tr><td colspan="8">Orders will appear here.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-inventory" class="view hidden">
+      <div class="panel">
+        <h2>Inventory</h2>
+        <div class="toolbar">
+          <input id="product-search" type="search" placeholder="Search products">
+          <button id="refresh-products">Refresh Inventory</button>
+        </div>
+        <p id="inventory-status" class="message"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="products-table">
+              <tr><td colspan="4">Products will appear here.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-sales" class="view hidden">
+      <div class="panel">
+        <h2>Sales Records</h2>
+        <button id="refresh-sales">Refresh Sales</button>
+        <p id="sales-status" class="message"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Receipt</th>
+                <th>Customer</th>
+                <th>Total (KES)</th>
+                <th>Payment Method</th>
+                <th>Payment Status</th>
+                <th>Sale Date</th>
+              </tr>
+            </thead>
+            <tbody id="sales-table">
+              <tr><td colspan="6">Sales will appear here.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
-<div class="actions"><button id="save-button" type="submit">SAVE PRODUCT</button><button id="cancel-edit" type="button" hidden>CANCEL EDIT</button></div>
-</form>
-<p id="product-status" class="status" role="status"></p>
-<h2>Saved Products</h2>
-<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="inventory-table"></tbody></table></div>
-</section>
-<section class="panel" data-panel="sales" hidden>
-<h2>Record an In-person Sale</h2>
-<div class="grid">
- <div class="field"><label for="sales-product">Product</label><select id="sales-product"></select></div>
- <div class="field"><label for="sales-quantity">Quantity</label><input id="sales-quantity" type="number" min="1" step="1" value="1"></div>
-</div>
-<button id="add-sale-item" type="button">ADD TO SALE</button>
-<h2>Sale Items</h2>
-<div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="sales-cart-body"></tbody></table></div>
-<p><strong>Total: <span id="sales-total">KES 0</span></strong></p>
-<div class="field"><label for="sales-payment">Payment method</label><select id="sales-payment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select></div>
-<button id="record-sale-button" type="button">RECORD SALE</button>
-<p id="sales-status" class="status" role="status">Ready.</p><div id="sale-receipt" hidden></div>
-</section>
-<section class="panel" data-panel="orders" hidden>
-<h2>Customer Orders</h2>
-<p>Review orders, delivery details and payment status.</p>
-<div class="actions"><button type="button" id="refresh-orders">REFRESH ORDERS</button></div>
-<p id="orders-status" class="status" role="status"></p>
-<div class="table-wrap"><table><thead><tr><th>Order / Date</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead><tbody id="orders-table"></tbody></table></div>
-</section>
-<section class="panel" data-panel="reports" hidden>
-<h2>Sales Reports</h2>
-<div class="grid">
- <div class="field"><label for="report-start">Start date</label><input id="report-start" type="date"></div>
- <div class="field"><label for="report-end">End date</label><input id="report-end" type="date"></div>
-</div>
-<div class="actions"><button id="apply-report-filter" type="button">APPLY DATES</button><button id="clear-report-filter" type="button">SHOW ALL</button><button id="refresh-report" type="button">REFRESH</button></div>
-<p id="report-status" class="status"></p>
-<div class="stats">
- <div class="stat">Revenue<strong id="report-revenue">KES 0</strong></div><div class="stat">Transactions<strong id="report-count">0</strong></div><div class="stat">Average Sale<strong id="report-average">KES 0</strong></div><div class="stat">Cash<strong id="report-cash">KES 0</strong></div><div class="stat">M-Pesa<strong id="report-mpesa">KES 0</strong></div><div class="stat">Other Payments<strong id="report-other">KES 0</strong></div>
-</div>
-<h2>Sales History</h2>
-<div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Date and Time</th><th>Payment</th><th>Total</th></tr></thead><tbody id="report-table"></tbody></table></div>
-</section>
-<section class="panel" data-panel="messages" hidden>
-<h2>Customer Messages</h2>
-<button id="refresh-messages" type="button">REFRESH MESSAGES</button><p id="messages-status" class="status"></p>
-<div class="table-wrap"><table><thead><tr><th>Customer</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="messages-table"></tbody></table></div>
-</section>
-</div>
-</div>
-</main>
-<footer><strong>KELSIY'S CLOSET</strong><p>STYLE THAT SPEAKS · FASHION THAT DEFINES YOU</p><p>© <span id="year"></span></p></footer>
+
 <script>
 "use strict";
-const SUPABASE_URL="https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY="sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
-const el=id=>document.getElementById(id);
-const say=(id,message)=>{if(el(id))el(id).textContent=message};
-const money=n=>"KES "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
-let db=null,ownerUser=null,products=[],cart=[],busy=false;
-el("year").textContent=new Date().getFullYear();
-function cell(row,value){const td=document.createElement("td");td.textContent=value==null?"":String(value);row.appendChild(td);return td}
-function withTimeout(promise,ms=15000){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error("Request timed out. Check your connection.")),ms))])}
-function resolveProductImage(value){
- const raw=String(value||"").trim();
- if(!raw)return "";
- if(/^(https?:|data:|blob:)/i.test(raw))return raw;
- return raw.startsWith("image/")?raw:`image/${raw.replace(/^\.\//,"")}`;
-}
-function showSection(name){
- document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==name);
- if(name==="inventory")loadProducts();
- if(name==="sales")loadSalesProducts();
- if(name==="reports")loadReport();
- if(name==="messages")loadMessages();
- if(name==="orders")loadOrders();
-}
-document.querySelectorAll("[data-section]").forEach(b=>b.addEventListener("click",()=>showSection(b.dataset.section)));
-document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showSection(b.dataset.go)));
-el("sign-out").onclick=async()=>{try{if(db)await db.auth.signOut()}catch(e){console.error(e)}window.location.replace("index.html")};
-function updateStats(){
- const active=products.filter(p=>p.active!==false);
- say("stat-products",active.length);
- say("stat-stock",active.reduce((s,p)=>s+Number(p.stock||0),0));
- say("stat-empty",active.filter(p=>Number(p.stock)<=0).length);
-}
-function clearForm(){el("product-form").reset();el("product-id").value="";el("save-button").textContent="SAVE PRODUCT";el("cancel-edit").hidden=true}
-el("cancel-edit").onclick=clearForm;
-async function loadProducts(){
- say("product-status","Loading products...");
- try{
-  const {data,error}=await withTimeout(db.from("products").select("*").order("created_at",{ascending:false}));
-  if(error)throw error;
-  products=data||[];updateStats();
-  const tbody=el("inventory-table");tbody.replaceChildren();
-  if(!products.length){const r=tbody.insertRow();cell(r,"No products yet.").colSpan=6}
-  products.forEach(p=>{
-   const r=tbody.insertRow(),photo=cell(r,"");
-   const path=resolveProductImage(p.image_url||p.image||p.image_path);
-   if(path){const img=document.createElement("img");img.className="photo";img.src=path;img.alt=p.name||"Product";img.onerror=()=>{img.remove();photo.textContent="Image unavailable"};photo.appendChild(img)}
-   else photo.textContent="No photo";
-   cell(r,p.name);cell(r,p.category);cell(r,money(p.price));cell(r,p.stock);
-   const actions=cell(r,""),edit=document.createElement("button"),del=document.createElement("button");
-   edit.type=del.type="button";edit.className=del.className="small";edit.textContent="Edit";del.textContent="Delete";del.classList.add("delete");
-   edit.onclick=()=>editProduct(p);del.onclick=()=>deleteProduct(p);actions.append(edit,del);
+
+/* SUPABASE CONNECTION */
+const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+
+let ownerUser = null;
+let allOrders = [];
+let allProducts = [];
+let allSales = [];
+
+function money(value) {
+  return "KES " + Number(value || 0).toLocaleString("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   });
-  say("product-status","Products loaded: "+products.length);
- }catch(e){say("product-status","Could not load products: "+e.message)}
 }
-function populateProducts(){
- const select=el("sales-product");select.replaceChildren();select.add(new Option("Choose a product",""));
- products.filter(p=>p.active!==false&&Number(p.stock)>0).forEach(p=>select.add(new Option(`${p.name} — ${money(p.price)} (Stock: ${p.stock})`,p.id)));
+
+function say(id, message, type = "") {
+  const element = $(id);
+  if (!element) return;
+  element.textContent = message;
+  element.className = "message " + type;
 }
-async function loadSalesProducts(){await loadProducts();populateProducts();renderSaleCart()}
-function renderSaleCart(){
- const tbody=el("sales-cart-body");tbody.replaceChildren();let total=0;
- if(!cart.length){const r=tbody.insertRow();cell(r,"No items added.").colSpan=5}
- cart.forEach(item=>{
-  const p=products.find(x=>String(x.id)===String(item.product_id));if(!p)return;
-  const subtotal=Number(p.price)*item.quantity;total+=subtotal;const r=tbody.insertRow();
-  cell(r,p.name);cell(r,item.quantity);cell(r,money(p.price));cell(r,money(subtotal));
-  const action=cell(r,""),remove=document.createElement("button");remove.type="button";remove.className="small delete";remove.textContent="Remove";
-  remove.onclick=()=>{cart=cart.filter(x=>x.product_id!==item.product_id);renderSaleCart()};action.appendChild(remove);
- });
- say("sales-total",money(total));
+
+function cell(row, value) {
+  const td = document.createElement("td");
+  td.textContent = value == null ? "" : String(value);
+  row.appendChild(td);
+  return td;
 }
-el("add-sale-item").onclick=()=>{
- const id=el("sales-product").value,quantity=Number(el("sales-quantity").value),p=products.find(x=>String(x.id)===String(id));
- if(!p||p.active===false)return say("sales-status","Choose an active product.");
- if(!Number.isInteger(quantity)||quantity<1)return say("sales-status","Enter a valid quantity.");
- const old=cart.find(x=>String(x.product_id)===String(id));
- if((old?old.quantity:0)+quantity>Number(p.stock))return say("sales-status","Not enough stock available.");
- if(old)old.quantity+=quantity;else cart.push({product_id:id,quantity});
- renderSaleCart();say("sales-status",p.name+" added.");el("sales-quantity").value=1;
-};
-el("record-sale-button").onclick=async()=>{
- if(busy)return;
- if(!ownerUser)return say("sales-status","Please sign in again.");
- if(!cart.length)return say("sales-status","Add products first.");
- busy=true;el("record-sale-button").disabled=true;say("sales-status","Recording sale...");
- try{
-  const {data,error}=await withTimeout(db.rpc("record_sale",{p_items:cart.map(i=>({product_id:i.product_id,quantity:i.quantity})),p_payment_method:el("sales-payment").value}));
-  if(error)throw error;
-  if(!data||data.receipt_number==null)throw new Error("No receipt number returned. Check the Sales table before retrying.");
-  cart=[];renderSaleCart();const box=el("sale-receipt");box.replaceChildren();box.hidden=false;
-  const h=document.createElement("h3");h.textContent="Sale recorded successfully";box.appendChild(h);
-  ["Receipt number: "+data.receipt_number,"Total: "+money(data.total),"Payment: "+el("sales-payment").value].forEach(t=>{const p=document.createElement("p");p.textContent=t;box.appendChild(p)});
-  say("sales-status","Sale saved.");await loadProducts();populateProducts();
- }catch(e){console.error(e);say("sales-status","Sale was not confirmed: "+e.message+". Check Sales before retrying.")}
- finally{busy=false;el("record-sale-button").disabled=false}
-};
-function editProduct(p){
- el("product-id").value=p.id;el("product-name").value=p.name||"";el("product-category").value=p.category||"Women";
- el("product-price").value=p.price??"";el("product-stock").value=p.stock??0;el("product-size").value=p.size||"";
- el("product-colour").value=p.color||p.colour||"";el("product-image").value=p.image_url||p.image||p.image_path||"";
- el("product-description").value=p.description||"";el("save-button").textContent="UPDATE PRODUCT";el("cancel-edit").hidden=false;
- el("product-form").scrollIntoView({behavior:"smooth"});
+
+function formatDate(value) {
+  if (!value) return "Not specified";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) :
+    date.toLocaleString("en-KE");
 }
-async function deleteProduct(p){
- if(!confirm('Delete "'+p.name+'" from inventory?'))return;
- try{const {error}=await db.from("products").delete().eq("id",p.id);if(error)throw error;say("product-status","Product deleted.");await loadProducts();populateProducts()}
- catch(e){say("product-status","Could not delete: "+e.message)}
-}
-el("product-form").onsubmit=async event=>{
- event.preventDefault();if(!ownerUser)return say("product-status","Please sign in again.");
- const price=Number(el("product-price").value),stock=Number(el("product-stock").value);
- if(price<0||!Number.isFinite(price)||stock<0||!Number.isInteger(stock))return say("product-status","Enter a valid price and whole-number stock.");
- const product={name:el("product-name").value.trim(),category:el("product-category").value,price,stock,
- size:el("product-size").value.trim()||null,color:el("product-colour").value.trim()||null,
- image_url:el("product-image").value.trim().replace(/^\.\//,"")||null,description:el("product-description").value.trim()||null,active:true};
- if(!product.name)return say("product-status","Enter a product name.");
- const id=el("product-id").value;el("save-button").disabled=true;
- try{
-  const result=id?await db.from("products").update(product).eq("id",id):await db.from("products").insert(product);
-  if(result.error)throw result.error;clearForm();say("product-status",id?"Product updated.":"Product saved.");await loadProducts();populateProducts();
- }catch(e){say("product-status","Could not save product: "+e.message)}
- finally{el("save-button").disabled=false}
-};
-function formatDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?String(v||""):d.toLocaleString("en-KE")}
-function dateStart(v){return v?new Date(v+"T00:00:00").toISOString():null}
-function dateEnd(v){if(!v)return null;const d=new Date(v+"T00:00:00");d.setDate(d.getDate()+1);return d.toISOString()}
-async function loadReport(){
- if(!ownerUser)return;
- const startV=el("report-start").value,endV=el("report-end").value;
- if(startV&&endV&&startV>endV)return say("report-status","Start date must not be after end date.");
- say("report-status","Loading sales report...");el("refresh-report").disabled=true;
- try{
-  let q=db.from("sales").select("*").order("sale_date",{ascending:false}).limit(1000);
-  const start=dateStart(startV),end=dateEnd(endV);if(start)q=q.gte("sale_date",start);if(end)q=q.lt("sale_date",end);
-  const {data,error}=await withTimeout(q);if(error)throw error;
-  const rows=data||[];let revenue=0,cash=0,mpesa=0,other=0;
-  rows.forEach(s=>{const n=Number(s.total)||0;revenue+=n;const m=String(s.payment_method||"").toLowerCase();if(m==="cash")cash+=n;else if(m==="mpesa")mpesa+=n;else other+=n});
-  say("report-revenue",money(revenue));say("report-count",rows.length);say("report-average",money(rows.length?revenue/rows.length:0));say("report-cash",money(cash));say("report-mpesa",money(mpesa));say("report-other",money(other));
-  const tbody=el("report-table");tbody.replaceChildren();if(!rows.length){const r=tbody.insertRow();cell(r,"No sales found.").colSpan=4}
-  rows.forEach(s=>{const r=tbody.insertRow();cell(r,s.receipt_number);cell(r,formatDate(s.sale_date));cell(r,s.payment_method);cell(r,money(s.total))});
-  say("report-status","Report loaded: "+rows.length+" transaction(s).");
- }catch(e){say("report-status","Could not load report: "+e.message)}
- finally{el("refresh-report").disabled=false}
-}
-el("apply-report-filter").onclick=loadReport;el("refresh-report").onclick=loadReport;
-el("clear-report-filter").onclick=()=>{el("report-start").value="";el("report-end").value="";loadReport()};
-async function loadOrders(){
- if(!ownerUser)return;
- say("orders-status","Loading customer orders...");el("refresh-orders").disabled=true;
- try{
-  const {data:orders,error}=await withTimeout(db.from("orders").select("*").order("created_at",{ascending:false}).limit(300));
-  if(error)throw error;const tbody=el("orders-table");tbody.replaceChildren();
-  if(!orders?.length){const r=tbody.insertRow();cell(r,"No online orders yet.").colSpan=8;say("orders-status","No online orders found.");return}
-  for(const o of orders){
-   const r=tbody.insertRow();
-   cell(r,String(o.id).slice(0,8).toUpperCase()+"\n"+formatDate(o.created_at));
-   cell(r,(o.customer_name||"Customer")+"\n"+(o.customer_email||"")+"\n"+(o.customer_phone_number||o.customer_phone||""));
-   const itemCell=cell(r,"Loading items...");
-   try{const result=await withTimeout(db.from("order_items").select("*").eq("order_id",o.id));if(result.error)throw result.error;itemCell.textContent=(result.data||[]).map(i=>(i.product_name||"Item")+((i.color||i.colour)?" ("+(i.color||i.colour)+")":"")+(i.size?" / "+i.size:"")+" × "+i.quantity+" — "+money(i.unit_price)).join("\n")||"No items"}
-   catch(e){itemCell.textContent="Items unavailable: "+e.message}
-   cell(r,((o.fulfillment_type||o.delivery_method)==="pickup"?"Pickup":"Delivery")+"\n"+(o.delivery_address||o.delivery_location||"Shop pickup")+"\n"+(o.schedule_date||o.delivery_date||"")+" "+(o.schedule_slot||o.delivery_time||"")+"\nFee: "+money(o.delivery_fee));
-   cell(r,money(o.total));
-   cell(r,(o.payment_method||"")+"\n"+(o.payment_status||""));
-   cell(r,o.order_status||"pending");
-   const actions=cell(r,""),fee=document.createElement("input");fee.type="number";fee.min="0";fee.step="50";fee.value=Number(o.delivery_fee||0);fee.style.maxWidth="100px";fee.setAttribute("aria-label","Delivery fee");
-   actions.append("Delivery fee ",fee,document.createElement("br"));
-   const orderSelect=document.createElement("select");
-   ["awaiting_confirmation","confirmed","preparing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const op=new Option(v.replaceAll("_"," "),v);if(v===(o.order_status||"awaiting_confirmation"))op.selected=true;orderSelect.add(op)});
-   const paySelect=document.createElement("select");
-   ["unpaid","paid","paid_simulated","cash_collected","failed"].forEach(v=>{const op=new Option(v.replaceAll("_"," "),v);if(v===(o.payment_status||"unpaid"))op.selected=true;paySelect.add(op)});
-   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";
-   save.onclick=async()=>{
-    save.disabled=true;
-    try{
-     const newFee=Number(fee.value);if(!Number.isFinite(newFee)||newFee<0)throw new Error("Enter a valid delivery fee.");
-     if(paySelect.value==="paid"&&o.payment_status!=="paid"){
-      if(!confirm("Confirm that you have actually received and verified this customer's payment?"))return;
-      const {error}=await withTimeout(db.rpc("confirm_customer_order",{p_order_id:o.id}));if(error)throw error;
-     }
-     if((o.payment_method==="cash_on_delivery"||o.payment_method==="cod")&&paySelect.value==="cash_collected"&&!confirm("Confirm that the cash has actually been collected?"))return;
-     const feeValue=(o.fulfillment_type||o.delivery_method)==="pickup"?0:newFee;
-     const total=Math.max(0,Number(o.subtotal||0)-Number(o.discount_amount||0)+feeValue);
-     const payload={order_status:orderSelect.value,delivery_fee:feeValue,total};
-     if(paySelect.value!=="paid"||o.payment_status==="paid")payload.payment_status=paySelect.value;
-     const {error}=await withTimeout(db.from("orders").update(payload).eq("id",o.id));if(error)throw error;
-     say("orders-status","Order updated.");await loadOrders();
-    }catch(e){say("orders-status","Could not update order: "+e.message)}
-    finally{save.disabled=false}
-   };
-   actions.append(orderSelect,document.createElement("br"),paySelect,document.createElement("br"),save);
+
+async function withTimeout(promise, ms = 20000) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("Request timed out. Check your connection.")),
+          ms
+        );
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
-  say("orders-status","Loaded "+orders.length+" order(s).");
- }catch(e){say("orders-status","Could not load orders: "+e.message)}
- finally{el("refresh-orders").disabled=false}
 }
-el("refresh-orders").onclick=loadOrders;
-async function loadMessages(){
- if(!ownerUser)return;
- say("messages-status","Loading messages...");el("refresh-messages").disabled=true;
- try{
-  const {data,error}=await withTimeout(db.from("messages").select("*").order("created_at",{ascending:false}));
-  if(error)throw error;const tbody=el("messages-table");tbody.replaceChildren();
-  if(!data?.length){const r=tbody.insertRow();cell(r,"No customer messages yet.").colSpan=5}
-  (data||[]).forEach(m=>{
-   const r=tbody.insertRow();cell(r,m.customer_name||"Customer");
-   const details=cell(r,"");const title=document.createElement("strong");title.textContent=m.subject||"Enquiry";
-   const preview=document.createElement("p");preview.textContent=m.message||"";details.append(title,preview);
-   cell(r,formatDate(m.created_at));cell(r,m.is_read?"Read":"Unread");
-   const actions=cell(r,"");
-   const view=document.createElement("button");view.type="button";view.className="small";view.textContent="View";
-   view.onclick=()=>alert("Customer: "+(m.customer_name||"Customer")+"\nEmail: "+(m.customer_email||"")+"\n\n"+(m.message||"")+(m.reply?"\n\nReply: "+m.reply:""));actions.appendChild(view);
-   const reply=document.createElement("button");reply.type="button";reply.className="small";reply.textContent=m.reply?"Edit Reply":"Reply";
-   reply.onclick=async()=>{const answer=prompt("Write your reply:",m.reply||"");if(answer===null||!answer.trim())return;const {error}=await db.from("messages").update({reply:answer.trim(),replied_at:new Date().toISOString()}).eq("id",m.id);say("messages-status",error?"Could not save reply: "+error.message:"Reply saved in the system.");if(!error)loadMessages()};actions.appendChild(reply);
-   if(!m.is_read){const read=document.createElement("button");read.type="button";read.className="small";read.textContent="Mark Read";read.onclick=async()=>{const {error}=await db.from("messages").update({is_read:true}).eq("id",m.id);if(error)say("messages-status",error.message);else loadMessages()};actions.appendChild(read)}
-   const del=document.createElement("button");del.type="button";del.className="small delete";del.textContent="Delete";
-   del.onclick=async()=>{if(!confirm("Delete this message?"))return;const {error}=await db.from("messages").delete().eq("id",m.id);if(error)say("messages-status",error.message);else loadMessages()};actions.appendChild(del);
+
+function showView(name) {
+  document.querySelectorAll(".view").forEach(view => view.classList.add("hidden"));
+  const selected = $("view-" + name);
+  if (selected) selected.classList.remove("hidden");
+
+  if (name === "orders") loadOrders();
+  if (name === "inventory") loadProducts();
+  if (name === "sales") loadSales();
+  if (name === "overview") loadOverview();
+}
+
+document.querySelectorAll("nav [data-view]").forEach(button => {
+  button.addEventListener("click", () => showView(button.dataset.view));
+});
+
+/* SIGN IN */
+$("login-form").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const button = $("login-button");
+  button.disabled = true;
+  say("login-message", "Signing in...");
+
+  try {
+    const { data, error } = await withTimeout(
+      db.auth.signInWithPassword({
+        email: $("login-email").value.trim(),
+        password: $("login-password").value
+      })
+    );
+
+    if (error) throw error;
+    ownerUser = data.user;
+
+    /*
+      IMPORTANT:
+      This verifies the Supabase login, but it does not by itself prove
+      the account has the owner role. Apply your existing database RLS
+      policies so customers cannot access owner data.
+    */
+
+    $("login-section").classList.add("hidden");
+    $("dashboard").classList.remove("hidden");
+    $("logout-button").classList.remove("hidden");
+
+    say("overview-message", "Signed in. Loading your records...", "success");
+    await loadOverview();
+  } catch (error) {
+    console.error("Sign-in error:", error);
+    say("login-message", "Sign-in failed: " + error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("logout-button").addEventListener("click", async () => {
+  await db.auth.signOut();
+  ownerUser = null;
+  $("dashboard").classList.add("hidden");
+  $("logout-button").classList.add("hidden");
+  $("login-section").classList.remove("hidden");
+  $("login-password").value = "";
+  say("login-message", "You have signed out.");
+});
+
+/* CUSTOMER ORDERS */
+async function loadOrders() {
+  if (!ownerUser) return;
+
+  const body = $("orders-table");
+  const refresh = $("refresh-orders");
+  refresh.disabled = true;
+  say("orders-status", "Loading customer orders...");
+
+  try {
+    const { data, error } = await withTimeout(
+      db.from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300)
+    );
+
+    if (error) throw error;
+    allOrders = data || [];
+    renderOrders();
+    say("orders-status", "Loaded " + allOrders.length + " order(s).", "success");
+  } catch (error) {
+    console.error("Load orders error:", error);
+    body.replaceChildren();
+    const row = body.insertRow();
+    cell(row, "Could not load orders: " + error.message).colSpan = 8;
+    say("orders-status", "Check your orders table permissions and column names: " + error.message, "error");
+  } finally {
+    refresh.disabled = false;
+  }
+}
+
+function renderOrders() {
+  const body = $("orders-table");
+  body.replaceChildren();
+
+  const query = $("order-search").value.trim().toLowerCase();
+  const filtered = allOrders.filter(order =>
+    [
+      order.id, order.customer_name, order.customer_email,
+      order.customer_phone_number, order.order_status
+    ].some(value => String(value || "").toLowerCase().includes(query))
+  );
+
+  if (!filtered.length) {
+    const row = body.insertRow();
+    cell(row, "No matching customer orders.").colSpan = 8;
+    return;
+  }
+
+  filtered.forEach(order => {
+    const row = body.insertRow();
+
+    const orderCell = cell(row,
+      String(order.id).slice(0, 8).toUpperCase() +
+      "\n" + formatDate(order.created_at));
+    orderCell.style.whiteSpace = "pre-line";
+
+    const customerCell = cell(row,
+      (order.customer_name || "Customer") + "\n" +
+      (order.customer_email || "") + "\n" +
+      (order.customer_phone_number || ""));
+    customerCell.style.whiteSpace = "pre-line";
+
+    const itemsCell = cell(row, "Loading items...");
+    itemsCell.style.whiteSpace = "pre-line";
+
+    loadOrderItems(order.id).then(items => {
+      itemsCell.textContent = items.length
+        ? items.map(item =>
+            (item.product_name || "Product") +
+            (item.color ? " / " + item.color : "") +
+            (item.size ? " / " + item.size : "") +
+            " × " + item.quantity +
+            " — " + money(item.unit_price)
+          ).join("\n")
+        : "No order items found";
+    }).catch(error => {
+      itemsCell.textContent = "Could not load items: " + error.message;
+    });
+
+    const isPickup = order.fulfillment_type === "pickup";
+    const date = order.scheduled_date || "Not scheduled";
+    const slot = order.scheduled_slot || order.schedule_slot || "Not specified";
+
+    const deliveryCell = cell(row,
+      (isPickup ? "Pickup" : "Delivery") + "\n" +
+      (order.delivery_address || order.town || order.delivery_area || "Not specified") +
+      "\nDate: " + date +
+      "\nTime: " + slot +
+      "\nFee: " + money(order.delivery_fee));
+    deliveryCell.style.whiteSpace = "pre-line";
+
+    cell(row, money(order.total));
+
+    const paymentCell = cell(row,
+      (order.payment_method || "Not specified") +
+      "\nStatus: " + (order.payment_status || "unpaid"));
+    paymentCell.style.whiteSpace = "pre-line";
+
+    cell(row, order.order_status || "awaiting confirmation");
+
+    const actions = cell(row, "");
+    const feeLabel = document.createElement("label");
+    feeLabel.textContent = "Delivery fee (KES)";
+
+    const feeInput = document.createElement("input");
+    feeInput.type = "number";
+    feeInput.min = "0";
+    feeInput.step = "1";
+    feeInput.value = isPickup ? "0" : String(Number(order.delivery_fee || 0));
+    feeInput.disabled = isPickup;
+    feeLabel.appendChild(feeInput);
+    actions.appendChild(feeLabel);
+
+    const statusLabel = document.createElement("label");
+    statusLabel.textContent = "Order status";
+    const statusSelect = document.createElement("select");
+
+    [
+      ["awaiting confirmation", "Awaiting confirmation"],
+      ["confirmed", "Confirmed"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      statusSelect.appendChild(option);
+    });
+
+    statusSelect.value = order.order_status === "confirmed"
+      ? "confirmed" : "awaiting confirmation";
+
+    statusLabel.appendChild(statusSelect);
+    actions.appendChild(statusLabel);
+
+    const paymentLabel = document.createElement("label");
+    paymentLabel.textContent = "Payment status";
+    const paymentSelect = document.createElement("select");
+
+    /*
+      These options use the known allowed statuses.
+      Add "paid" only if the database constraint permits it.
+    */
+    [
+      ["unpaid", "Unpaid"],
+      ["simulated", "Simulated"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      paymentSelect.appendChild(option);
+    });
+
+    paymentSelect.value = order.payment_status === "simulated"
+      ? "simulated" : "unpaid";
+
+    paymentLabel.appendChild(paymentSelect);
+    actions.appendChild(paymentLabel);
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "button";
+    saveButton.textContent = "SAVE CHANGES";
+    actions.appendChild(saveButton);
+
+    saveButton.addEventListener("click", async () => {
+      const fee = isPickup ? 0 : Number(feeInput.value);
+
+      if (!Number.isFinite(fee) || fee < 0) {
+        say("orders-status", "Enter a valid delivery fee.", "error");
+        return;
+      }
+
+      const subtotal = Number(order.subtotal || 0);
+      const discount = Number(order.discount_amount || 0);
+      const total = Math.max(0, subtotal - discount + fee);
+
+      if (statusSelect.value === "confirmed" &&
+          order.order_status !== "confirmed") {
+        if (!confirm("Confirm this customer's order? This does not mean payment has been received.")) {
+          return;
+        }
+      }
+
+      if (paymentSelect.value === "simulated" &&
+          order.payment_status !== "simulated") {
+        if (!confirm("Mark this payment as simulated? This does not confirm real money was received.")) {
+          return;
+        }
+      }
+
+      saveButton.disabled = true;
+      say("orders-status", "Saving order changes...");
+
+      try {
+        const payload = {
+          order_status: statusSelect.value,
+          delivery_fee: fee,
+          total: total,
+          payment_status: paymentSelect.value
+        };
+
+        const { data, error } = await withTimeout(
+          db.from("orders").update(payload).eq("id", order.id).select("id")
+        );
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error("No order was updated. Check your Supabase permissions.");
+        }
+
+        say("orders-status", "Order updated successfully.", "success");
+        await loadOrders();
+      } catch (error) {
+        console.error("Save order error:", error);
+        say("orders-status", "Could not save order: " + error.message, "error");
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
   });
-  say("messages-status","Messages loaded: "+(data||[]).length);
- }catch(e){say("messages-status","Could not load messages: "+e.message)}
- finally{el("refresh-messages").disabled=false}
 }
-el("refresh-messages").onclick=loadMessages;
-async function checkOwner(){
- try{
-  say("status","Connecting to Supabase...");
-  const {data,error}=await withTimeout(db.auth.getSession());if(error)throw error;
-  if(!data.session){window.location.replace("index.html");return}
-  ownerUser=data.session.user;
-  const result=await withTimeout(db.from("profiles").select("role").eq("id",ownerUser.id).maybeSingle());
-  if(result.error)throw result.error;
-  if(!result.data||!["owner","admin"].includes(String(result.data.role||"").toLowerCase())){
-   say("status","Owner access not found. Please sign in with the owner account.");await db.auth.signOut();window.location.replace("index.html");return;
+
+async function loadOrderItems(orderId) {
+  const { data, error } = await withTimeout(
+    db.from("order_items")
+      .select("product_name, quantity, unit_price, size, color")
+      .eq("order_id", orderId)
+  );
+  if (error) throw error;
+  return data || [];
+}
+
+$("refresh-orders").addEventListener("click", loadOrders);
+$("order-search").addEventListener("input", renderOrders);
+
+/* INVENTORY */
+async function loadProducts() {
+  if (!ownerUser) return;
+
+  const body = $("products-table");
+  $("refresh-products").disabled = true;
+  say("inventory-status", "Loading inventory...");
+
+  try {
+    const { data, error } = await withTimeout(
+      db.from("products").select("*").limit(500)
+    );
+    if (error) throw error;
+
+    allProducts = data || [];
+    renderProducts();
+    say("inventory-status", "Loaded " + allProducts.length + " product(s).", "success");
+  } catch (error) {
+    console.error("Inventory error:", error);
+    body.replaceChildren();
+    const row = body.insertRow();
+    cell(row, "Could not load inventory: " + error.message).colSpan = 4;
+    say("inventory-status", "Check your products table and permissions: " + error.message, "error");
+  } finally {
+    $("refresh-products").disabled = false;
   }
-  await loadProducts();showSection("home");say("status","Signed in as owner: "+(ownerUser.email||""));
- }catch(e){console.error(e);say("status","Dashboard startup error: "+e.message)}
 }
-db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-checkOwner();
+
+function renderProducts() {
+  const body = $("products-table");
+  body.replaceChildren();
+  const query = $("product-search").value.trim().toLowerCase();
+
+  const filtered = allProducts.filter(product =>
+    String(product.product_name || product.name || "")
+      .toLowerCase().includes(query)
+  );
+
+  if (!filtered.length) {
+    const row = body.insertRow();
+    cell(row, "No products found.").colSpan = 4;
+    return;
+  }
+
+  filtered.forEach(product => {
+    const row = body.insertRow();
+    cell(row, product.product_name || product.name || "Unnamed product");
+    cell(row, money(product.price));
+    cell(row, product.stock_quantity ?? product.stock ?? product.quantity ?? "—");
+    cell(row, product.description || product.category || "—");
+  });
+}
+
+$("refresh-products").addEventListener("click", loadProducts);
+$("product-search").addEventListener("input", renderProducts);
+
+/* SALES */
+async function loadSales() {
+  if (!ownerUser) return;
+
+  const body = $("sales-table");
+  $("refresh-sales").disabled = true;
+  say("sales-status", "Loading sales...");
+
+  try {
+    const { data, error } = await withTimeout(
+      db.from("sales").select("*").order("sales_date", { ascending: false }).limit(500)
+    );
+
+    if (error) {
+      /*
+        Some installations use created_at instead of sales_date.
+        Retry with the alternate common date column.
+      */
+      const retry = await withTimeout(
+        db.from("sales").select("*").order("created_at", { ascending: false }).limit(500)
+      );
+      if (retry.error) throw error;
+      allSales = retry.data || [];
+    } else {
+      allSales = data || [];
+    }
+
+    body.replaceChildren();
+
+    if (!allSales.length) {
+      const row = body.insertRow();
+      cell(row, "No sales records found.").colSpan = 6;
+    } else {
+      allSales.forEach(sale => {
+        const row = body.insertRow();
+        cell(row, sale.receipt_number || sale.receipt_no || sale.id || "—");
+        cell(row, sale.customer_name || sale.customer_id || "Walk-in customer");
+        cell(row, money(sale.total_amount ?? sale.total ?? sale.grand_total));
+        cell(row, sale.payment_method || "—");
+        cell(row, sale.payment_status || "—");
+        cell(row, formatDate(sale.sales_date || sale.created_at));
+      });
+    }
+
+    say("sales-status", "Loaded " + allSales.length + " sales record(s).", "success");
+  } catch (error) {
+    console.error("Sales error:", error);
+    body.replaceChildren();
+    const row = body.insertRow();
+    cell(row, "Could not load sales: " + error.message).colSpan = 6;
+    say("sales-status", "Check your sales table's date and total columns: " + error.message, "error");
+  } finally {
+    $("refresh-sales").disabled = false;
+  }
+}
+
+$("refresh-sales").addEventListener("click", loadSales);
+
+/* DASHBOARD SUMMARY */
+async function loadOverview() {
+  if (!ownerUser) return;
+
+  say("overview-message", "Refreshing dashboard...");
+  try {
+    const [productsResult, ordersResult, salesResult] = await Promise.all([
+      withTimeout(db.from("products").select("*", { count: "exact", head: true })),
+      withTimeout(db.from("orders").select("*", { count: "exact", head: true })),
+      withTimeout(db.from("sales").select("*", { count: "exact", head: true }))
+    ]);
+
+    $("product-count").textContent =
+      productsResult.error ? "—" : String(productsResult.count ?? 0);
+    $("order-count").textContent =
+      ordersResult.error ? "—" : String(ordersResult.count ?? 0);
+    $("sales-count").textContent =
+      salesResult.error ? "—" : String(salesResult.count ?? 0);
+
+    const pendingResult = await withTimeout(
+      db.from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("order_status", "awaiting confirmation")
+    );
+
+    $("pending-count").textContent =
+      pendingResult.error ? "—" : String(pendingResult.count ?? 0);
+
+    const errors = [
+      productsResult.error && "products",
+      ordersResult.error && "orders",
+      salesResult.error && "sales",
+      pendingResult.error && "pending orders"
+    ].filter(Boolean);
+
+    say(
+      "overview-message",
+      errors.length
+        ? "Dashboard partly loaded. Check table permissions for: " + errors.join(", ")
+        : "Dashboard connected successfully. Your records are ready.",
+      errors.length ? "error" : "success"
+    );
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    say("overview-message", "Could not load dashboard: " + error.message, "error");
+  }
+}
+
+$("refresh-all").addEventListener("click", async () => {
+  await loadOverview();
+  await loadOrders();
+  await loadProducts();
+  await loadSales();
+});
+
+/* RESTORE AN EXISTING SUPABASE SESSION */
+(async function restoreSession() {
+  try {
+    const { data, error } = await withTimeout(db.auth.getSession());
+    if (error) throw error;
+
+    if (data.session && data.session.user) {
+      ownerUser = data.session.user;
+      $("login-section").classList.add("hidden");
+      $("dashboard").classList.remove("hidden");
+      $("logout-button").classList.remove("hidden");
+      await loadOverview();
+    }
+  } catch (error) {
+    console.error("Session restore error:", error);
+    say("login-message", "Please sign in again: " + error.message, "error");
+  }
+})();
 </script>
+
 </body>
 </html>
