@@ -1,598 +1,80 @@
-"use strict";
-
-const SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
-
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = id => document.getElementById(id);
-const clean = value => String(value ?? "").trim();
-const money = n => "KSh " + Number(n || 0).toLocaleString("en-KE", {
-  maximumFractionDigits: 2
-});
-
-let products = [];
-let cart = [];
-let submitting = false;
-
-function message(id, text) {
-  const node = $(id);
-  if (node) node.textContent = text;
-}
-
-function optionsFrom(value) {
-  if (Array.isArray(value)) return value.map(clean).filter(Boolean);
-  return clean(value).split(/[,/|]/).map(x => x.trim()).filter(Boolean);
-}
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    '"': "&quot;", "'": "&#39;"
-  })[char]);
-}
-
-function todayLocal() {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString().slice(0, 10);
-}
-
-function productImage(p) {
-  return p.image_url || p.image || p.image_path || "";
-}
-
-function productStock(p) {
-  return Number(p.stock ?? p.quantity_in_stock ?? 0);
-}
-
-function productPrice(p) {
-  return Number(p.price ?? 0);
-}
-
-async function loadProducts() {
-  message("catalogue-message", "Loading our collection...");
-
-  try {
-    const { data, error } = await db.from("products")
-      .select("*").order("name", { ascending: true });
-
-    if (error) throw error;
-
-    products = (data || []).filter(p =>
-      p.is_active !== false && p.active !== false
-    );
-
-    renderProducts();
-    message("catalogue-message", products.length
-      ? products.length + " product(s) available."
-      : "No products are currently available.");
-  } catch (error) {
-    console.error("Product loading error:", error);
-    message("catalogue-message", "Could not load products. Please try again later.");
-  }
-}
-
-function renderProducts() {
-  const container = $("customer-products");
-  if (!container) return;
-  container.replaceChildren();
-
-  const category = clean($("category-filter")?.value || "all").toLowerCase();
-  const visible = products.filter(p =>
-    category === "all" || clean(p.category).toLowerCase() === category
-  );
-
-  if (!visible.length) {
-    container.textContent = "No products found in this category.";
-    return;
-  }
-
-  visible.forEach(product => {
-    const card = document.createElement("article");
-    card.className = "customer-product-card";
-
-    const image = productImage(product);
-    const stock = productStock(product);
-    const sizes = optionsFrom(product.size || product.sizes);
-    const colors = optionsFrom(product.color || product.colour || product.colors);
-
-    card.innerHTML = `
-      <img class="customer-product-image" src="${escapeHtml(image)}"
-        alt="${escapeHtml(product.name || "Clothing item")}"
-        onerror="this.style.display='none'">
-      <div class="customer-product-details">
-        <h3>${escapeHtml(product.name)}</h3>
-        <p>${escapeHtml(product.description || "")}</p>
-        <p class="customer-product-price">${money(productPrice(product))}</p>
-        <p class="customer-product-stock ${stock < 1 ? "out-of-stock" : ""}">
-          ${stock > 0 ? stock + " in stock" : "Out of stock"}
-        </p>
-        <div class="kc-product-options">
-          <label>Size
-            <select class="choose-size">
-              <option value="">Choose size</option>
-              ${sizes.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("")}
-            </select>
-          </label>
-          <label>Colour
-            <select class="choose-color">
-              <option value="">Choose colour</option>
-              ${colors.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}
-            </select>
-          </label>
-          <label>Quantity
-            <input class="choose-quantity" type="number" min="1"
-              max="${Math.max(1, stock)}" value="1">
-          </label>
-        </div>
-        <button class="kc-button kc-add-button" type="button"
-          ${stock < 1 ? "disabled" : ""}>
-          ${stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"}
-        </button>
-      </div>`;
-
-    card.querySelector(".kc-add-button").addEventListener("click", () => {
-      const size = card.querySelector(".choose-size").value;
-      const color = card.querySelector(".choose-color").value;
-      const quantity = Number(card.querySelector(".choose-quantity").value);
-
-      if (sizes.length && !size) return alert("Please select a size.");
-      if (colors.length && !color) return alert("Please select a colour.");
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > stock) {
-        return alert("Enter a valid quantity within available stock.");
-      }
-
-      const existing = cart.find(item =>
-        item.id === product.id && item.size === size && item.color === color
-      );
-
-      if (existing) {
-        if (existing.quantity + quantity > stock) {
-          return alert("That quantity exceeds the available stock.");
-        }
-        existing.quantity += quantity;
-      } else {
-        cart.push({
-          id: product.id, name: product.name,
-          price: productPrice(product), image, size, color, quantity, stock
-        });
-      }
-
-      renderCart();
-      message("checkout-status", "");
-    });
-
-    container.appendChild(card);
-  });
-}
-
-function subtotal() {
-  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-}
-
-function deliveryFee() {
-  if ($("delivery-method")?.value === "pickup") return 0;
-
-  const area = $("delivery-area")?.value;
-  if (area === "near_shop") return 200;
-  if (area === "nairobi") return 500;
-
-  return 700;
-}
-
-function discountAmount() {
-  return clean($("discount-code")?.value).toUpperCase() === "KC10"
-    ? subtotal() * 0.10 : 0;
-}
-
-function renderCart() {
-  const container = $("cart-items");
-  if (!container) return;
-  container.replaceChildren();
-
-  if (!cart.length) {
-    const empty = document.createElement("p");
-    empty.className = "kc-empty";
-    empty.textContent = "Your bag is empty. Browse the collection to add items.";
-    container.appendChild(empty);
-  }
-
-  cart.forEach((item, index) => {
-    const line = document.createElement("div");
-    line.className = "kc-cart-line";
-    line.innerHTML = `
-      <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}"
-        onerror="this.style.display='none'">
-      <div>
-        <h3>${escapeHtml(item.name)}</h3>
-        <p>Size: ${escapeHtml(item.size || "Not specified")}</p>
-        <p>Colour: ${escapeHtml(item.color || "Not specified")}</p>
-        <p>${money(item.price)} each</p>
-        <label>Quantity
-          <input class="cart-quantity" type="number" min="1"
-            max="${item.stock}" value="${item.quantity}">
-        </label>
-        <p><strong>${money(item.price * item.quantity)}</strong></p>
-        <button class="kc-button kc-button-outline remove-item" type="button">
-          REMOVE
-        </button>
-      </div>`;
-
-    line.querySelector(".cart-quantity").addEventListener("change", event => {
-      const qty = Number(event.target.value);
-
-      if (!Number.isInteger(qty) || qty < 1 || qty > item.stock) {
-        alert("Enter a valid quantity within available stock.");
-        event.target.value = item.quantity;
-        return;
-      }
-
-      cart[index].quantity = qty;
-      renderCart();
-    });
-
-    line.querySelector(".remove-item").addEventListener("click", () => {
-      cart.splice(index, 1);
-      renderCart();
-    });
-
-    container.appendChild(line);
-  });
-
-  const sub = subtotal();
-  const discount = discountAmount();
-  const fee = deliveryFee();
-
-  message("bag-count", cart.reduce((sum, item) => sum + item.quantity, 0));
-  message("cart-subtotal", money(sub));
-  message("cart-discount", money(discount));
-  message("cart-delivery", money(fee));
-  message("cart-total", money(Math.max(0, sub - discount + fee)));
-}
-
-function updateFulfilmentFields() {
-  const pickup = $("delivery-method")?.value === "pickup";
-
-  if ($("delivery-fields")) $("delivery-fields").hidden = pickup;
-  if ($("pickup-fields")) $("pickup-fields").hidden = !pickup;
-
-  if ($("delivery-location")) $("delivery-location").required = !pickup;
-  if ($("delivery-date")) $("delivery-date").required = !pickup;
-  if ($("delivery-time")) $("delivery-time").required = !pickup;
-  if ($("pickup-date")) $("pickup-date").required = pickup;
-  if ($("pickup-time")) $("pickup-time").required = pickup;
-
-  renderCart();
-}
-
-function updatePaymentFields() {
-  const method = clean($("payment-method")?.value).toLowerCase();
-  const isMpesa = method.includes("mpesa") || method.includes("m-pesa");
-
-  if ($("mpesa-fields")) $("mpesa-fields").hidden = !isMpesa;
-}
-
-function setDateLimits() {
-  const today = todayLocal();
-
-  ["delivery-date", "pickup-date"].forEach(id => {
-    const field = $(id);
-    if (!field) return;
-    field.min = today;
-    if (!field.value || field.value < today) field.value = today;
-  });
-}
+/* CUSTOMER CHECKOUT VALIDATION AND PAYMENT STATUS */
 
 function validKenyanPhone(value) {
-  const phone = clean(value).replace(/[\s()-]/g, "");
-  return /^(?:\+254|254|0)?[17]\d{8}$/.test(phone);
+  const phone = String(value ?? "").replace(/[\s()-]/g, "");
+
+  // Accept exactly 10 digits starting with 01 or 07,
+  // or the equivalent +254 / 254 international format.
+  return /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/.test(phone);
 }
 
 function normalisePaymentMethod(value) {
-  const method = clean(value).toLowerCase();
+  const method = String(value ?? "").trim().toLowerCase();
 
   if (method.includes("mpesa") || method.includes("m-pesa")) {
     return "M-Pesa";
   }
 
   if (method.includes("cash")) {
-    return "Cash on delivery";
+    return "Cash";
   }
 
-  return clean(value);
+  return "";
 }
 
-async function placeOrder(event) {
-  event.preventDefault();
-  if (submitting) return;
+function validateCheckoutDetails() {
+  const firstName = document.getElementById("order-first-name");
+  const lastName = document.getElementById("order-last-name");
+  const fullName = document.getElementById("order-name");
+  const phone = document.getElementById("order-phone");
+  const email = document.getElementById("order-email");
+  const payment = document.getElementById("payment-method");
+  const mpesaPhone = document.getElementById("mpesa-phone");
+  const status = document.getElementById("checkout-status");
 
-  if (!cart.length) {
-    message("checkout-status", "Please add products to your bag first.");
-    return;
+  const name = firstName || lastName
+    ? [firstName?.value, lastName?.value].map(v => String(v ?? "").trim()).filter(Boolean).join(" ")
+    : String(fullName?.value ?? "").trim();
+
+  if (!name) {
+    status.textContent = "Please enter your first and last name.";
+    return false;
   }
 
-  const name = clean($("order-name")?.value);
-  const phone = clean($("order-phone")?.value);
-  const email = clean($("order-email")?.value);
-  const pickup = $("delivery-method")?.value === "pickup";
-  const area = pickup ? "pickup" : clean($("delivery-area")?.value);
-  const location = pickup ? "Shop pickup" : clean($("delivery-location")?.value);
-  const rawMethod = clean($("payment-method")?.value);
-  const method = normalisePaymentMethod(rawMethod);
-
-  const dateField = pickup ? $("pickup-date") : $("delivery-date");
-  const timeField = pickup ? $("pickup-time") : $("delivery-time");
-  const date = clean(dateField?.value);
-  const slot = clean(timeField?.value);
-
-  if (!name || !phone || !email) {
-    message("checkout-status", "Complete your name, phone number and email.");
-    return;
+  if (!validKenyanPhone(phone?.value)) {
+    status.textContent =
+      "Enter a valid Kenyan phone number, such as 0712345678 or 0112345678.";
+    return false;
   }
 
-  if (!validKenyanPhone(phone)) {
-    message("checkout-status",
-      "Enter a valid Kenyan phone number, for example 0712345678 or +254712345678.");
-    return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email?.value ?? "").trim())) {
+    status.textContent = "Please enter a valid email address.";
+    return false;
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    message("checkout-status", "Enter a valid email address.");
-    return;
+  const selectedMethod = normalisePaymentMethod(payment?.value);
+
+  if (!selectedMethod) {
+    status.textContent = "Please select M-Pesa or Cash.";
+    return false;
   }
 
-  if (!rawMethod) {
-    message("checkout-status", "Please select a payment method.");
-    return;
+  if (
+    selectedMethod === "M-Pesa" &&
+    mpesaPhone &&
+    !validKenyanPhone(mpesaPhone.value)
+  ) {
+    status.textContent = "Enter a valid Kenyan M-Pesa number.";
+    return false;
   }
 
-  if (!pickup && (!area || !location)) {
-    message("checkout-status", "Please complete your delivery area and address.");
-    return;
-  }
-
-  if (!date || date < todayLocal()) {
-    message("checkout-status", "Choose today or a future date.");
-    return;
-  }
-
-  if (!slot) {
-    message("checkout-status", "Please select a collection or delivery time.");
-    return;
-  }
-
-  const isMpesa = method === "M-Pesa";
-  const mpesaPhone = clean($("mpesa-phone")?.value);
-
-  if (isMpesa && mpesaPhone && !validKenyanPhone(mpesaPhone)) {
-    message("checkout-status", "Enter a valid Kenyan M-Pesa phone number.");
-    return;
-  }
-
-  const sub = subtotal();
-  const discount = discountAmount();
-  const fee = deliveryFee();
-  const total = Math.max(0, sub - discount + fee);
-
-  submitting = true;
-  if ($("place-order-button")) $("place-order-button").disabled = true;
-  message("checkout-status", "Submitting your order...");
-
-  let orderId = null;
-
-  try {
-    const { data: authData, error: authError } = await db.auth.getUser();
-    if (authError) throw authError;
-    const user = authData?.user || null;
-
-    // Use the actual orders table columns, not guessed alternatives.
-    const orderPayload = {
-      customer_id: user?.id || null,
-      customer_name: name,
-      customer_email: email,
-      customer_phone_number: phone,
-
-      fulfillment_type: pickup ? "pickup" : "delivery",
-      delivery_method: pickup ? "pickup" : "delivery",
-      delivery_area: area,
-      county: pickup ? null : location.split(",")[0].trim(),
-      town: pickup ? null : (location.split(",")[1] || "").trim() || null,
-      delivery_address: location,
-      delivery_location: location,
-      delivery_fee: fee,
-
-      schedule_date: date,
-      schedule_slot: slot,
-      delivery_date: date,
-      delivery_time: slot,
-
-      subtotal: sub,
-      discount_code: clean($("discount-code")?.value).toUpperCase() || null,
-      discount_amount: discount,
-      total,
-
-      payment_method: method,
-      payment_status: "pending",
-      mpesa_phone: isMpesa ? (mpesaPhone || phone) : null,
-
-      order_status: "awaiting confirmation",
-      order_notes: clean($("order-notes")?.value) || null
-    };
-
-    const { data: order, error: orderError } = await db
-      .from("orders")
-      .insert(orderPayload)
-      .select("id")
-      .single();
-
-    if (orderError) throw orderError;
-    orderId = order.id;
-
-    const items = cart.map(item => ({
-      order_id: orderId,
-      product_id: String(item.id),
-      product_name: item.name,
-      size: item.size || "",
-      color: item.color || "",
-      unit_price: item.price,
-      quantity: item.quantity,
-      line_total: item.price * item.quantity
-    }));
-
-    const { error: itemError } = await db.from("order_items").insert(items);
-
-    if (itemError) {
-      console.error("Order items insert error:", itemError);
-      message("checkout-status",
-        "Your order reference is " + orderId.slice(0, 8).toUpperCase() +
-        ", but its items could not be saved. Please contact the shop before placing another order.");
-      return;
-    }
-
-    cart = [];
-    renderCart();
-    $("checkout-form")?.reset();
-    setDateLimits();
-    updateFulfilmentFields();
-    updatePaymentFields();
-
-    message("checkout-status",
-      "Your order has been received. Reference: " +
-      orderId.slice(0, 8).toUpperCase() +
-      ". Payment status: Pending. The shop will confirm the next payment steps.");
-
-    await loadMyOrders();
-  } catch (error) {
-    console.error("Checkout error:", error);
-
-    if (orderId) {
-      message("checkout-status",
-        "Order reference " + orderId.slice(0, 8).toUpperCase() +
-        " was created, but a later step failed. Please contact the shop before retrying.");
-    } else {
-      message("checkout-status",
-        "We could not place your order. Please try again or contact the shop.");
-    }
-  } finally {
-    submitting = false;
-    if ($("place-order-button")) $("place-order-button").disabled = false;
-  }
+  return true;
 }
 
-async function loadMyOrders() {
-  const container = $("my-orders-list");
-  if (!container) return;
-  container.replaceChildren();
-
-  try {
-    const { data: authData } = await db.auth.getUser();
-    const user = authData?.user;
-
-    if (!user) {
-      message("my-orders-status", "Sign in to view your order history.");
-      return;
-    }
-
-    const { data, error } = await db.from("orders")
-      .select("*")
-      .eq("customer_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    if (!data?.length) {
-      message("my-orders-status", "You have no orders yet.");
-      return;
-    }
-
-    data.forEach(order => {
-      const card = document.createElement("article");
-      card.className = "kc-order-card";
-
-      const heading = document.createElement("h3");
-      heading.textContent = "Order " + String(order.id).slice(0, 8).toUpperCase();
-
-      const details = document.createElement("p");
-      details.textContent =
-        "Placed: " + new Date(order.created_at).toLocaleString() +
-        " | Total: " + money(order.total) +
-        " | Payment method: " + (order.payment_method || "Not specified") +
-        " | Payment status: " + (order.payment_status || "pending") +
-        " | Order status: " + (order.order_status || "pending");
-
-      const fulfilment = document.createElement("p");
-      fulfilment.textContent =
-        (order.fulfillment_type || order.delivery_method || "delivery") +
-        " | " + (order.schedule_date || order.delivery_date || "") +
-        " | " + (order.schedule_slot || order.delivery_time || "");
-
-      card.append(heading, details, fulfilment);
-      container.appendChild(card);
-    });
-
-    message("my-orders-status", "Your order history is up to date.");
-  } catch (error) {
-    console.error("Order history error:", error);
-    message("my-orders-status", "Could not load order history. Please try again.");
-  }
-}
-
-async function signOutCustomer() {
-  try {
-    const { error } = await db.auth.signOut();
-    if (error) throw error;
-    window.location.href = "index.html";
-  } catch (error) {
-    message("my-orders-status", "Sign out failed. Please try again.");
-  }
-}
-
-function setupContactForm() {
-  const form = $("customer-contact-form");
-  if (!form) return;
-
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
-    message("contact-status", "Sending message...");
-
-    try {
-      const payload = {
-        customer_name: clean($("contact-name")?.value),
-        customer_email: clean($("contact-email")?.value),
-        customer_phone: clean($("contact-phone")?.value),
-        message: clean($("contact-message")?.value),
-        subject: "Website enquiry",
-        is_read: false
-      };
-
-      const { error } = await db.from("messages").insert(payload);
-      if (error) throw error;
-
-      form.reset();
-      message("contact-status", "Your message has been sent.");
-    } catch (error) {
-      console.error("Contact form error:", error);
-      message("contact-status", "Could not send your message. Please try again.");
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadProducts();
-  renderCart();
-  setDateLimits();
-  updateFulfilmentFields();
-  updatePaymentFields();
-
-  $("category-filter")?.addEventListener("change", renderProducts);
-  $("delivery-method")?.addEventListener("change", updateFulfilmentFields);
-  $("delivery-area")?.addEventListener("change", renderCart);
-  $("discount-code")?.addEventListener("input", renderCart);
-  $("payment-method")?.addEventListener("change", updatePaymentFields);
-  $("checkout-form")?.addEventListener("submit", placeOrder);
-  $("customer-signout")?.addEventListener("click", signOutCustomer);
-
-  // No simulated payment-success buttons are registered here.
-  setupContactForm();
-  await loadMyOrders();
-});
+/*
+ * Important:
+ * - Do not add simulated payment success/failure buttons.
+ * - Do not mark M-Pesa as Paid just because Pay Now was clicked.
+ * - Save payment_status as "pending" until a real payment
+ *   confirmation is received securely from the payment provider.
+ */
