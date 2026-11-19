@@ -3,301 +3,516 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kelsiy's Closet - Owner Dashboard</title>
+<title>Kelsiy's Closet | Owner Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58}
+:root{--b:#701b39;--d:#3e1023;--c:#faf5ed;--g:#c49a58;--ink:#30242a;--muted:#77666c;--line:#eadbd5}
 *{box-sizing:border-box}
-body{margin:0;background:var(--c);font:15px Arial;color:#30242a}
-header{background:var(--d);color:white;padding:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:4px solid var(--g)}
-main{max-width:1200px;margin:20px auto;padding:12px}
-button{background:var(--b);color:white;border:1px solid var(--g);padding:10px;border-radius:5px;cursor:pointer;margin:3px}
-input,select,textarea{padding:10px;border:1px solid #ddc9c9;border-radius:5px;max-width:100%;width:100%;margin:4px 0 10px}
-nav,.panel{background:white;padding:15px;margin-bottom:15px;border:1px solid #eadbd5;border-radius:8px}
+body{margin:0;background:var(--c);font:15px Arial,sans-serif;color:var(--ink)}
+header{background:var(--d);color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:4px solid var(--g)}
+header h1{font-size:22px;margin:0}
+header p{margin:6px 0 0;color:#f1dfdf}
+main{max-width:1400px;margin:20px auto;padding:12px}
+button{background:var(--b);color:white;border:1px solid var(--g);padding:10px 13px;border-radius:5px;cursor:pointer;margin:3px}
+button:hover{background:var(--d)}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,select,textarea{padding:10px;border:1px solid #ddc9c9;border-radius:5px;width:100%;margin:5px 0 12px;background:white;color:var(--ink)}
+label{font-weight:bold;font-size:13px}
+nav,.panel{background:white;padding:16px;margin-bottom:16px;border:1px solid var(--line);border-radius:9px}
 nav{display:flex;flex-wrap:wrap;gap:5px}
-table{border-collapse:collapse;width:100%;min-width:650px}
-th,td{padding:10px;border-bottom:1px solid #eadbd5;text-align:left;vertical-align:top}
-th{background:#f4e7df}
-.wrap{overflow-x:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-[hidden]{display:none!important}
+nav button{flex:1;min-width:110px}
 h2,h3{color:var(--b)}
-.status{overflow-wrap:anywhere}
+h2{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:13px}
+.stat{padding:18px;background:#fcf7f1;border:1px solid var(--line);border-radius:8px}
+.stat strong{color:var(--muted)}
+.stat h2{font-size:27px;margin:10px 0 0}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f4e7df;color:var(--d)}
+td small{color:var(--muted)}
+.product-photo{width:78px;height:88px;object-fit:cover;border-radius:6px;background:#f4e7df;border:1px solid var(--line)}
+.product-cell{display:flex;gap:10px;min-width:200px}
+.product-cell strong{display:block;margin-bottom:5px}
+.muted{color:var(--muted);font-size:13px}
+.notice{padding:10px;background:#fcf7f1;border-radius:5px;overflow-wrap:anywhere}
+.good{color:#176b42}
+.bad{color:#b42318}
+.actions{white-space:nowrap}
+.order-card{border:1px solid var(--line);padding:14px;border-radius:8px;margin:12px 0}
+.status-pill{display:inline-block;padding:4px 8px;border-radius:12px;background:#f4e7df;font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:600px){main{padding:8px}header{padding:15px}nav button{min-width:95px;font-size:12px}.product-photo{width:62px;height:75px}}
 </style>
 </head>
 <body>
 <header>
-  <div><h2 style="color:white;margin:0">KELSIY'S CLOSET</h2><p>Owner Dashboard</p></div>
+  <div>
+    <h1>KELSIY'S CLOSET</h1>
+    <p>Owner Dashboard · Inventory, Orders & Sales</p>
+  </div>
   <button id="logout">SIGN OUT</button>
 </header>
+
 <main>
-<p id="notice" class="status">Checking owner access...</p>
+<p id="notice" class="notice">Checking owner access...</p>
+
 <section id="login" class="panel" hidden>
-<h2>Owner login required</h2>
-<p>Please sign in using your existing website login.</p>
-<button onclick="location.href='index.html'">GO TO LOGIN</button>
+  <h2>Owner login required</h2>
+  <p>Please sign in with your existing owner account.</p>
+  <button onclick="location.href='index.html'">GO TO LOGIN</button>
 </section>
+
 <div id="app" hidden>
 <nav>
-<button data-page="home">Dashboard</button>
-<button data-page="products">Inventory</button>
-<button data-page="sales">Record Sale</button>
-<button data-page="orders">Customer Orders</button>
-<button data-page="reports">Sales Reports</button>
-<button data-page="messages">Messages</button>
+  <button data-page="home">Dashboard</button>
+  <button data-page="products">Inventory</button>
+  <button data-page="sales">Record Sale</button>
+  <button data-page="orders">Customer Orders</button>
+  <button data-page="reports">Sales Reports</button>
+  <button data-page="messages">Messages</button>
 </nav>
 
 <section class="panel" id="home">
-<h2>Business Overview</h2>
-<div class="grid">
-<div><strong>Products</strong><h2 id="count">0</h2></div>
-<div><strong>Total Stock</strong><h2 id="stock">0</h2></div>
-<div><strong>Out of Stock</strong><h2 id="empty">0</h2></div>
-</div>
-<button onclick="refreshAll()">REFRESH DASHBOARD</button>
+  <h2>Business Overview</h2>
+  <div class="grid">
+    <div class="stat"><strong>Active Products</strong><h2 id="count">0</h2></div>
+    <div class="stat"><strong>Total Stock</strong><h2 id="stock">0</h2></div>
+    <div class="stat"><strong>Out of Stock</strong><h2 id="empty">0</h2></div>
+    <div class="stat"><strong>Recorded Sales</strong><h2 id="saleCount">0</h2></div>
+  </div>
+  <button onclick="refreshAll()">REFRESH DASHBOARD</button>
 </section>
 
 <section class="panel" id="products" hidden>
-<h2>Inventory</h2>
-<form id="productForm">
-<input id="pid" type="hidden">
-<label>Product name</label><input id="pname" required>
-<label>Category</label><input id="pcat" required>
-<label>Price (KSh)</label><input id="pprice" type="number" min="0" step=".01" required>
-<label>Stock quantity</label><input id="pstock" type="number" min="0" required>
-<label>Sizes</label><input id="psize" placeholder="S, M, L, XL">
-<label>Colours</label><input id="pcolor" placeholder="Black, Cream">
-<label>Image URL</label><input id="pimage">
-<label>Description</label><textarea id="pdesc"></textarea>
-<button type="submit">SAVE PRODUCT</button>
-<button type="button" id="cancelEdit">CLEAR FORM</button>
-</form>
-<p id="productMsg"></p>
-<div class="wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="productRows"></tbody></table></div>
+  <h2>Inventory Management</h2>
+  <p class="muted">Add products, view their photos and update your available stock.</p>
+
+  <form id="productForm">
+    <input id="pid" type="hidden">
+    <div class="formgrid">
+      <div><label for="pname">Product name</label><input id="pname" required></div>
+      <div><label for="pcat">Category</label><input id="pcat" required placeholder="Jeans, Dresses, Shoes..."></div>
+      <div><label for="pprice">Price (KSh)</label><input id="pprice" type="number" min="0" step=".01" required></div>
+      <div><label for="pstock">Stock quantity</label><input id="pstock" type="number" min="0" step="1" required></div>
+      <div><label for="psize">Sizes</label><input id="psize" placeholder="S, M, L, XL"></div>
+      <div><label for="pcolor">Colours</label><input id="pcolor" placeholder="Black, Cream"></div>
+      <div><label for="pimage">Product image URL</label><input id="pimage" type="url" placeholder="https://..."></div>
+    </div>
+    <label for="pdesc">Description</label>
+    <textarea id="pdesc" rows="3" placeholder="Product details..."></textarea>
+    <button type="submit" id="productSave">SAVE PRODUCT</button>
+    <button type="button" id="cancelEdit">CLEAR FORM</button>
+  </form>
+  <p id="productMsg" class="notice" aria-live="polite"></p>
+
+  <h3>Saved Products</h3>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Sizes / Colours</th><th>Actions</th></tr></thead>
+      <tbody id="productRows"></tbody>
+    </table>
+  </div>
 </section>
 
 <section class="panel" id="sales" hidden>
-<h2>Record In-Person Sale</h2>
-<p>Use for sales made outside the online checkout.</p>
-<label>Product</label><select id="saleProduct"></select>
-<label>Quantity</label><input id="saleQty" type="number" min="1" value="1">
-<button id="addSale">ADD ITEM</button>
-<div class="wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="saleRows"></tbody></table></div>
-<h3>Total: <span id="saleTotal">KSh 0</span></h3>
-<label>Payment method</label>
-<select id="salePayment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select>
-<button id="saveSale">RECORD SALE</button>
-<p id="saleMsg"></p>
+  <h2>Record In-Person Sale</h2>
+  <p class="muted">Use this section for sales made outside online checkout. Customer orders are recorded through Customer Orders after payment is verified.</p>
+  <label for="saleProduct">Product</label><select id="saleProduct"></select>
+  <label for="saleQty">Quantity</label><input id="saleQty" type="number" min="1" step="1" value="1">
+  <button id="addSale">ADD ITEM</button>
+  <div class="wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="saleRows"></tbody></table></div>
+  <h3>Total: <span id="saleTotal">KSh 0</span></h3>
+  <label for="salePayment">Payment method</label>
+  <select id="salePayment"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option></select>
+  <button id="saveSale">RECORD SALE</button>
+  <p id="saleMsg" class="notice" aria-live="polite"></p>
 </section>
 
 <section class="panel" id="orders" hidden>
-<h2>Customer Orders</h2>
-<button id="refreshOrders">REFRESH ORDERS</button>
-<p id="orderMsg"></p>
-<div class="wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order Status</th><th>Save</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+  <h2>Customer Orders</h2>
+  <p class="muted">Review purchased items and delivery details. Verify the actual payment before confirming it.</p>
+  <button id="refreshOrders">REFRESH ORDERS</button>
+  <p id="orderMsg" class="notice" aria-live="polite"></p>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>Order / Date</th><th>Customer</th><th>Items Purchased</th><th>Delivery Details</th><th>Amount</th><th>Payment</th><th>Order Status</th><th>Actions</th></tr></thead>
+      <tbody id="orderRows"></tbody>
+    </table>
+  </div>
 </section>
 
 <section class="panel" id="reports" hidden>
-<h2>Sales Reports</h2>
-<button id="refreshReports">REFRESH REPORTS</button>
-<h3>Total recorded sales: <span id="revenue">KSh 0</span></h3>
-<p id="reportMsg"></p>
-<div class="wrap"><table><thead><tr><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+  <h2>Sales Reports</h2>
+  <button id="refreshReports">REFRESH REPORTS</button>
+  <div class="grid">
+    <div class="stat"><strong>Total recorded sales</strong><h2 id="revenue">KSh 0</h2></div>
+    <div class="stat"><strong>Transactions</strong><h2 id="reportCount">0</h2></div>
+  </div>
+  <p id="reportMsg" class="notice" aria-live="polite"></p>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>Receipt</th><th>Date</th><th>Customer</th><th>Items Purchased</th><th>Payment</th><th>Total</th></tr></thead>
+      <tbody id="reportRows"></tbody>
+    </table>
+  </div>
 </section>
 
 <section class="panel" id="messages" hidden>
-<h2>Customer Messages</h2>
-<button id="refreshMessages">REFRESH MESSAGES</button>
-<p id="messageMsg"></p>
-<div class="wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Message</th><th>Date</th><th>Action</th></tr></thead><tbody id="messageRows"></tbody></table></div>
+  <h2>Customer Messages</h2>
+  <button id="refreshMessages">REFRESH MESSAGES</button>
+  <p id="messageMsg" class="notice" aria-live="polite"></p>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Contact</th><th>Message</th><th>Date</th><th>Status / Action</th></tr></thead>
+      <tbody id="messageRows"></tbody>
+    </table>
+  </div>
 </section>
 </div>
 </main>
 
 <script>
-const db=supabase.createClient(
-"https://zqvjaqpqtctnvylgtwjg.supabase.co",
-"sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR"
+"use strict";
+
+const db = window.supabase.createClient(
+  "https://zqvjaqpqtctnvylgtwjg.supabase.co",
+  "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR"
 );
-const $=id=>document.getElementById(id);
-const cash=n=>"KSh "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let items=[],sale=[],orders=[];
+const $ = id => document.getElementById(id);
+const cash = n => "KSh " + Number(n || 0).toLocaleString("en-KE",{maximumFractionDigits:2});
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = value => {
+  try { const u = new URL(String(value || "")); return ["https:","http:"].includes(u.protocol) ? u.href : ""; }
+  catch { return ""; }
+};
+let items = [], sale = [], orders = [], currentUser = null;
+let busy = false;
+
+function msg(id,text,error=false){
+  $(id).textContent = text || "";
+  $(id).className = "notice" + (error ? " bad" : "");
+}
+function stockOf(p){return Number(p.stock ?? p.quantity_in_stock ?? 0)}
+function imageOf(p){return safeUrl(p.image_url || p.image || p.image_path || "")}
 
 async function start(){
-try{
-const {data:{session},error}=await db.auth.getSession();
-if(error)throw error;
-if(!session){$("login").hidden=false;$("notice").textContent="Sign in to continue.";return}
-const {data:profile,error:e}=await db.from("profiles").select("role").eq("id",session.user.id).maybeSingle();
-if(e)throw e;
-if(profile?.role!=="owner"){$("login").hidden=false;$("notice").textContent="This account does not have owner access.";return}
-$("app").hidden=false;$("notice").textContent="Owner dashboard ready.";
-await refreshAll();
-}catch(e){$("notice").textContent="Dashboard error: "+e.message}
+  try{
+    const {data:{session},error} = await db.auth.getSession();
+    if(error) throw error;
+    if(!session){
+      $("login").hidden=false;
+      $("notice").textContent="Please sign in to continue.";
+      return;
+    }
+    currentUser=session.user;
+    const {data:profile,error:e}=await db.from("profiles").select("role").eq("id",session.user.id).maybeSingle();
+    if(e) throw e;
+    if(!["owner","admin"].includes(String(profile?.role||"").toLowerCase())){
+      $("login").hidden=false;
+      $("notice").textContent="This account does not have owner access.";
+      return;
+    }
+    $("app").hidden=false;
+    $("notice").textContent="Owner dashboard ready.";
+    await refreshAll();
+  }catch(e){$("notice").textContent="Dashboard error: "+e.message}
 }
 
-$("logout").onclick=async()=>{await db.auth.signOut();location.href="index.html"};
+$("logout").onclick=async()=>{
+  const {error}=await db.auth.signOut();
+  if(error){msg("notice","Could not sign out: "+error.message,true);return}
+  location.href="index.html";
+};
 
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{
-document.querySelectorAll("main section[id]").forEach(s=>s.hidden=true);
-$(b.dataset.page).hidden=false;
-if(b.dataset.page==="products")loadProducts();
-if(b.dataset.page==="sales")loadSaleProducts();
-if(b.dataset.page==="orders")loadOrders();
-if(b.dataset.page==="reports")loadReports();
-if(b.dataset.page==="messages")loadMessages();
+  document.querySelectorAll("#app > section").forEach(s=>s.hidden=true);
+  $(b.dataset.page).hidden=false;
+  if(b.dataset.page==="products")loadProducts();
+  if(b.dataset.page==="sales")loadSaleProducts();
+  if(b.dataset.page==="orders")loadOrders();
+  if(b.dataset.page==="reports")loadReports();
+  if(b.dataset.page==="messages")loadMessages();
 });
 
-async function refreshAll(){await loadProducts();await loadOrders();await loadReports()}
+async function refreshAll(){
+  await loadProducts();
+  await loadOrders();
+  await loadReports();
+}
 
 async function loadProducts(){
-try{
-const {data,error}=await db.from("products").select("*").order("name");
-if(error)throw error;
-items=data||[];
-$("productRows").innerHTML="";
-items.forEach(p=>{
-const r=document.createElement("tr");
-r.innerHTML=`<td>${esc(p.name)}<br><small>${esc(p.category||"")}</small></td><td>${cash(p.price)}</td><td>${p.stock??p.quantity_in_stock??0}</td><td><button data-edit="${esc(p.id)}">EDIT</button><button data-delete="${esc(p.id)}">DELETE</button></td>`;
-$("productRows").appendChild(r);
-});
-$("count").textContent=items.length;
-const stocks=items.map(p=>Number(p.stock??p.quantity_in_stock??0));
-$("stock").textContent=stocks.reduce((a,b)=>a+b,0);
-$("empty").textContent=stocks.filter(n=>n===0).length;
-$("saleProduct").innerHTML=items.filter(p=>Number(p.stock??p.quantity_in_stock??0)>0).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${cash(p.price)}</option>`).join("");
-}catch(e){$("productMsg").textContent="Inventory error: "+e.message}
+  try{
+    const {data,error}=await db.from("products").select("*").order("name");
+    if(error) throw error;
+    items=data||[];
+    $("productRows").innerHTML="";
+    if(!items.length){
+      $("productRows").innerHTML='<tr><td colspan="6">No products have been added yet.</td></tr>';
+    }
+    items.forEach(p=>{
+      const photo=imageOf(p);
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td><div class="product-cell">
+          ${photo?`<img class="product-photo" src="${esc(photo)}" alt="${esc(p.name)}">`:'<div class="product-photo"></div>'}
+          <div><strong>${esc(p.name)}</strong><small>${esc(p.description||"")}</small></div>
+        </div></td>
+        <td>${esc(p.category||"—")}</td>
+        <td>${cash(p.price)}</td>
+        <td>${stockOf(p)}</td>
+        <td>${esc(p.size||"—")}<br>${esc(p.color||p.colour||"—")}</td>
+        <td class="actions"><button data-edit="${esc(p.id)}">EDIT</button><button data-delete="${esc(p.id)}">DELETE</button></td>`;
+      const im=tr.querySelector("img");
+      if(im) im.onerror=()=>{im.style.display="none"};
+      $("productRows").appendChild(tr);
+    });
+    $("count").textContent=items.length;
+    const stocks=items.map(stockOf);
+    $("stock").textContent=stocks.reduce((a,b)=>a+b,0);
+    $("empty").textContent=stocks.filter(n=>n===0).length;
+    $("saleProduct").innerHTML=items.filter(p=>stockOf(p)>0).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${cash(p.price)} (Stock: ${stockOf(p)})</option>`).join("");
+    if(!items.some(p=>stockOf(p)>0)) $("saleProduct").innerHTML='<option value="">No products in stock</option>';
+  }catch(e){msg("productMsg","Inventory error: "+e.message,true)}
 }
 
 $("productForm").onsubmit=async e=>{
-e.preventDefault();
-const id=$("pid").value;
-const payload={name:$("pname").value.trim(),category:$("pcat").value.trim(),price:Number($("pprice").value),stock:Number($("pstock").value),size:$("psize").value,color:$("pcolor").value,image_url:$("pimage").value,description:$("pdesc").value};
-try{
-let result;
-if(id)result=await db.from("products").update(payload).eq("id",id);
-else result=await db.from("products").insert(payload);
-if(result.error)throw result.error;
-$("productForm").reset();$("pid").value="";
-$("productMsg").textContent="Product saved.";
-await loadProducts();
-}catch(e){$("productMsg").textContent="Could not save product: "+e.message}
+  e.preventDefault();
+  if(busy)return;
+  busy=true;$("productSave").disabled=true;
+  const id=$("pid").value;
+  const payload={
+    name:$("pname").value.trim(),
+    category:$("pcat").value.trim(),
+    price:Number($("pprice").value),
+    stock:Number($("pstock").value),
+    size:$("psize").value.trim(),
+    color:$("pcolor").value.trim(),
+    image_url:$("pimage").value.trim(),
+    description:$("pdesc").value.trim()
+  };
+  try{
+    const result=id
+      ? await db.from("products").update(payload).eq("id",id)
+      : await db.from("products").insert(payload);
+    if(result.error) throw result.error;
+    $("productForm").reset();$("pid").value="";
+    msg("productMsg","Product saved successfully.");
+    await loadProducts();
+  }catch(e){msg("productMsg","Could not save product: "+e.message,true)}
+  finally{busy=false;$("productSave").disabled=false}
 };
-$("cancelEdit").onclick=()=>{$("productForm").reset();$("pid").value=""};
+
+$("cancelEdit").onclick=()=>{$("productForm").reset();$("pid").value="";msg("productMsg","")};
 
 $("productRows").onclick=async e=>{
-const edit=e.target.dataset.edit,del=e.target.dataset.delete;
-if(edit){
-const p=items.find(x=>String(x.id)===edit);if(!p)return;
-$("pid").value=p.id;$("pname").value=p.name||"";$("pcat").value=p.category||"";
-$("pprice").value=p.price||0;$("pstock").value=p.stock??p.quantity_in_stock??0;
-$("psize").value=p.size||"";$("pcolor").value=p.color||p.colour||"";
-$("pimage").value=p.image_url||p.image||"";$("pdesc").value=p.description||"";
-window.scrollTo({top:0,behavior:"smooth"});
-}
-if(del&&confirm("Delete this product?")){
-const result=await db.from("products").delete().eq("id",del);
-if(result.error)alert(result.error.message);else await loadProducts();
-}
+  const edit=e.target.dataset.edit,del=e.target.dataset.delete;
+  if(edit){
+    const p=items.find(x=>String(x.id)===edit);if(!p)return;
+    $("pid").value=p.id;$("pname").value=p.name||"";$("pcat").value=p.category||"";
+    $("pprice").value=p.price??0;$("pstock").value=stockOf(p);
+    $("psize").value=p.size||"";$("pcolor").value=p.color||p.colour||"";
+    $("pimage").value=p.image_url||p.image||p.image_path||"";$("pdesc").value=p.description||"";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  if(del&&confirm("Delete this product?")){
+    const {error}=await db.from("products").delete().eq("id",del);
+    if(error)msg("productMsg","Delete failed: "+error.message,true);
+    else{msg("productMsg","Product deleted.");await loadProducts()}
+  }
 };
 
 async function loadSaleProducts(){await loadProducts()}
 $("addSale").onclick=()=>{
-const p=items.find(x=>String(x.id)===$("saleProduct").value),q=Number($("saleQty").value);
-if(!p||!Number.isInteger(q)||q<1)return alert("Choose a product and valid quantity.");
-const stock=Number(p.stock??p.quantity_in_stock??0);
-if(q>stock)return alert("Not enough stock.");
-const found=sale.find(x=>String(x.id)===String(p.id));
-if(found){if(found.quantity+q>stock)return alert("Not enough stock.");found.quantity+=q}
-else sale.push({id:p.id,name:p.name,price:Number(p.price),quantity:q});
-renderSale();
+  const p=items.find(x=>String(x.id)===$("saleProduct").value);
+  const q=Number($("saleQty").value);
+  if(!p||!Number.isInteger(q)||q<1)return alert("Choose a product and valid quantity.");
+  const stock=stockOf(p);
+  const found=sale.find(x=>String(x.id)===String(p.id));
+  if(q+(found?.quantity||0)>stock)return alert("Not enough stock available.");
+  if(found)found.quantity+=q;
+  else sale.push({id:p.id,name:p.name,price:Number(p.price),quantity:q});
+  renderSale();
 };
 function renderSale(){
-$("saleRows").innerHTML=sale.map((p,i)=>`<tr><td>${esc(p.name)}</td><td>${p.quantity}</td><td>${cash(p.price*p.quantity)}</td><td><button data-remove-sale="${i}">REMOVE</button></td></tr>`).join("");
-$("saleTotal").textContent=cash(sale.reduce((s,p)=>s+p.price*p.quantity,0));
+  $("saleRows").innerHTML=sale.map((p,i)=>`<tr><td>${esc(p.name)}</td><td>${p.quantity}</td><td>${cash(p.price)}</td><td>${cash(p.price*p.quantity)}</td><td><button data-remove-sale="${i}">REMOVE</button></td></tr>`).join("");
+  $("saleTotal").textContent=cash(sale.reduce((s,p)=>s+p.price*p.quantity,0));
 }
-$("saleRows").onclick=e=>{if(e.target.dataset.removeSale!==undefined){sale.splice(Number(e.target.dataset.removeSale),1);renderSale()}};
+$("saleRows").onclick=e=>{
+  if(e.target.dataset.removeSale!==undefined){sale.splice(Number(e.target.dataset.removeSale),1);renderSale()}
+};
 $("saveSale").onclick=async()=>{
-if(!sale.length)return alert("Add at least one product.");
-try{
-const {error}=await db.rpc("record_sale",{p_items:sale.map(p=>({product_id:p.id,quantity:p.quantity})),p_payment_method:$("salePayment").value});
-if(error)throw error;
-sale=[];renderSale();$("saleMsg").textContent="Sale recorded successfully.";
-await loadProducts();await loadReports();
-}catch(e){$("saleMsg").textContent="Sale failed: "+e.message}
+  if(!sale.length)return alert("Add at least one product.");
+  if(busy)return;
+  busy=true;$("saveSale").disabled=true;
+  try{
+    const {error}=await db.rpc("record_sale",{
+      p_items:sale.map(p=>({product_id:p.id,quantity:p.quantity})),
+      p_payment_method:$("salePayment").value
+    });
+    if(error)throw error;
+    sale=[];renderSale();msg("saleMsg","In-person sale recorded successfully.");
+    await loadProducts();await loadReports();
+  }catch(e){msg("saleMsg","Sale failed: "+e.message,true)}
+  finally{busy=false;$("saveSale").disabled=false}
 };
 
 async function loadOrders(){
-$("orderRows").innerHTML="<tr><td colspan='8'>Loading orders...</td></tr>";
-try{
-const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(200);
-if(error)throw error;orders=data||[];
-const {data:lines,error:le}=await db.from("order_items").select("order_id,product_name,color,size,quantity,unit_price,line_total");
-if(le)throw le;
-$("orderRows").innerHTML="";
-for(const o of orders){
-const list=(lines||[]).filter(i=>i.order_id===o.id);
-const tr=document.createElement("tr");
-tr.innerHTML=`<td>${esc(String(o.id).slice(0,8))}<br><small>${esc(o.created_at?new Date(o.created_at).toLocaleString():"")}</small></td>
-<td>${esc(o.customer_name)}<br>${esc(o.customer_phone_number||"")}<br>${esc(o.customer_email||"")}</td>
-<td>${list.map(i=>`${esc(i.product_name)} / ${esc(i.color||"")} / ${esc(i.size||"")} × ${i.quantity}`).join("<br>")||"No items found"}</td>
-<td>${esc(o.fulfillment_type||o.delivery_method||"Delivery")}<br>${esc(o.delivery_address||o.delivery_location||"")}<br>${esc(o.town||"")} ${esc(o.county||"")}<br>${esc(o.schedule_date||o.delivery_date||"")} ${esc(o.schedule_slot||o.delivery_time||"")}<br>Fee: ${cash(o.delivery_fee)}</td>
-<td>Subtotal: ${cash(o.subtotal)}<br>Discount: ${cash(o.discount_amount)}<br><b>${cash(o.total)}</b></td>
-<td>${esc(o.payment_method||"")}<br>${esc(o.payment_status||"pending")}</td>
-<td><select class="ostatus">${["pending","confirmed","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].map(s=>`<option ${s===(o.order_status||"pending")?"selected":""} value="${s}">${s.replaceAll("_"," ")}</option>`).join("")}</select><br>
-<select class="pstatus">${["pending","successful","refunded"].map(s=>`<option value="${s}" ${s===((["paid","success"].includes(o.payment_status))?"successful":o.payment_status||"pending")?"selected":""}>${s}</option>`).join("")}</select></td>
-<td><button class="save-order">SAVE</button><p class="rowmsg"></p></td>`;
-tr.querySelector(".save-order").onclick=async()=>{
-const payment=tr.querySelector(".pstatus").value;
-if(payment==="successful"&&!["paid","success","successful"].includes(o.payment_status)){
-if(!confirm("Only confirm successful payment after receiving cash or verifying M-Pesa. Have you verified receipt?"))return;
-}
-try{
-const {error}=await db.from("orders").update({order_status:tr.querySelector(".ostatus").value,payment_status:payment}).eq("id",o.id);
-if(error)throw error;
-tr.querySelector(".rowmsg").textContent="Saved.";
-await loadOrders();
-}catch(e){tr.querySelector(".rowmsg").textContent=e.message}
-};
-$("orderRows").appendChild(tr);
-}
-$("orderMsg").textContent=orders.length+" order(s) loaded.";
-}catch(e){$("orderRows").innerHTML="";$("orderMsg").textContent="Orders error: "+e.message}
+  $("orderRows").innerHTML='<tr><td colspan="8">Loading orders...</td></tr>';
+  try{
+    const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(200);
+    if(error)throw error;
+    orders=data||[];
+    const {data:lines,error:le}=await db.from("order_items").select("order_id,product_name,color,size,quantity,unit_price,line_total");
+    if(le)throw le;
+    $("orderRows").innerHTML="";
+    if(!orders.length)$("orderRows").innerHTML='<tr><td colspan="8">No customer orders found.</td></tr>';
+
+    for(const o of orders){
+      const list=(lines||[]).filter(i=>String(i.order_id)===String(o.id));
+      const payment=String(o.payment_status||"pending").toLowerCase();
+      const paid=["paid","successful","success"].includes(payment);
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${esc(String(o.id).slice(0,8))}<br><small>${esc(o.created_at?new Date(o.created_at).toLocaleString():"")}</small></td>
+        <td><strong>${esc(o.customer_name||"Customer")}</strong><br>${esc(o.customer_phone_number||"")}<br>${esc(o.customer_email||"")}</td>
+        <td>${list.map(i=>`${esc(i.product_name||"Product")} × ${Number(i.quantity||0)}<br><small>${esc(i.color||"")} ${esc(i.size||"")} · ${cash(i.unit_price)} each · ${cash(i.line_total)}</small>`).join("<hr>")||"No items found"}</td>
+        <td><strong>${esc(o.fulfillment_type||o.delivery_method||"Delivery")}</strong><br>
+          ${esc(o.delivery_address||o.delivery_location||"")}<br>
+          ${esc(o.town||"")} ${esc(o.county||"")}<br>
+          ${esc(o.delivery_area||"")}<br>
+          ${esc(o.schedule_date||o.delivery_date||"")} ${esc(o.schedule_slot||o.delivery_time||"")}<br>
+          <small>Fee: ${cash(o.delivery_fee)}</small>
+          ${o.order_notes?`<br><small>Note: ${esc(o.order_notes)}</small>`:""}
+        </td>
+        <td>Subtotal: ${cash(o.subtotal)}<br>Discount: ${cash(o.discount_amount)}<br><strong>${cash(o.total)}</strong></td>
+        <td><strong>${esc(o.payment_method||"Not specified")}</strong><br>
+          <span class="status-pill">${paid?"PAID":esc(payment.toUpperCase())}</span>
+          ${o.mpesa_phone?`<br><small>M-Pesa: ${esc(o.mpesa_phone)}</small>`:""}
+        </td>
+        <td><select class="ostatus">
+          ${["awaiting confirmation","pending","confirmed","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].map(s=>`<option value="${esc(s)}" ${s===(o.order_status||"awaiting confirmation")?"selected":""}>${esc(s.replaceAll("_"," "))}</option>`).join("")}
+        </select></td>
+        <td>
+          <button class="save-status">SAVE STATUS</button>
+          ${paid?'<p class="good">Payment recorded</p>':'<button class="confirm-payment">CONFIRM PAYMENT & RECORD SALE</button>'}
+          <p class="rowmsg muted" aria-live="polite"></p>
+        </td>`;
+
+      tr.querySelector(".save-status").onclick=async()=>{
+        const status=tr.querySelector(".ostatus").value;
+        const button=tr.querySelector(".save-status");
+        button.disabled=true;
+        try{
+          const {error}=await db.from("orders").update({order_status:status}).eq("id",o.id);
+          if(error)throw error;
+          tr.querySelector(".rowmsg").textContent="Order status saved.";
+          await loadOrders();
+        }catch(e){tr.querySelector(".rowmsg").textContent="Could not save: "+e.message}
+        finally{button.disabled=false}
+      };
+
+      const confirmButton=tr.querySelector(".confirm-payment");
+      if(confirmButton)confirmButton.onclick=async()=>{
+        if(!confirm("Confirm only after you have actually received the cash or verified the M-Pesa payment. Have you verified this payment?"))return;
+        if(!confirm("This will mark the order as PAID and record a sale. Continue?"))return;
+        confirmButton.disabled=true;
+        tr.querySelector(".rowmsg").textContent="Recording confirmed payment...";
+        try{
+          const {data,error}=await db.rpc("confirm_customer_order",{p_order_id:o.id});
+          if(error)throw error;
+          tr.querySelector(".rowmsg").textContent="Payment confirmed and sale recorded.";
+          await loadOrders();
+          await loadReports();
+        }catch(e){
+          tr.querySelector(".rowmsg").textContent="Confirmation failed: "+e.message;
+          confirmButton.disabled=false;
+        }
+      };
+      $("orderRows").appendChild(tr);
+    }
+    msg("orderMsg",orders.length+" order(s) loaded.");
+  }catch(e){
+    $("orderRows").innerHTML="";
+    msg("orderMsg","Orders error: "+e.message,true);
+  }
 }
 $("refreshOrders").onclick=loadOrders;
 
 async function loadReports(){
-try{
-const {data,error}=await db.from("sales").select("*").order("sale_date",{ascending:false}).limit(300);
-if(error)throw error;
-const rows=data||[];
-$("revenue").textContent=cash(rows.reduce((s,r)=>s+Number(r.total||0),0));
-$("reportRows").innerHTML=rows.map(r=>`<tr><td>${esc(r.receipt_number||r.id||"")}</td><td>${esc(r.sale_date||"")}</td><td>${esc(r.payment_method||"")}</td><td>${cash(r.total)}</td></tr>`).join("");
-$("reportMsg").textContent=rows.length+" recorded sale(s).";
-}catch(e){$("reportMsg").textContent="Report error: "+e.message}
+  try{
+    const {data,error}=await db.from("sales").select("*").order("sale_date",{ascending:false}).limit(300);
+    if(error)throw error;
+    const rows=data||[];
+    const ids=rows.map(r=>r.id).filter(Boolean);
+    let saleLines=[];
+    if(ids.length){
+      const {data:sl,error:se}=await db.from("sale_items").select("sale_id,product_name,quantity,unit_price,line_total").in("sale_id",ids);
+      if(se)throw se;
+      saleLines=sl||[];
+    }
+    const orderIds=rows.map(r=>r.order_id).filter(Boolean);
+    let relatedOrders=[];
+    if(orderIds.length){
+      const {data:os,error:oe}=await db.from("orders").select("id,customer_name,customer_email,customer_phone_number").in("id",orderIds);
+      if(oe)throw oe;
+      relatedOrders=os||[];
+    }
+    const orderById=new Map(relatedOrders.map(o=>[String(o.id),o]));
+    $("revenue").textContent=cash(rows.reduce((s,r)=>s+Number(r.total||0),0));
+    $("reportCount").textContent=rows.length;
+    $("saleCount").textContent=rows.length;
+    $("reportRows").innerHTML="";
+    if(!rows.length)$("reportRows").innerHTML='<tr><td colspan="6">No recorded sales found.</td></tr>';
+
+    rows.forEach(r=>{
+      const o=r.order_id?orderById.get(String(r.order_id)):null;
+      const lineList=saleLines.filter(i=>String(i.sale_id)===String(r.id));
+      const customer=o?.customer_name || (r.customer_id?"Customer account":"In-person customer");
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${esc(r.receipt_number??r.id??"—")}</td>
+        <td>${esc(r.sale_date?new Date(r.sale_date).toLocaleString():"")}</td>
+        <td>${esc(customer)}${o?.customer_phone_number?`<br><small>${esc(o.customer_phone_number)}</small>`:""}${o?.customer_email?`<br><small>${esc(o.customer_email)}</small>`:""}</td>
+        <td>${lineList.map(i=>`${esc(i.product_name||"Product")} × ${Number(i.quantity||0)}<br><small>${cash(i.unit_price)} each · ${cash(i.line_total)}</small>`).join("<hr>")||"Item details unavailable"}</td>
+        <td>${esc(r.payment_method||"—")}</td>
+        <td><strong>${cash(r.total)}</strong></td>`;
+      $("reportRows").appendChild(tr);
+    });
+    msg("reportMsg",rows.length+" recorded sale(s).");
+  }catch(e){msg("reportMsg","Report error: "+e.message,true)}
 }
 $("refreshReports").onclick=loadReports;
 
 async function loadMessages(){
-try{
-const {data,error}=await db.from("messages").select("*").order("created_at",{ascending:false}).limit(100);
-if(error)throw error;
-$("messageRows").innerHTML="";
-(data||[]).forEach(m=>{
-const r=document.createElement("tr");
-r.innerHTML=`<td>${esc(m.customer_name||m.name||"")}</td><td>${esc(m.customer_email||m.email||"")}<br>${esc(m.customer_phone||"")}</td><td>${esc(m.message||"")}</td><td>${esc(m.created_at||"")}</td><td>${m.is_read?"Read":"Unread"}</td><td><button data-read="${esc(m.id)}">MARK READ</button></td>`;
-$("messageRows").appendChild(r);
-});
-$("messageMsg").textContent=(data||[]).length+" message(s).";
-}catch(e){$("messageMsg").textContent="Messages error: "+e.message}
+  try{
+    const {data,error}=await db.from("messages").select("*").order("created_at",{ascending:false}).limit(100);
+    if(error)throw error;
+    $("messageRows").innerHTML="";
+    if(!(data||[]).length)$("messageRows").innerHTML='<tr><td colspan="5">No messages found.</td></tr>';
+    (data||[]).forEach(m=>{
+      const r=document.createElement("tr");
+      r.innerHTML=`
+        <td>${esc(m.customer_name||m.name||"")}</td>
+        <td>${esc(m.customer_email||m.email||"")}<br>${esc(m.customer_phone||"")}</td>
+        <td>${esc(m.message||"")}</td>
+        <td>${esc(m.created_at||"")}</td>
+        <td>${m.is_read?"Read":"Unread"}<br><button data-read="${esc(m.id)}">MARK READ</button></td>`;
+      $("messageRows").appendChild(r);
+    });
+    msg("messageMsg",(data||[]).length+" message(s).");
+  }catch(e){msg("messageMsg","Messages error: "+e.message,true)}
 }
 $("refreshMessages").onclick=loadMessages;
 $("messageRows").onclick=async e=>{
-const id=e.target.dataset.read;if(!id)return;
-const {error}=await db.from("messages").update({is_read:true}).eq("id",id);
-if(error)alert(error.message);else loadMessages();
+  const id=e.target.dataset.read;if(!id)return;
+  const {error}=await db.from("messages").update({is_read:true}).eq("id",id);
+  if(error)msg("messageMsg","Could not update message: "+error.message,true);
+  else await loadMessages();
 };
+
 start();
 </script>
 </body>
