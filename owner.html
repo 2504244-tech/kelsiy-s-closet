@@ -65,6 +65,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <button type="button" data-section="home">HOME</button>
  <button type="button" data-section="inventory">INVENTORY</button>
  <button type="button" data-section="sales">SALES</button>
+ <button type="button" data-section="orders">CUSTOMER ORDERS</button>
  <button type="button" data-section="reports">SALES REPORTS</button>
  <button type="button" data-section="messages">MESSAGES</button>
 </nav>
@@ -128,6 +129,17 @@ footer{text-align:center;border-top:4px solid var(--g)}
 <button id="record-sale-button" type="button">RECORD SALE</button>
 <p id="sales-status" class="status" role="status">Ready.</p>
 <div id="sale-receipt" hidden></div>
+</section>
+
+<section class="panel" data-panel="orders" hidden>
+<h2>Customer Orders</h2>
+<p>Orders submitted from the customer shopping page appear here. Review the pickup/delivery details and update payment/order status.</p>
+<div class="actions"><button type="button" id="refresh-orders">REFRESH ORDERS</button></div>
+<p id="orders-status" class="status" role="status">Open Customer Orders to load orders.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Receiving</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead>
+<tbody id="orders-table"></tbody>
+</table></div>
 </section>
 
 <section class="panel" data-panel="reports" hidden>
@@ -212,6 +224,7 @@ function showSection(name){
  });
  if(name==="inventory")loadProducts();
  if(name==="sales")loadSalesProducts();
+ if(name==="orders")loadCustomerOrders();
  if(name==="reports")loadReport();
  if(name==="messages")loadMessages();
 }
@@ -607,6 +620,51 @@ el("clear-report-filter").onclick=()=>{
  el("report-end").value="";
  loadReport();
 };
+
+/* CUSTOMER ORDERS */
+function formatOrderItems(items) {
+ if (!Array.isArray(items)) return "Order items";
+ return items.map(item => `${item.name || "Item"} × ${item.quantity || 1} (${item.size || "Size n/a"}, ${item.color || "Colour n/a"})`).join("; ");
+}
+async function loadCustomerOrders() {
+ if (!ownerUser) return say("orders-status", "Please sign in again.");
+ say("orders-status", "Loading customer orders...");
+ el("refresh-orders").disabled = true;
+ try {
+  const {data,error}=await withTimeout(db.from("customer_orders").select("id,order_number,customer_name,customer_email,customer_phone,receiving_method,delivery_address,payment_method,payment_status,order_status,subtotal,delivery_fee,total,order_items,order_notes,created_at").order("created_at",{ascending:false}).limit(300));
+  if(error)throw error;
+  const tbody=el("orders-table"); tbody.replaceChildren();
+  const rows=data||[];
+  if(!rows.length){const r=tbody.insertRow();cell(r,"No customer orders have been submitted yet.").colSpan=8;}
+  rows.forEach(order=>{
+   const r=tbody.insertRow();
+   cell(r,order.order_number||String(order.id).slice(0,8));
+   const customer=cell(r,"");
+   const name=document.createElement("strong");name.textContent=order.customer_name||"Customer";
+   const contact=document.createElement("p");contact.textContent=(order.customer_email||"")+" · "+(order.customer_phone||"");
+   const notes=document.createElement("p");notes.textContent=order.order_notes?"Notes: "+order.order_notes:"";
+   customer.append(name,contact,notes);
+   cell(r,formatOrderItems(order.order_items));
+   cell(r,(order.receiving_method==="delivery"?"Delivery: "+(order.delivery_address||"Address not supplied"):"Shop pickup"));
+   cell(r,money(order.total));
+   const paymentCell=cell(r,"");paymentCell.textContent=(order.payment_status||"unpaid").replaceAll("_"," ")+" · "+(order.payment_method||"Not specified");
+   const orderCell=cell(r,order.order_status||"new");
+   const actions=cell(r,"");
+   const pay=document.createElement("button");pay.type="button";pay.className="small";pay.textContent="CONFIRM PAYMENT";pay.disabled=["paid","paid_simulated","confirmed"].includes(String(order.payment_status||"").toLowerCase());
+   pay.onclick=async()=>{if(!confirm("Confirm that payment has been received/verified for this order? For simulated M-Pesa, this only updates the system record."))return;await updateCustomerOrder(order.id,{payment_status:"confirmed"},"Payment confirmed.");};
+   const status=document.createElement("select");status.className="small";["new","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v.replaceAll("_"," ");if(v===(order.order_status||"new"))o.selected=true;status.appendChild(o);});
+   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";save.onclick=async()=>updateCustomerOrder(order.id,{order_status:status.value},"Order status updated.");
+   actions.append(pay,status,save);
+  });
+  say("orders-status",`Loaded ${rows.length} customer order(s).`);
+ }catch(error){console.error("Customer orders error:",error);say("orders-status","Could not load customer orders: "+error.message+". Check that the customer_orders table and policies have been created.");}
+ finally{el("refresh-orders").disabled=false;}
+}
+async function updateCustomerOrder(id,updates,successMessage){
+ try{const {error}=await withTimeout(db.from("customer_orders").update(updates).eq("id",id));if(error)throw error;say("orders-status",successMessage);await loadCustomerOrders();}
+ catch(error){console.error(error);say("orders-status","Could not update order: "+error.message);}
+}
+el("refresh-orders").onclick=loadCustomerOrders;
 
 /* CUSTOMER MESSAGES */
 async function loadMessages(){
