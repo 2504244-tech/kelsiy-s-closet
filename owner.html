@@ -95,7 +95,7 @@ footer{text-align:center;border-top:4px solid var(--g)}
  <div class="field"><label for="product-stock">Stock quantity *</label><input id="product-stock" type="number" min="0" step="1" required></div>
  <div class="field"><label for="product-size">Size</label><input id="product-size" placeholder="S, M, L, XL"></div>
  <div class="field"><label for="product-colour">Color</label><input id="product-colour" placeholder="Black"></div>
- <div class="field"><label for="product-image">Image filename or path</label><input id="product-image" placeholder="t shirts.jpeg or image/t shirts.jpeg"><small>Use the existing GitHub image/ folder. Example: t shirts.jpeg</small></div>
+ <div class="field"><label for="product-image">Image URL or path</label><input id="product-image" placeholder="images/dress.jpg"></div>
  <div class="field"><label for="product-description">Description</label><textarea id="product-description"></textarea></div>
 </div>
 <div class="actions">
@@ -133,20 +133,12 @@ footer{text-align:center;border-top:4px solid var(--g)}
 
 <section class="panel" data-panel="orders" hidden>
 <h2>Customer Orders</h2>
-<p>Review online orders and update order and payment status. Demo M-Pesa is simulated only.</p>
+<p>Orders submitted from the customer shopping page appear here. Review the pickup/delivery details and update payment/order status.</p>
 <div class="actions"><button type="button" id="refresh-orders">REFRESH ORDERS</button></div>
 <p id="orders-status" class="status" role="status">Open Customer Orders to load orders.</p>
 <div class="table-wrap"><table>
-<thead><tr><th>Order / Date</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead>
+<thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Receiving</th><th>Total</th><th>Payment</th><th>Order status</th><th>Actions</th></tr></thead>
 <tbody id="orders-table"></tbody>
-</table></div>
-<h2>Customer Change Requests</h2>
-<p>Review cancellation, rescheduling and item-change requests. Approved cancellations update the order status; approved rescheduling updates its date and time. Item edits should be applied to the order items manually after checking stock.</p>
-<div class="actions"><button type="button" id="refresh-order-requests">REFRESH REQUESTS</button></div>
-<p id="order-requests-status" class="status" role="status">Refresh to load customer requests.</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Request / Date</th><th>Order</th><th>Customer</th><th>Request details</th><th>Decision</th><th>Owner response</th><th>Action</th></tr></thead>
-<tbody id="order-requests-table"></tbody>
 </table></div>
 </section>
 
@@ -232,9 +224,9 @@ function showSection(name){
  });
  if(name==="inventory")loadProducts();
  if(name==="sales")loadSalesProducts();
+ if(name==="orders")loadCustomerOrders();
  if(name==="reports")loadReport();
  if(name==="messages")loadMessages();
- if(name==="orders")loadOrders();
 }
 
 document.querySelectorAll("[data-section]").forEach(button=>{
@@ -288,13 +280,12 @@ async function loadProducts(){
    const r=tbody.insertRow();
    const photo=cell(r,"");
 
-   const photoPath=resolveProductImage(p.image_url||p.image||p.image_path);
-   if(photoPath){
+   if(p.image_url){
     const img=document.createElement("img");
     img.className="photo";
-    img.src=photoPath;
-    img.alt=p.name||"Product photo";
-    img.onerror=()=>{img.remove();photo.textContent="Photo not found in image/ folder"};
+    img.src=p.image_url;
+    img.alt=p.name;
+    img.onerror=()=>{img.remove();photo.textContent="No photo"};
     photo.appendChild(img);
    }else{
     photo.textContent="No photo";
@@ -508,7 +499,7 @@ el("product-form").onsubmit=async event=>{
   price,stock,
   size:el("product-size").value.trim()||null,
   color:el("product-colour").value.trim()||null,
-  image_url:el("product-image").value.trim().replace(/^\.\//,"")||null,
+  image_url:el("product-image").value.trim()||null,
   description:el("product-description").value.trim()||null,
   active:true
  };
@@ -606,7 +597,7 @@ async function loadReport(){
 
   rows.forEach(s=>{
    const r=tbody.insertRow();
-   cell(r,s.receipt_number);
+   cell(r, String(s.receipt_number || "").startsWith("KC-") ? s.receipt_number : "KC-" + s.receipt_number);
    cell(r,formatDate(s.sale_date));
    cell(r,s.payment_method);
    cell(r,money(s.total));
@@ -630,111 +621,71 @@ el("clear-report-filter").onclick=()=>{
  loadReport();
 };
 
-/* CUSTOMER ONLINE ORDERS */
-async function loadOrders(){
- if(!ownerUser)return say("orders-status","Please sign in again.");
- say("orders-status","Loading customer orders...");
- el("refresh-orders").disabled=true;
- try{
-  const {data:orders,error}=await withTimeout(db.from("orders").select("*").order("created_at",{ascending:false}).limit(300));
+/* CUSTOMER ORDERS */
+function formatOrderItems(items) {
+ if (!Array.isArray(items)) return "Order items";
+ return items.map(item => `${item.name || "Item"} × ${item.quantity || 1} (${item.size || "Size n/a"}, ${item.color || "Colour n/a"})`).join("; ");
+}
+async function loadCustomerOrders() {
+ if (!ownerUser) return say("orders-status", "Please sign in again.");
+ say("orders-status", "Loading customer orders...");
+ el("refresh-orders").disabled = true;
+ try {
+  const {data,error}=await withTimeout(db.from("customer_orders").select("id,order_number,customer_name,customer_email,customer_phone,receiving_method,delivery_address,payment_method,payment_status,order_status,subtotal,delivery_fee,total,order_items,order_notes,created_at").order("created_at",{ascending:false}).limit(300));
   if(error)throw error;
-  const tbody=el("orders-table");tbody.replaceChildren();
-  if(!orders||!orders.length){const r=tbody.insertRow();cell(r,"No online orders yet.").colSpan=8;say("orders-status","No online orders found.");return;}
-  for(const o of orders){
+  const tbody=el("orders-table"); tbody.replaceChildren();
+  const rows=data||[];
+  if(!rows.length){const r=tbody.insertRow();cell(r,"No customer orders have been submitted yet.").colSpan=8;}
+  rows.forEach(order=>{
    const r=tbody.insertRow();
-   cell(r,String(o.id).slice(0,8).toUpperCase()+"\n"+formatDate(o.created_at));
-   cell(r,(o.customer_name||"Customer")+"\n"+(o.customer_email||"")+"\n"+(o.customer_phone_number||o.customer_phone||""));
-   const itemCell=cell(r,"Loading items...");
-   try{
-    const result=await withTimeout(db.from("order_items").select("*").eq("order_id",o.id));
-    if(result.error)throw result.error;
-    itemCell.textContent=(result.data||[]).map(i=>(i.product_name||"Item")+((i.color||i.colour)?" ("+(i.color||i.colour)+")":"")+(i.size?" / "+i.size:"")+" × "+i.quantity+" — "+money(i.unit_price)).join("\n")||"No items";
-   }catch(e){itemCell.textContent="Could not load items: "+e.message;}
-   cell(r,((o.fulfillment_type||o.delivery_method)==="pickup"?"Pickup":"Delivery")+"\n"+(o.delivery_address||o.delivery_location||"Shop pickup")+"\n"+(o.schedule_date||o.delivery_date||"")+" "+(o.schedule_slot||o.delivery_time||"")+"\nFee: "+money(o.delivery_fee));
-   cell(r,money(o.total)+((o.delivery_area==="countrywide"||o.delivery_area==="countrywide outside Nairobi")?" (confirm fee)":""));
-   cell(r,(o.payment_method||"")+"\n"+(o.payment_status||""));
-   const statusCell=cell(r,o.order_status||"pending");
+   cell(r,order.order_number||String(order.id).slice(0,8));
+   const customer=cell(r,"");
+   const name=document.createElement("strong");name.textContent=order.customer_name||"Customer";
+   const contact=document.createElement("p");contact.textContent=(order.customer_email||"")+" · "+(order.customer_phone||"");
+   const notes=document.createElement("p");notes.textContent=order.order_notes?"Notes: "+order.order_notes:"";
+   customer.append(name,contact,notes);
+   cell(r,formatOrderItems(order.order_items));
+   cell(r,(order.receiving_method==="delivery"?"Delivery: "+(order.delivery_address||"Address not supplied"):"Shop pickup"));
+   cell(r,money(order.total));
+   const paymentCell=cell(r,"");paymentCell.textContent=(order.payment_status||"unpaid").replaceAll("_"," ")+" · "+(order.payment_method||"Not specified");
+   const orderCell=cell(r,order.order_status||"new");
    const actions=cell(r,"");
-   const feeLabel=document.createElement("label");feeLabel.textContent="Delivery fee (KES) ";
-   const feeInput=document.createElement("input");feeInput.type="number";feeInput.min="0";feeInput.step="50";feeInput.value=Number(o.delivery_fee||0);feeInput.style.maxWidth="105px";feeLabel.appendChild(feeInput);actions.appendChild(feeLabel);
-   const orderSelect=document.createElement("select");
-   ["awaiting_confirmation","confirmed","preparing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.order_status||"awaiting_confirmation"))opt.selected=true;orderSelect.appendChild(opt);});
-   orderSelect.style.maxWidth="145px";
-   const paySelect=document.createElement("select");
-   ["unpaid","paid","paid_simulated","cash_collected","failed"].forEach(v=>{const opt=document.createElement("option");opt.value=v;opt.textContent=v.replaceAll("_"," ");if(v===(o.payment_status||"unpaid"))opt.selected=true;paySelect.appendChild(opt);});
-   paySelect.style.maxWidth="145px";
-   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";
-   save.onclick=async()=>{
-    if((o.payment_method==="cash_on_delivery"||o.payment_method==="cod")&&paySelect.value==="paid"&&!confirm("Only mark cash as paid after the owner has actually received the cash. Confirm cash was collected?"))return;
-    save.disabled=true;
+   const pay=document.createElement("button");pay.type="button";pay.className="small";pay.textContent="CONFIRM PAYMENT";pay.disabled=["paid","confirmed"].includes(String(order.payment_status||"").toLowerCase());
+   pay.onclick=async()=>{
+    if(!confirm("Confirm that you have actually received and verified this customer's payment? This will record the sale and update stock. Continue?"))return;
+    pay.disabled=true;
     try{
-     const newFee=Number(feeInput.value);
-     if(!Number.isFinite(newFee)||newFee<0)throw new Error("Enter a valid delivery fee.");
-     const newTotal=Math.max(0,Number(o.subtotal||0)-Number(o.discount_amount||0)+((o.fulfillment_type||o.delivery_method)==="pickup"?0:newFee));
-     if(paySelect.value==="paid" && o.payment_status!=="paid"){
-      if(!confirm("Confirm that you have actually received and verified this customer's payment? This will mark the order as paid and create one sales record."))return;
-      const {error:confirmError}=await withTimeout(db.rpc("confirm_customer_order",{p_order_id:o.id}));
-      if(confirmError)throw confirmError;
-     }
-     const updatePayload={order_status:orderSelect.value,delivery_fee:(o.fulfillment_type||o.delivery_method)==="pickup"?0:newFee,total:newTotal};
-     if(paySelect.value!=="paid" || o.payment_status==="paid") updatePayload.payment_status=paySelect.value;
-     const {error}=await withTimeout(db.from("orders").update(updatePayload).eq("id",o.id));
-     if(error)throw error;
-     say("orders-status",paySelect.value==="paid"?"Order updated and payment recorded in Sales Reports.":"Order "+String(o.id).slice(0,8)+" updated.");
-     await loadOrders();
-    }catch(e){say("orders-status","Could not update order: "+e.message);}
-    finally{save.disabled=false;}
+     const items=Array.isArray(order.order_items)?order.order_items:[];
+     if(!items.length)throw new Error("This order has no saved item details, so it cannot be recorded as a sale.");
+     if(!items.every(i=>i.product_id && Number(i.quantity)>0))throw new Error("The order is missing product IDs or valid quantities.");
+     const method=String(order.payment_method||"").toLowerCase().includes("mpesa")?"mpesa":"cash";
+     const {data:sale,error:saleError}=await withTimeout(db.rpc("record_sale",{p_items:items.map(i=>({product_id:i.product_id,quantity:Number(i.quantity)})),p_payment_method:method}));
+     if(saleError)throw saleError;
+     if(!sale||sale.receipt_number==null)throw new Error("Sale was not confirmed because no receipt number was returned. Check Sales before retrying.");
+     const salesReceipt=String(sale.receipt_number).startsWith("KC-")?String(sale.receipt_number):"KC-"+sale.receipt_number;
+     const {error:updateError}=await withTimeout(db.from("customer_orders").update({payment_status:"paid",sales_receipt_number:salesReceipt}).eq("id",order.id));
+     if(updateError)throw new Error("Sale was recorded as "+salesReceipt+", but the order status could not be updated. Check Sales before retrying. "+updateError.message);
+     say("orders-status","Payment confirmed. Sale receipt "+salesReceipt+" has been added to Sales Reports.");
+     await loadCustomerOrders();
+     await loadReport();
+     await loadProducts();
+     populateProducts();
+    }catch(error){console.error("Payment confirmation failed:",error);say("orders-status","Could not confirm payment: "+error.message);}
+    finally{pay.disabled=false;}
    };
-   actions.append(orderSelect,document.createElement("br"),paySelect,document.createElement("br"),save);
-  }
-  say("orders-status","Loaded "+orders.length+" order(s).");
- }catch(error){console.error(error);say("orders-status","Could not load orders: "+error.message);}
+   const status=document.createElement("select");status.className="small";["new","processing","ready_for_pickup","out_for_delivery","completed","cancelled"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v.replaceAll("_"," ");if(v===(order.order_status||"new"))o.selected=true;status.appendChild(o);});
+   const save=document.createElement("button");save.type="button";save.className="small";save.textContent="SAVE STATUS";save.onclick=async()=>updateCustomerOrder(order.id,{order_status:status.value},"Order status updated.");
+   actions.append(pay,status,save);
+  });
+  say("orders-status",`Loaded ${rows.length} customer order(s).`);
+ }catch(error){console.error("Customer orders error:",error);say("orders-status","Could not load customer orders: "+error.message+". Check that the customer_orders table and policies have been created.");}
  finally{el("refresh-orders").disabled=false;}
 }
-el("refresh-orders").onclick=loadOrders;
-
-/* CUSTOMER CHANGE REQUESTS */
-async function loadOrderRequests(){
- if(!ownerUser)return say("order-requests-status","Please sign in again.");
- say("order-requests-status","Loading customer requests...");
- const tbody=el("order-requests-table"); tbody.replaceChildren();
- try{
-  const {data:requests,error}=await withTimeout(db.from("order_requests").select("*").order("created_at",{ascending:false}).limit(300));
-  if(error)throw error;
-  if(!requests||!requests.length){const r=tbody.insertRow();cell(r,"No customer requests yet.").colSpan=7;say("order-requests-status","No customer requests found.");return;}
-  for(const q of requests){
-   const r=tbody.insertRow();
-   cell(r,q.request_type.replaceAll("_"," ")+"\n"+formatDate(q.created_at));
-   cell(r,String(q.order_id).slice(0,8).toUpperCase());
-   cell(r,q.customer_id);
-   cell(r,(q.requested_date?"New date: "+q.requested_date+"\n":"")+(q.requested_slot?"Time: "+q.requested_slot+"\n":"")+(q.request_details||"No extra details"));
-   cell(r,q.status||"pending");
-   const responseCell=cell(r,""); const response=document.createElement("textarea");response.value=q.owner_response||"";response.placeholder="Optional response";responseCell.appendChild(response);
-   const actionCell=cell(r,""); const decision=document.createElement("select");
-   [["pending","Pending"],["approved","Approve"],["rejected","Reject"]].forEach(([v,t])=>{const op=document.createElement("option");op.value=v;op.textContent=t;if(v===(q.status||"pending"))op.selected=true;decision.appendChild(op);});
-   const save=document.createElement("button");save.type="button";save.textContent="SAVE DECISION";save.className="small";
-   save.onclick=async()=>{save.disabled=true;try{
-    const {data:order,error:orderErr}=await withTimeout(db.from("orders").select("*").eq("id",q.order_id).single());if(orderErr)throw orderErr;
-    if(decision.value==="approved"){
-     if(q.request_type==="cancellation"){
-      if(!["awaiting_confirmation","confirmed"].includes(order.order_status))throw new Error("This order can no longer be cancelled at this stage.");
-      const {error}=await withTimeout(db.from("orders").update({order_status:"cancelled"}).eq("id",q.order_id));if(error)throw error;
-     } else if(q.request_type==="reschedule"){
-      if(!q.requested_date)throw new Error("This reschedule request has no requested date.");
-      const {error}=await withTimeout(db.from("orders").update({scheduled_date:q.requested_date,scheduled_slot:q.requested_slot||order.scheduled_slot}).eq("id",q.order_id));if(error)throw error;
-     } else if(q.request_type==="edit"){
-      if(!response.value.trim())throw new Error("For an item-edit request, describe the agreed changes and update the order items after checking stock before approving.");
-     }
-    }
-    const {error}=await withTimeout(db.from("order_requests").update({status:decision.value,owner_response:response.value.trim()||null,reviewed_at:new Date().toISOString(),reviewed_by:ownerUser.id}).eq("id",q.id));if(error)throw error;
-    say("order-requests-status","Request decision saved.");await loadOrderRequests();await loadOrders();
-   }catch(e){say("order-requests-status","Could not save decision: "+e.message);}finally{save.disabled=false;}};
-   actionCell.append(decision,document.createElement("br"),save);
-  }
-  say("order-requests-status","Loaded "+requests.length+" request(s).");
- }catch(e){say("order-requests-status","Could not load requests: "+e.message);}
+async function updateCustomerOrder(id,updates,successMessage){
+ try{const {error}=await withTimeout(db.from("customer_orders").update(updates).eq("id",id));if(error)throw error;say("orders-status",successMessage);await loadCustomerOrders();}
+ catch(error){console.error(error);say("orders-status","Could not update order: "+error.message);}
 }
-el("refresh-order-requests").onclick=loadOrderRequests;
+el("refresh-orders").onclick=loadCustomerOrders;
 
 /* CUSTOMER MESSAGES */
 async function loadMessages(){
