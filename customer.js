@@ -1,237 +1,440 @@
-const CUSTOMER_SUPABASE_URL = "https://zqvjaqpqtctnvylgtwjg.supabase.co";
-const CUSTOMER_SUPABASE_KEY = "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
+
+"use strict";
+
+/* KELSIY'S CLOSET — CUSTOMER SHOPPING SYSTEM */
+
+const CUSTOMER_SUPABASE_URL =
+  "https://zqvjaqpqtctnvylgtwjg.supabase.co";
+
+const CUSTOMER_SUPABASE_KEY =
+  "sb_publishable_2sKvDrUEA7KfUKohQ41j1g_54OcXZsR";
 
 const customerDB = window.supabase.createClient(
   CUSTOMER_SUPABASE_URL,
   CUSTOMER_SUPABASE_KEY
 );
 
-// Catalogue elements
-const productsContainer = document.getElementById("customer-products");
-const catalogueMessage = document.getElementById("catalogue-message");
-const categoryFilter = document.getElementById("category-filter");
+const $ = id => document.getElementById(id);
+
+const money = n =>
+  "KSh " + Number(n || 0).toLocaleString("en-KE", {
+    maximumFractionDigits: 2
+  });
+
+const safeText = (parent, tag, text, cls) => {
+  const node = document.createElement(tag);
+  node.textContent = text == null ? "" : String(text);
+  if (cls) node.className = cls;
+  parent.appendChild(node);
+  return node;
+};
 
 let allProducts = [];
 let currentCustomer = null;
+let cart = [];
+let orderSubmitting = false;
 
-// General helpers
-function priceKES(price) {
-  return "KES " + Number(price || 0).toLocaleString("en-KE", {
-    maximumFractionDigits: 2
-  });
+try {
+  cart = JSON.parse(localStorage.getItem("kc-shopping-cart") || "[]");
+  if (!Array.isArray(cart)) cart = [];
+} catch {
+  cart = [];
 }
 
-function addProductText(parent, tag, text, className = "") {
-  const element = document.createElement(tag);
-  element.textContent = text;
+/* ---------------- SHOPPING BAG ---------------- */
 
-  if (className) {
-    element.className = className;
-  }
-
-  parent.appendChild(element);
-  return element;
+function saveCart() {
+  localStorage.setItem("kc-shopping-cart", JSON.stringify(cart));
+  updateBagCount();
+  renderCart();
 }
 
-// SHOPPING BAG (saved in this browser so the bag remains after a refresh)
-const CUSTOMER_CART_KEY = "kelsiys_closet_customer_cart_v1";
-let customerCart = readCustomerCart();
+function updateBagCount() {
+  const count = cart.reduce(
+    (sum, item) => sum + Number(item.quantity || 0), 0
+  );
 
-function readCustomerCart() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CUSTOMER_CART_KEY) || "[]");
-    return Array.isArray(saved) ? saved : [];
-  } catch (error) {
-    console.warn("Could not read the saved shopping bag:", error);
-    return [];
-  }
+  if ($("bag-count")) $("bag-count").textContent = count;
 }
 
-function saveCustomerCart() {
-  try { localStorage.setItem(CUSTOMER_CART_KEY, JSON.stringify(customerCart)); }
-  catch (error) { console.warn("Could not save the shopping bag:", error); }
-  renderCustomerCart();
+function resolveProductImage(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+
+  return raw.startsWith("image/")
+    ? raw
+    : "image/" + raw.replace(/^\.?\//, "");
 }
 
-function optionValues(value, fallback) {
-  const text = String(value || "").trim();
-  if (!text) return [fallback];
-  const values = text.split(/[,/|]/).map(item => item.trim()).filter(Boolean);
-  return values.length ? values : [text];
+function parseOptions(value) {
+  return String(value || "")
+    .split(/[,;|]/)
+    .map(x => x.trim())
+    .filter(Boolean);
 }
 
-function makeOptionSelect(labelText, values, className) {
-  const label = document.createElement("label");
-  label.textContent = labelText;
+function makeSelect(options, label) {
   const select = document.createElement("select");
-  select.className = className;
-  values.forEach(value => {
-    const option = document.createElement("option");
-    option.value = value; option.textContent = value; select.appendChild(option);
+  select.setAttribute("aria-label", label);
+
+  options.forEach(value => {
+    select.add(new Option(value, value));
   });
-  label.appendChild(select);
-  return { label, select };
+
+  return select;
 }
 
-function addProductToCart(product, size, color, quantity) {
-  const stock = Math.max(0, Number(product.stock) || 0);
-  const key = [String(product.id), size, color].join("::");
-  const existing = customerCart.find(item => item.key === key);
-  const currentQuantity = existing ? Number(existing.quantity) : 0;
-  if (currentQuantity + quantity > stock) {
-    setCartMessage("Only " + Math.max(0, stock - currentQuantity) + " more item(s) of this product are available.");
-    return;
-  }
-  if (existing) existing.quantity += quantity;
-  else customerCart.push({
-    key, productId: product.id, name: product.name || "Fashion item",
-    price: Number(product.price) || 0, imageUrl: product.image_url || "",
-    size, color, quantity, stock
-  });
-  saveCustomerCart();
-  setCartMessage((product.name || "Item") + " added to your shopping bag.");
+function productImage(product) {
+  const img = document.createElement("img");
+
+  img.className = "customer-product-image";
+  img.alt = product.name || "Fashion product";
+  img.loading = "lazy";
+
+  const src = resolveProductImage(
+    product.image_url || product.image || product.image_path
+  );
+
+  if (src) img.src = src;
+
+  img.onerror = () => {
+    img.removeAttribute("src");
+    img.alt = "Product image unavailable";
+  };
+
+  return img;
 }
 
-function setCartMessage(message) {
-  const element = document.getElementById("customer-cart-message");
-  if (element) element.textContent = message;
-}
+/* ---------------- PRODUCT COLLECTION ---------------- */
 
-function renderCustomerCart() {
-  const container = document.getElementById("customer-cart-items");
-  const count = document.getElementById("customer-cart-count");
-  const subtotalElement = document.getElementById("customer-cart-subtotal");
-  if (!container) return;
-  container.replaceChildren();
-  const totalItems = customerCart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-  if (count) count.textContent = String(totalItems);
-  const subtotal = customerCart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
-  if (subtotalElement) subtotalElement.textContent = priceKES(subtotal);
-
-  if (!customerCart.length) {
-    addProductText(container, "p", "Your shopping bag is empty. Add something you love from the collection.");
-    return;
-  }
-
-  customerCart.forEach(item => {
-    const row = document.createElement("article");
-    row.className = "customer-cart-row";
-    const image = document.createElement("img");
-    image.alt = item.name || "Fashion item"; image.loading = "lazy";
-    if (item.imageUrl) image.src = item.imageUrl;
-    image.onerror = () => image.removeAttribute("src");
-    row.appendChild(image);
-    const details = document.createElement("div");
-    addProductText(details, "h3", item.name || "Fashion item");
-    addProductText(details, "p", priceKES(item.price) + " each");
-    addProductText(details, "p", "Size: " + (item.size || "Not specified") + " · Colour: " + (item.color || "Not specified"));
-    const actions = document.createElement("div"); actions.className = "customer-cart-actions";
-    const quantity = document.createElement("input"); quantity.type = "number"; quantity.min = "1"; quantity.max = String(Math.max(1, Number(item.stock) || 1)); quantity.value = String(item.quantity); quantity.className = "customer-cart-quantity"; quantity.setAttribute("aria-label", "Quantity for " + item.name);
-    quantity.addEventListener("change", () => {
-      const requested = Math.floor(Number(quantity.value));
-      const stock = Math.max(0, Number(item.stock) || 0);
-      if (!Number.isFinite(requested) || requested < 1) { quantity.value = String(item.quantity); return; }
-      if (requested > stock) { setCartMessage("Quantity cannot exceed available stock (" + stock + ")."); quantity.value = String(item.quantity); return; }
-      item.quantity = requested; saveCustomerCart(); setCartMessage("Shopping bag updated.");
-    });
-    const remove = document.createElement("button"); remove.type = "button"; remove.className = "customer-cart-remove"; remove.textContent = "REMOVE";
-    remove.addEventListener("click", () => { customerCart = customerCart.filter(cartItem => cartItem.key !== item.key); saveCustomerCart(); setCartMessage("Item removed from your bag."); });
-    actions.append(quantity, remove); details.appendChild(actions); row.appendChild(details);
-    const lineTotal = document.createElement("strong"); lineTotal.textContent = priceKES((Number(item.price) || 0) * (Number(item.quantity) || 0)); row.appendChild(lineTotal);
-    container.appendChild(row);
-  });
-}
-
-const clearCartButton = document.getElementById("customer-clear-cart");
-if (clearCartButton) clearCartButton.addEventListener("click", () => {
-  customerCart = []; saveCustomerCart(); setCartMessage("Your shopping bag has been cleared.");
-});
-
-// PRODUCT CATALOGUE
 function displayProducts() {
-  if (!productsContainer) return;
+  const container = $("customer-products");
+  const message = $("catalogue-message");
 
-  productsContainer.replaceChildren();
-  const selected = (categoryFilter?.value || "all").toLowerCase();
-  const products = allProducts.filter(product => selected === "all" || String(product.category || "").toLowerCase() === selected);
+  if (!container || !message) return;
+
+  container.replaceChildren();
+
+  const selected = (
+    $("category-filter")?.value || "all"
+  ).toLowerCase();
+
+  const products = allProducts.filter(product =>
+    selected === "all" ||
+    String(product.category || "").toLowerCase() === selected
+  );
 
   if (!products.length) {
-    catalogueMessage.textContent = allProducts.length ? "There are no products in this category yet." : "No active products are available yet. Please check back soon.";
+    message.textContent = allProducts.length
+      ? "There are no products in this category yet."
+      : "No active products are available yet.";
     return;
   }
 
-  catalogueMessage.textContent = products.length + (products.length === 1 ? " product available." : " products available.");
+  message.textContent = products.length + " product(s) available.";
 
   products.forEach(product => {
     const card = document.createElement("article");
     card.className = "customer-product-card";
-    if (product.image_url) {
-      const image = document.createElement("img"); image.className = "customer-product-image"; image.src = product.image_url; image.alt = product.name || "Fashion product"; image.loading = "lazy";
-      image.onerror = () => { image.removeAttribute("src"); image.alt = "Product image unavailable"; };
-      card.appendChild(image);
-    } else {
-      const placeholder = document.createElement("div"); placeholder.className = "customer-product-image"; placeholder.style.display = "grid"; placeholder.style.placeItems = "center"; placeholder.textContent = "KELSIY'S CLOSET"; card.appendChild(placeholder);
+    card.appendChild(productImage(product));
+
+    const details = document.createElement("div");
+    details.className = "customer-product-details";
+
+    safeText(details, "h3", product.name || "Fashion item");
+    safeText(details, "p", money(product.price), "customer-product-price");
+
+    if (product.description) {
+      safeText(details, "p", product.description);
     }
 
-    const details = document.createElement("div"); details.className = "customer-product-details";
-    addProductText(details, "h3", product.name || "Fashion item");
-    addProductText(details, "p", priceKES(product.price), "customer-product-price");
-    if (product.category) addProductText(details, "p", "Category: " + product.category);
-    if (product.description) addProductText(details, "p", product.description);
-    const stock = Math.max(0, Number(product.stock) || 0);
-    addProductText(details, "p", stock > 0 ? stock + (stock === 1 ? " item available" : " items available") : "OUT OF STOCK", stock > 0 ? "customer-product-stock" : "customer-product-stock out-of-stock");
+    if (product.category) {
+      safeText(details, "p", "Category: " + product.category);
+    }
 
-    const options = document.createElement("div"); options.className = "customer-product-options";
-    const sizes = optionValues(product.size, "One size");
-    const colors = optionValues(product.color, "As shown");
-    const sizeControl = makeOptionSelect("SIZE", sizes, "customer-product-size");
-    const colorControl = makeOptionSelect("COLOUR", colors, "customer-product-color");
-    options.append(sizeControl.label, colorControl.label);
+    const stock = Math.max(0, Number(product.stock) || 0);
+
+    safeText(
+      details,
+      "p",
+      stock ? stock + " item(s) available" : "SOLD OUT",
+      "customer-product-stock" + (stock ? "" : " out-of-stock")
+    );
+
+    const options = document.createElement("div");
+    options.className = "kc-product-options";
+
+    const colors = parseOptions(product.color || product.colour);
+    const sizes = parseOptions(product.size);
+
+    let colorSelect = null;
+    let sizeSelect = null;
+
+    if (colors.length) {
+      const label = safeText(options, "label", "Choose colour");
+      colorSelect = makeSelect(colors, "Colour");
+      label.appendChild(colorSelect);
+    }
+
+    if (sizes.length) {
+      const label = safeText(options, "label", "Choose size");
+      sizeSelect = makeSelect(sizes, "Size");
+      label.appendChild(sizeSelect);
+    }
+
+    const quantityLabel = safeText(options, "label", "Quantity");
+    const quantity = document.createElement("input");
+
+    quantity.type = "number";
+    quantity.min = "1";
+    quantity.max = String(Math.max(1, stock));
+    quantity.value = "1";
+    quantity.disabled = stock < 1;
+
+    quantityLabel.appendChild(quantity);
     details.appendChild(options);
 
-    const quantityLabel = document.createElement("label"); quantityLabel.textContent = "QUANTITY"; quantityLabel.style.display = "block"; quantityLabel.style.fontWeight = "700"; quantityLabel.style.color = "var(--burgundy)"; quantityLabel.style.fontSize = "12px";
-    const quantityInput = document.createElement("input"); quantityInput.type = "number"; quantityInput.min = "1"; quantityInput.max = String(Math.max(1, stock)); quantityInput.value = "1"; quantityInput.disabled = stock < 1; quantityInput.style.width = "100%"; quantityInput.style.boxSizing = "border-box"; quantityInput.style.padding = "10px"; quantityInput.style.marginTop = "5px"; quantityInput.style.border = "1px solid #d9c5c8"; quantityInput.style.borderRadius = "5px"; quantityLabel.appendChild(quantityInput); details.appendChild(quantityLabel);
+    const add = safeText(
+      details,
+      "button",
+      stock ? "ADD TO BAG" : "SOLD OUT",
+      "kc-button kc-add-button"
+    );
 
-    const addButton = document.createElement("button"); addButton.type = "button"; addButton.className = "customer-add-to-cart"; addButton.textContent = stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"; addButton.disabled = stock < 1;
-    addButton.addEventListener("click", () => {
-      const quantity = Math.floor(Number(quantityInput.value));
-      if (!Number.isFinite(quantity) || quantity < 1) { setCartMessage("Please choose a quantity of at least 1."); return; }
-      if (quantity > stock) { setCartMessage("Only " + stock + " item(s) are available in stock."); quantityInput.value = String(Math.max(1, stock)); return; }
-      addProductToCart(product, sizeControl.select.value, colorControl.select.value, quantity);
+    add.type = "button";
+    add.disabled = stock < 1;
+
+    add.addEventListener("click", () => {
+      const qty = Number(quantity.value);
+
+      if (!Number.isInteger(qty) || qty < 1 || qty > stock) {
+        alert("Please choose a quantity between 1 and " + stock + ".");
+        return;
+      }
+
+      const color = colorSelect ? colorSelect.value : "";
+      const size = sizeSelect ? sizeSelect.value : "";
+      const key = product.id + "|" + color + "|" + size;
+
+      const existing = cart.find(item => item.key === key);
+
+      if (existing) {
+        if (existing.quantity + qty > stock) {
+          alert("Only " + stock + " item(s) are currently available.");
+          return;
+        }
+
+        existing.quantity += qty;
+      } else {
+        cart.push({
+          key,
+          product_id: product.id,
+          name: product.name,
+          image_url:
+            product.image_url || product.image || product.image_path || "",
+          color,
+          size,
+          quantity: qty,
+          unit_price: Number(product.price) || 0,
+          available_stock: stock
+        });
+      }
+
+      saveCart();
+      add.textContent = "ADDED TO BAG";
     });
-    details.appendChild(addButton); card.appendChild(details); productsContainer.appendChild(card);
+
+    card.appendChild(details);
+    container.appendChild(card);
   });
 }
 
 async function loadCustomerProducts() {
-  if (!productsContainer || !catalogueMessage) return;
+  const message = $("catalogue-message");
+  if (!message) return;
 
-  catalogueMessage.textContent = "Loading our collection...";
+  message.textContent = "Loading our collection...";
 
   const { data, error } = await customerDB
     .from("products")
-    .select(
-      "id,name,category,description,size,color,price,stock,image_url,active,created_at"
-    )
+    .select("*")
     .eq("active", true)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Could not load customer products:", error);
-    catalogueMessage.textContent =
-      "Products could not load: " + error.message;
+    console.error("Products error:", error);
+    message.textContent = "Products could not load: " + error.message;
     return;
   }
 
   allProducts = data || [];
+
+  cart = cart.map(item => {
+    const product = allProducts.find(
+      p => String(p.id) === String(item.product_id)
+    );
+
+    return product ? {
+      ...item,
+      name: product.name,
+      image_url:
+        product.image_url || product.image || product.image_path || "",
+      unit_price: Number(product.price) || 0,
+      available_stock: Number(product.stock) || 0
+    } : item;
+  });
+
   displayProducts();
+  saveCart();
 }
 
-if (categoryFilter) {
-  categoryFilter.addEventListener("change", displayProducts);
+/* ---------------- CART TOTALS ---------------- */
+
+function cartTotals() {
+  const subtotal = cart.reduce(
+    (sum, item) =>
+      sum + Number(item.unit_price) * Number(item.quantity),
+    0
+  );
+
+  const code = ($("discount-code")?.value || "")
+    .trim()
+    .toUpperCase();
+
+  const discount = code === "KC10" ? subtotal * 0.10 : 0;
+
+  const method = $("delivery-method")?.value || "pickup";
+  const area = $("delivery-area")?.value || "near_shop";
+
+  let fee = 0;
+
+  if (method === "delivery") {
+    fee = area === "near_shop" ? 200
+      : area === "nairobi" ? 500
+      : 800;
+  }
+
+  return {
+    subtotal,
+    discount,
+    fee,
+    total: Math.max(0, subtotal - discount + fee),
+    code,
+    area,
+    method
+  };
 }
 
-// CUSTOMER ACCOUNT
+function renderCart() {
+  const container = $("cart-items");
+  if (!container) return;
+
+  container.replaceChildren();
+
+  if (!cart.length) {
+    safeText(
+      container,
+      "p",
+      "Your bag is empty. Add products from Our Collection to begin.",
+      "kc-empty"
+    );
+  }
+
+  cart.forEach((item, index) => {
+    const row = document.createElement("article");
+    row.className = "kc-cart-line";
+
+    const img = document.createElement("img");
+    img.alt = item.name || "Product";
+
+    const src = resolveProductImage(item.image_url);
+    if (src) img.src = src;
+
+    img.onerror = () => img.removeAttribute("src");
+    row.appendChild(img);
+
+    const info = document.createElement("div");
+
+    safeText(info, "h3", item.name);
+
+    if (item.color) safeText(info, "p", "Colour: " + item.color);
+    if (item.size) safeText(info, "p", "Size: " + item.size);
+
+    safeText(info, "p", money(item.unit_price) + " each");
+
+    const qtyLabel = safeText(info, "label", "Quantity ");
+    const qty = document.createElement("input");
+
+    qty.type = "number";
+    qty.min = "1";
+    qty.max = String(Math.max(1, item.available_stock || 1));
+    qty.value = item.quantity;
+
+    qtyLabel.appendChild(qty);
+
+    qty.addEventListener("change", () => {
+      const value = Number(qty.value);
+      const stock = Number(item.available_stock) || 0;
+
+      if (!Number.isInteger(value) || value < 1 || value > stock) {
+        alert(
+          "Quantity must be between 1 and the available stock (" +
+          stock + ")."
+        );
+        qty.value = item.quantity;
+        return;
+      }
+
+      cart[index].quantity = value;
+      saveCart();
+    });
+
+    const remove = safeText(
+      info,
+      "button",
+      "REMOVE",
+      "kc-button kc-button-outline"
+    );
+
+    remove.type = "button";
+
+    remove.addEventListener("click", () => {
+      cart.splice(index, 1);
+      saveCart();
+    });
+
+    row.appendChild(info);
+    container.appendChild(row);
+  });
+
+  const totals = cartTotals();
+
+  if ($("cart-subtotal")) {
+    $("cart-subtotal").textContent = money(totals.subtotal);
+  }
+
+  if ($("cart-discount")) {
+    $("cart-discount").textContent = totals.discount
+      ? "−" + money(totals.discount) + " (KC10)"
+      : money(0);
+  }
+
+  if ($("cart-delivery")) {
+    $("cart-delivery").textContent =
+      totals.method === "pickup" ? "Free pickup" : money(totals.fee);
+  }
+
+  if ($("cart-total")) {
+    $("cart-total").textContent = money(totals.total);
+  }
+
+  updateBagCount();
+}
+
+/* ---------------- CUSTOMER ACCOUNT ---------------- */
+
 async function loadCustomerAccount() {
   const { data, error } = await customerDB.auth.getUser();
 
@@ -244,426 +447,720 @@ async function loadCustomerAccount() {
   return currentCustomer;
 }
 
-// CUSTOMER MESSAGES AND OWNER REPLIES
-function createCustomerMessagesSection() {
-  let section = document.getElementById("customer-messages-section");
+function showStatus(id, text, isError = false) {
+  const element = $(id);
 
-  if (section) return section;
-
-  section = document.createElement("section");
-  section.id = "customer-messages-section";
-  section.className = "customer-messages-section";
-
-  section.style.margin = "24px 0";
-  section.style.padding = "20px";
-  section.style.borderRadius = "12px";
-  section.style.background = "#fffaf4";
-  section.style.color = "#481027";
-
-  const heading = document.createElement("h2");
-  heading.textContent = "My Messages";
-
-  const description = document.createElement("p");
-  description.textContent =
-    "View your enquiries and replies from Kelsiy's Closet.";
-
-  const list = document.createElement("div");
-  list.id = "customer-messages-list";
-
-  section.append(heading, description, list);
-
-  const contactForm = document.getElementById("customer-contact-form");
-
-  if (contactForm) {
-    contactForm.insertAdjacentElement("afterend", section);
-  } else if (productsContainer?.parentElement) {
-    productsContainer.parentElement.insertBefore(section, productsContainer);
-  } else {
-    document.body.appendChild(section);
+  if (element) {
+    element.textContent = text;
+    element.style.color = isError ? "#b42318" : "";
   }
-
-  return section;
 }
 
-async function loadCustomerMessages() {
-  const section = createCustomerMessagesSection();
-  const list = document.getElementById("customer-messages-list");
+function updateCustomerInfo() {
+  if (!currentCustomer) return;
 
-  if (!list) return;
+  if ($("order-email")) {
+    $("order-email").value = currentCustomer.email || "";
+  }
 
+  if ($("contact-email")) {
+    $("contact-email").value = currentCustomer.email || "";
+  }
+
+  const fullName = String(
+    currentCustomer.user_metadata?.full_name || ""
+  ).trim();
+
+  const parts = fullName ? fullName.split(/\s+/) : [];
+
+  if ($("order-first-name") && !$("order-first-name").value) {
+    $("order-first-name").value =
+      currentCustomer.user_metadata?.first_name || parts.shift() || "";
+  }
+
+  if ($("order-last-name") && !$("order-last-name").value) {
+    $("order-last-name").value =
+      currentCustomer.user_metadata?.last_name || parts.join(" ");
+  }
+}
+
+/* ---------------- CHECKOUT FIELDS ---------------- */
+
+function setMinimumDates() {
+  const now = new Date();
+
+  const today = new Date(
+    now.getTime() - now.getTimezoneOffset() * 60000
+  ).toISOString().slice(0, 10);
+
+  ["delivery-date", "pickup-date"].forEach(id => {
+    const element = $(id);
+
+    if (element) {
+      element.min = today;
+      if (!element.value) element.value = today;
+    }
+  });
+}
+
+function updateCheckoutFields() {
+  const pickup = $("delivery-method")?.value === "pickup";
+
+  if ($("delivery-fields")) {
+    $("delivery-fields").hidden = pickup;
+  }
+
+  if ($("pickup-fields")) {
+    $("pickup-fields").hidden = !pickup;
+  }
+
+  if ($("delivery-location")) {
+    $("delivery-location").required = !pickup;
+  }
+
+  if ($("delivery-area")) {
+    $("delivery-area").required = !pickup;
+  }
+
+  if ($("delivery-date")) {
+    $("delivery-date").required = !pickup;
+  }
+
+  if ($("delivery-time")) {
+    $("delivery-time").required = !pickup;
+  }
+
+  if ($("pickup-date")) {
+    $("pickup-date").required = pickup;
+  }
+
+  if ($("pickup-time")) {
+    $("pickup-time").required = pickup;
+  }
+
+  renderCart();
+}
+
+function normaliseKenyanPhone(value) {
+  let phone = String(value || "").replace(/[\s-]/g, "");
+
+  if (phone.startsWith("+254")) {
+    phone = "0" + phone.slice(4);
+  } else if (phone.startsWith("254")) {
+    phone = "0" + phone.slice(3);
+  }
+
+  return phone;
+}
+
+function validKenyanPhone(value) {
+  return /^0[17]\d{8}$/.test(normaliseKenyanPhone(value));
+}
+
+/* ---------------- ORDER HISTORY ---------------- */
+
+function orderStatusLabel(value) {
+  return String(value || "awaiting_confirmation").replaceAll("_", " ");
+}
+
+async function loadMyOrders() {
+  const list = $("my-orders-list");
+  const status = $("my-orders-status");
+  if (!list || !status) return;
   list.replaceChildren();
-
   const user = currentCustomer || await loadCustomerAccount();
+  if (!user) { status.textContent = "Please sign in to view your orders."; return; }
+  status.textContent = "Loading your orders...";
+  const { data, error } = await customerDB.from("orders").select("*")
+    .eq("customer_id", user.id).order("created_at", { ascending: false });
+  if (error) { status.textContent = "Orders could not load: " + error.message; return; }
+  if (!data?.length) { status.textContent = "You have not placed any orders yet."; return; }
+  status.textContent = data.length + " order(s) found. Refresh this page or revisit My Orders to see the latest updates.";
 
-  if (!user || !user.email) {
-    addProductText(
-      list,
-      "p",
-      "Please sign in to your customer account to view your messages."
+  for (const order of data) {
+    const card = document.createElement("article"); card.className = "kc-order-card";
+    safeText(card, "h3", "Order " + String(order.id).slice(0, 8).toUpperCase());
+    safeText(card, "p", "Placed: " + new Date(order.created_at).toLocaleString("en-KE"));
+    safeText(card, "p", "Total: " + money(order.total) + " · Payment: " + (order.payment_method || "") + " · Payment status: " + (order.payment_status || "unpaid"));
+    safeText(card, "p", "Order status: " + orderStatusLabel(order.order_status));
+    const date = order.scheduled_date || order.schedule_date || order.delivery_date || "";
+    const time = order.scheduled_slot || order.schedule_slot || order.delivery_time || "";
+    safeText(card, "p", ((order.fulfillment_type || order.delivery_method) === "pickup" ? "Pickup" : "Delivery") + ": " + (order.delivery_address || order.delivery_location || "Shop pickup") + " · " + date + " " + time);
+    const itemLine = safeText(card, "p", "Loading items...");
+    const itemResult = await customerDB.from("order_items").select("*").eq("order_id", order.id);
+    if (itemResult.error) itemLine.textContent = "Items could not load: " + itemResult.error.message;
+    else itemLine.textContent = (itemResult.data || []).map(i => (i.product_name || "Product") + ((i.color || i.colour) ? " (" + (i.color || i.colour) + ")" : "") + (i.size ? " / " + i.size : "") + " × " + i.quantity + " — " + money(i.unit_price)).join("; ") || "No item details.";
+
+    const reqResult = await customerDB.from("order_requests").select("*").eq("order_id", order.id).order("created_at", {ascending:false});
+    if (!reqResult.error && reqResult.data?.length) {
+      const reqBox = document.createElement("div"); reqBox.className = "kc-request-panel";
+      safeText(reqBox, "strong", "Your requests");
+      reqResult.data.forEach(req => {
+        const summary = document.createElement("p");
+        summary.textContent = orderStatusLabel(req.request_type) + " request — " + orderStatusLabel(req.status) + (req.requested_date ? " · New date: " + req.requested_date : "") + (req.requested_slot ? " · Time: " + req.requested_slot : "") + (req.request_details ? " · Details: " + req.request_details : "") + (req.owner_response ? " · Owner response: " + req.owner_response : "");
+        reqBox.appendChild(summary);
+      });
+      card.appendChild(reqBox);
+    }
+
+    const canRequest = ["awaiting_confirmation", "confirmed"].includes(order.order_status || "awaiting_confirmation");
+    if (canRequest) {
+      const actions = document.createElement("div"); actions.className = "kc-order-actions";
+      const toggle = document.createElement("button"); toggle.type = "button"; toggle.textContent = "Request a change";
+      const form = document.createElement("form"); form.className = "kc-request-panel"; form.hidden = true;
+      const typeLabel = document.createElement("label"); typeLabel.textContent = "Request type";
+      const type = document.createElement("select");
+      [["cancellation","Cancel order"],["reschedule","Reschedule pickup/delivery"],["edit","Edit items, size, colour or quantity"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;type.appendChild(o);});
+      typeLabel.appendChild(type); form.appendChild(typeLabel);
+      const dateLabel = document.createElement("label"); dateLabel.textContent = "New date (for rescheduling)";
+      const dateInput = document.createElement("input"); dateInput.type="date"; dateInput.min=new Date().toISOString().slice(0,10); dateLabel.appendChild(dateInput); form.appendChild(dateLabel);
+      const timeLabel = document.createElement("label"); timeLabel.textContent = "Preferred time slot (for rescheduling)";
+      const timeInput = document.createElement("input"); timeInput.type="text"; timeInput.placeholder="e.g. 2:00 PM – 4:00 PM"; timeLabel.appendChild(timeInput); form.appendChild(timeLabel);
+      const detailLabel = document.createElement("label"); detailLabel.textContent = "Reason or requested changes";
+      const detail = document.createElement("textarea"); detail.maxLength=1000; detail.placeholder="Explain the change you need. For item edits, include product, size, colour and quantity."; detailLabel.appendChild(detail); form.appendChild(detailLabel);
+      const note = document.createElement("p"); note.className="kc-request-note"; note.textContent="This sends a request to the owner; it does not change your order until the owner reviews it."; form.appendChild(note);
+      const submit = document.createElement("button"); submit.type="submit"; submit.textContent="SEND REQUEST"; form.appendChild(submit);
+      const formStatus = document.createElement("p"); formStatus.setAttribute("role","status"); form.appendChild(formStatus);
+      const updateFields=()=>{dateLabel.hidden=type.value!=="reschedule";timeLabel.hidden=type.value!=="reschedule";};
+      type.addEventListener("change",updateFields); updateFields();
+      toggle.addEventListener("click",()=>{form.hidden=!form.hidden;});
+      form.addEventListener("submit",async ev=>{
+        ev.preventDefault(); submit.disabled=true; formStatus.textContent="Sending request...";
+        try {
+          if(type.value==="reschedule" && !dateInput.value) throw new Error("Choose your requested new date.");
+          if(type.value==="edit" && !detail.value.trim()) throw new Error("Describe the changes you want.");
+          const payload={order_id:order.id,customer_id:user.id,request_type:type.value,requested_date:type.value==="reschedule"?dateInput.value:null,requested_slot:type.value==="reschedule"?(timeInput.value.trim()||null):null,request_details:detail.value.trim()||null,status:"pending"};
+          const {error:insertError}=await customerDB.from("order_requests").insert(payload);
+          if(insertError) throw insertError;
+          formStatus.textContent="Request sent. The owner will review it.";
+          await loadMyOrders();
+        } catch(e) { formStatus.textContent="Request could not be sent: "+e.message; }
+        finally { submit.disabled=false; }
+      });
+      actions.append(toggle); card.appendChild(actions); card.appendChild(form);
+    } else {
+      safeText(card,"p","Requests to change this order are closed because it is already being prepared, dispatched, completed or cancelled.");
+    }
+    list.appendChild(card);
+  }
+}
+
+/* ---------------- PLACE ORDER ---------------- */
+
+async function placeOrder(event) {
+  event.preventDefault();
+
+  if (orderSubmitting) return;
+
+  if (!cart.length) {
+    showStatus(
+      "checkout-status",
+      "Your bag is empty. Add at least one product first.",
+      true
     );
     return;
   }
 
-  addProductText(list, "p", "Loading your messages...");
+  const user = currentCustomer || await loadCustomerAccount();
+
+  if (!user) {
+    showStatus(
+      "checkout-status",
+      "Please sign in to your customer account before placing an order.",
+      true
+    );
+    return;
+  }
+
+  const firstName = ($("order-first-name")?.value || "").trim();
+  const lastName = ($("order-last-name")?.value || "").trim();
+  const name = (firstName + " " + lastName).trim();
+  const phone = normaliseKenyanPhone($("order-phone")?.value || "");
+  const email = ($("order-email")?.value || "").trim();
+
+  const method = $("delivery-method")?.value || "pickup";
+  const payment = $("payment-method")?.value || "";
+  const area = $("delivery-area")?.value || "near_shop";
+
+  const location = method === "pickup"
+    ? "Shop pickup"
+    : ($("delivery-location")?.value || "").trim();
+
+  const date = method === "pickup"
+    ? $("pickup-date")?.value || ""
+    : $("delivery-date")?.value || "";
+
+  const time = method === "pickup"
+    ? $("pickup-time")?.value || ""
+    : $("delivery-time")?.value || "";
+
+  const totals = cartTotals();
+
+  if (!firstName || !lastName || !phone || !email) {
+    showStatus(
+      "checkout-status",
+      "Please complete your first name, last name, phone number and email.",
+      true
+    );
+    return;
+  }
+
+  if (!validKenyanPhone(phone)) {
+    showStatus(
+      "checkout-status",
+      "Enter a valid Kenyan phone number, such as 0712345678.",
+      true
+    );
+    return;
+  }
+
+  if (!payment) {
+    showStatus("checkout-status", "Please choose a payment method.", true);
+    return;
+  }
+
+  if (method === "delivery" && (!area || !location)) {
+    showStatus(
+      "checkout-status",
+      "Please select a delivery area and enter your delivery address.",
+      true
+    );
+    return;
+  }
+
+  if (!date || !time) {
+    showStatus(
+      "checkout-status",
+      "Please select your preferred date and time.",
+      true
+    );
+    return;
+  }
+
+  const now = new Date();
+  const today = new Date(
+    now.getTime() - now.getTimezoneOffset() * 60000
+  ).toISOString().slice(0, 10);
+
+  if (date < today) {
+    showStatus(
+      "checkout-status",
+      "Please choose today or a future date.",
+      true
+    );
+    return;
+  }
+
+  if (totals.code && totals.code !== "KC10") {
+    showStatus(
+      "checkout-status",
+      "That discount code is not valid. Remove it or use KC10.",
+      true
+    );
+    return;
+  }
+
+  if (payment === "mpesa") {
+    const mpesaPhone = $("mpesa-phone")?.value || "";
+
+    if (!validKenyanPhone(mpesaPhone)) {
+      showStatus(
+        "checkout-status",
+        "Enter a valid Kenyan M-Pesa phone number.",
+        true
+      );
+      return;
+    }
+  }
+
+  const button = $("place-order-button");
+  orderSubmitting = true;
+
+  if (button) button.disabled = true;
+
+  showStatus("checkout-status", "Checking stock and saving your order...");
+
+  let orderCreated = false;
+
+  try {
+    /* Verify current stock and price. */
+    for (const item of cart) {
+      const { data, error } = await customerDB
+        .from("products")
+        .select("id,name,stock,active,price")
+        .eq("id", item.product_id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data || data.active === false) {
+        throw new Error(item.name + " is no longer available.");
+      }
+
+      if (Number(data.stock) < Number(item.quantity)) {
+        throw new Error(
+          "Insufficient stock for " + item.name +
+          ". Please update your bag."
+        );
+      }
+
+      if (Number(data.price) !== Number(item.unit_price)) {
+        throw new Error(
+          "The price of " + item.name +
+          " has changed. Refresh and review your bag."
+        );
+      }
+    }
+
+    const fee = method === "pickup"
+      ? 0
+      : area === "near_shop" ? 200
+      : area === "nairobi" ? 500
+      : 800;
+
+    const total = Math.max(
+      0,
+      totals.subtotal - totals.discount + fee
+    );
+
+    const mpesaPhone = payment === "mpesa"
+      ? normaliseKenyanPhone($("mpesa-phone")?.value || "")
+      : null;
+
+    /*
+      CRITICAL FIX:
+      Your Supabase error identifies scheduled_date as the
+      NOT NULL column. It MUST receive the selected date.
+    */
+    const orderPayload = {
+      customer_id: user.id,
+      customer_name: name,
+      customer_email: email,
+      customer_phone_number: phone,
+
+      fulfillment_type: method,
+      delivery_method: method,
+      delivery_area: method === "pickup" ? "pickup" : area,
+
+      delivery_fee: fee,
+      subtotal: totals.subtotal,
+      discount_code: totals.discount ? totals.code : null,
+      discount_amount: totals.discount,
+      total: total,
+
+      payment_method: payment,
+      payment_status: "unpaid",
+      mpesa_phone: mpesaPhone,
+
+      delivery_address: location,
+      delivery_location: location,
+
+      scheduled_date: date,
+      schedule_date: date,
+      schedule_slot: time,
+      delivery_date: date,
+      delivery_time: time,
+
+      order_status: "awaiting_confirmation",
+      order_notes: ($("order-notes")?.value || "").trim() || null
+    };
+
+    const { data: order, error: orderError } = await customerDB
+      .from("orders")
+      .insert(orderPayload)
+      .select("*")
+      .single();
+
+    if (orderError) throw orderError;
+
+    orderCreated = true;
+
+    const items = cart.map(item => ({
+      order_id: order.id,
+      product_id: String(item.product_id),
+      product_name: item.name,
+      size: item.size || null,
+      color: item.color || null,
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unit_price),
+      line_total: Number(item.unit_price) * Number(item.quantity)
+    }));
+
+    const { error: itemsError } = await customerDB
+      .from("order_items")
+      .insert(items);
+
+    if (itemsError) {
+      throw new Error(
+        "Order " + String(order.id).slice(0, 8).toUpperCase() +
+        " was created, but its item details could not be saved. " +
+        itemsError.message
+      );
+    }
+
+    const receipt = cart.map(item =>
+      item.name +
+      (item.color ? " (" + item.color + ")" : "") +
+      (item.size ? " / " + item.size : "") +
+      " × " + item.quantity
+    ).join("; ");
+
+    cart = [];
+    saveCart();
+
+    $("checkout-form")?.reset();
+
+    setMinimumDates();
+    updateCheckoutFields();
+    updateCustomerInfo();
+
+    showStatus(
+      "checkout-status",
+      "Order placed successfully! Reference: " +
+      String(order.id).slice(0, 8).toUpperCase() +
+      ". Items: " + receipt +
+      ". Your order is awaiting confirmation. Payment remains unpaid until verified."
+    );
+
+    await loadMyOrders();
+
+  } catch (error) {
+    console.error("Order placement error:", error);
+
+    showStatus(
+      "checkout-status",
+      (orderCreated
+        ? "Your order was created, but another step failed. "
+        : "Order could not be placed. ") +
+      error.message,
+      true
+    );
+
+  } finally {
+    orderSubmitting = false;
+    if (button) button.disabled = false;
+  }
+}
+
+/* ---------------- CHECKOUT BUTTONS ---------------- */
+
+$("category-filter")?.addEventListener("change", displayProducts);
+$("delivery-method")?.addEventListener("change", updateCheckoutFields);
+$("delivery-area")?.addEventListener("change", renderCart);
+$("discount-code")?.addEventListener("input", renderCart);
+$("payment-method")?.addEventListener("change", updateCheckoutFields);
+
+$("checkout-toggle")?.addEventListener("click", () => {
+  const form = $("checkout-form");
+
+  if (!form) {
+    console.error("Checkout form not found in customer.html.");
+    return;
+  }
+
+  if (!cart.length) {
+    showStatus(
+      "checkout-status",
+      "Your shopping bag is empty. Add a product before checking out.",
+      true
+    );
+    $("shopping-bag")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+    return;
+  }
+
+  showStatus("checkout-status", "");
+  form.hidden = false;
+  updateCheckoutFields();
+
+  form.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
+
+$("back-to-bag")?.addEventListener("click", () => {
+  const form = $("checkout-form");
+
+  if (form) form.hidden = true;
+
+  $("shopping-bag")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
+
+$("checkout-form")?.addEventListener("submit", placeOrder);
+
+/* ---------------- CONTACT FORM ---------------- */
+
+$("customer-contact-form")?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const status = $("contact-status");
+  const user = currentCustomer || await loadCustomerAccount();
+
+  if (!user) {
+    if (status) {
+      status.textContent = "Please sign in before sending a message.";
+    }
+    return;
+  }
+
+  const button = event.currentTarget.querySelector(
+    'button[type="submit"]'
+  );
+
+  if (button) button.disabled = true;
+  if (status) status.textContent = "Sending...";
+
+  try {
+    const { error } = await customerDB.from("messages").insert({
+      customer_name: $("contact-name")?.value.trim() || "",
+      customer_email: user.email,
+      subject: "Customer enquiry",
+      message: $("contact-message")?.value.trim() || ""
+    });
+
+    if (error) throw error;
+
+    event.currentTarget.reset();
+    updateCustomerInfo();
+
+    if (status) {
+      status.textContent = "Your message was sent successfully.";
+    }
+
+    await loadCustomerMessages();
+
+  } catch (error) {
+    if (status) {
+      status.textContent = "Could not send message: " + error.message;
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
+/* ---------------- SIGN OUT ---------------- */
+
+$("customer-signout")?.addEventListener("click", async () => {
+  const button = $("customer-signout");
+
+  if (button) button.disabled = true;
+
+  const { error } = await customerDB.auth.signOut();
+
+  if (error) {
+    if (button) button.disabled = false;
+    alert("Could not sign out: " + error.message);
+    return;
+  }
+
+  window.location.replace("index.html");
+});
+
+/* ---------------- CUSTOMER MESSAGES ---------------- */
+
+async function loadCustomerMessages() {
+  const form = $("customer-contact-form");
+  if (!form) return;
+
+  let section = $("customer-messages-section");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "customer-messages-section";
+    section.className = "kc-section";
+
+    section.innerHTML =
+      '<div class="kc-section-inner">' +
+      '<h2 class="kc-section-heading">MY MESSAGES</h2>' +
+      '<p id="customer-messages-status"></p>' +
+      '<div id="customer-messages-list"></div>' +
+      '</div>';
+
+    form.insertAdjacentElement("afterend", section);
+  }
+
+  const user = currentCustomer || await loadCustomerAccount();
+  const list = $("customer-messages-list");
+
+  if (!list) return;
+
+  if (!user) {
+    $("customer-messages-status").textContent =
+      "Sign in to view messages.";
+    return;
+  }
 
   const { data, error } = await customerDB
     .from("messages")
-    .select(
-      "id,customer_name,customer_email,subject,message,created_at,reply,replied_at"
-    )
+    .select("id,subject,message,created_at,reply,replied_at")
     .eq("customer_email", user.email)
     .order("created_at", { ascending: false });
 
   list.replaceChildren();
 
   if (error) {
-    console.error("Could not load customer messages:", error);
-
-    addProductText(
-      list,
-      "p",
-      "Your messages could not load. Please refresh the page and try again."
-    );
+    $("customer-messages-status").textContent =
+      "Messages unavailable: " + error.message;
     return;
   }
 
-  if (!data || data.length === 0) {
-    addProductText(
-      list,
-      "p",
-      "You have not sent any messages yet. Your enquiries and replies will appear here."
-    );
-    return;
-  }
+  $("customer-messages-status").textContent =
+    data?.length ? data.length + " message(s)" : "No messages yet.";
 
-  data.forEach((message) => {
+  (data || []).forEach(message => {
     const card = document.createElement("article");
+    card.className = "kc-order-card";
 
-    card.style.padding = "16px";
-    card.style.margin = "14px 0";
-    card.style.border = "1px solid #e5d4d9";
-    card.style.borderRadius = "10px";
-    card.style.background = "#ffffff";
+    safeText(card, "h3", message.subject || "Enquiry");
+    safeText(card, "p", message.message || "");
 
-    addProductText(
-      card,
-      "h3",
-      message.subject || "Customer enquiry"
-    );
-
-    addProductText(
+    safeText(
       card,
       "p",
-      "Sent: " + (
-        message.created_at
-          ? new Date(message.created_at).toLocaleString("en-KE")
-          : "Date unavailable"
-      )
+      message.reply
+        ? "Owner reply: " + message.reply
+        : "Awaiting owner reply."
     );
-
-    addProductText(card, "p", "Your message:");
-    addProductText(card, "p", message.message || "");
-
-    const replyHeading = document.createElement("h4");
-    replyHeading.textContent = "Reply from Kelsiy's Closet";
-    replyHeading.style.marginTop = "16px";
-    card.appendChild(replyHeading);
-
-    if (message.reply && message.reply.trim()) {
-      addProductText(card, "p", message.reply);
-
-      if (message.replied_at) {
-        addProductText(
-          card,
-          "small",
-          "Replied: " +
-            new Date(message.replied_at).toLocaleString("en-KE")
-        );
-      }
-    } else {
-      addProductText(card, "p", "Awaiting a reply from the owner.");
-    }
 
     list.appendChild(card);
   });
 }
 
-// CONTACT FORM SUBMISSION
-const customerContactForm =
-  document.getElementById("customer-contact-form");
+/* ---------------- START CUSTOMER PAGE ---------------- */
 
-const contactStatus = document.getElementById("contact-status");
-
-if (customerContactForm) {
-  customerContactForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const submitButton = customerContactForm.querySelector(
-      'button[type="submit"], input[type="submit"]'
-    );
-
-    const name = document.getElementById("contact-name")?.value.trim();
-    const typedEmail = document.getElementById("contact-email")?.value.trim();
-    const message = document.getElementById("contact-message")?.value.trim();
-
-    if (contactStatus) {
-      contactStatus.textContent = "";
-    }
-
-    if (!name || !typedEmail || !message) {
-      if (contactStatus) {
-        contactStatus.textContent =
-          "Please enter your name, email and message.";
-      }
-      return;
-    }
-
-    if (submitButton) {
-      submitButton.disabled = true;
-    }
-
-    if (contactStatus) {
-      contactStatus.textContent = "Sending your message...";
-    }
-
-    try {
-      const user = currentCustomer || await loadCustomerAccount();
-
-      if (!user || !user.email) {
-        throw new Error(
-          "Please sign in to your customer account before sending a message."
-        );
-      }
-
-      if (typedEmail.toLowerCase() !== user.email.toLowerCase()) {
-        throw new Error(
-          "Please use the email address linked to your customer account."
-        );
-      }
-
-      const { error } = await customerDB
-        .from("messages")
-        .insert({
-          customer_name: name,
-          customer_email: user.email,
-          subject: "Customer enquiry",
-          message: message
-        });
-
-      if (error) throw error;
-
-      customerContactForm.reset();
-
-      const emailInput = document.getElementById("contact-email");
-      if (emailInput) {
-        emailInput.value = user.email;
-      }
-
-      if (contactStatus) {
-        contactStatus.textContent =
-          "Your message was sent successfully!";
-      }
-
-      await loadCustomerMessages();
-    } catch (error) {
-      console.error("Could not send customer message:", error);
-
-      if (contactStatus) {
-        contactStatus.textContent =
-          error.message || "Your message could not be sent. Please try again.";
-      }
-    } finally {
-      if (submitButton) {
-        submitButton.disabled = false;
-      }
-    }
-  });
-}
-
-// Keep the form email matched to the signed-in customer account.
-async function prepareContactForm() {
-  const user = await loadCustomerAccount();
-  const emailInput = document.getElementById("contact-email");
-
-  if (emailInput && user?.email) {
-    emailInput.value = user.email;
-  }
-}
-
-// CUSTOMER SIGN-OUT
-const customerSignOut = document.getElementById("customer-signout");
-
-if (customerSignOut) {
-  customerSignOut.addEventListener("click", async () => {
-    customerSignOut.disabled = true;
-    customerSignOut.textContent = "SIGNING OUT...";
-
-    const { error } = await customerDB.auth.signOut();
-
-    if (error) {
-      console.error("Sign-out error:", error);
-      customerSignOut.disabled = false;
-      customerSignOut.textContent = "SIGN OUT";
-
-      alert("We could not sign you out. Please try again.");
-      return;
-    }
-
-    window.location.replace("index.html");
-  });
-}
-
-
-// CUSTOMER CHECKOUT AND ORDER SUBMISSION
-const checkoutForm = document.getElementById("customer-checkout-form");
-const checkoutButton = document.getElementById("customer-checkout-button");
-const receivingMethod = document.getElementById("checkout-receiving-method");
-const deliveryAddressWrap = document.getElementById("checkout-address-wrap");
-const deliveryAddressInput = document.getElementById("checkout-address");
-const checkoutPaymentMethod = document.getElementById("checkout-payment-method");
-const mpesaWrap = document.getElementById("checkout-mpesa-wrap");
-const mpesaPhoneInput = document.getElementById("checkout-mpesa-phone");
-const checkoutStatus = document.getElementById("customer-checkout-status");
-
-function customerCartSubtotal() {
-  return customerCart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
-}
-function updateCheckoutFields() {
-  const isDelivery = receivingMethod?.value === "delivery";
-  if (deliveryAddressWrap) deliveryAddressWrap.hidden = !isDelivery;
-  if (deliveryAddressInput) deliveryAddressInput.required = isDelivery;
-  const useMpesa = checkoutPaymentMethod?.value === "mpesa";
-  if (mpesaWrap) mpesaWrap.hidden = !useMpesa;
-  if (mpesaPhoneInput) mpesaPhoneInput.required = useMpesa;
-  const total = document.getElementById("checkout-order-total");
-  if (total) total.textContent = priceKES(customerCartSubtotal());
-}
-function checkoutMessage(message, isError = false) {
-  if (checkoutStatus) {
-    checkoutStatus.textContent = message;
-    checkoutStatus.style.color = isError ? "#a21b2d" : "var(--burgundy)";
-  }
-}
-if (checkoutButton) checkoutButton.addEventListener("click", async () => {
-  if (!customerCart.length) { setCartMessage("Your bag is empty. Add an item before checkout."); return; }
-  const user = currentCustomer || await loadCustomerAccount();
-  if (!user) { setCartMessage("Please sign in to your customer account before placing an order."); return; }
-  const emailInput = document.getElementById("checkout-customer-email");
-  if (emailInput) emailInput.value = user.email || "";
-  checkoutForm.hidden = false;
-  updateCheckoutFields();
-  checkoutForm.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-if (receivingMethod) receivingMethod.addEventListener("change", updateCheckoutFields);
-if (checkoutPaymentMethod) checkoutPaymentMethod.addEventListener("change", updateCheckoutFields);
-const backToBag = document.getElementById("customer-back-to-bag");
-if (backToBag) backToBag.addEventListener("click", () => {
-  checkoutForm.hidden = true;
-  document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-
-function validKenyanPhone(value) {
-  const digits = String(value || "").replace(/[\s-]/g, "");
-  return /^(?:\+254|0)?[17]\d{8}$/.test(digits);
-}
-if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  const submitButton = document.getElementById("customer-place-order");
-  if (!customerCart.length) return checkoutMessage("Your bag is empty. Add an item before placing an order.", true);
-  const user = currentCustomer || await loadCustomerAccount();
-  if (!user) return checkoutMessage("Please sign in again before placing your order.", true);
-  const name = document.getElementById("checkout-customer-name").value.trim();
-  const phone = document.getElementById("checkout-customer-phone").value.trim();
-  const email = document.getElementById("checkout-customer-email").value.trim();
-  const method = receivingMethod.value;
-  const address = deliveryAddressInput.value.trim();
-  const payment = checkoutPaymentMethod.value;
-  const mpesaPhone = mpesaPhoneInput.value.trim();
-  if (!name) return checkoutMessage("Enter your full name.", true);
-  if (!validKenyanPhone(phone)) return checkoutMessage("Enter a valid Kenyan phone number, for example 0712345678.", true);
-  if (!email || email.toLowerCase() !== String(user.email || "").toLowerCase()) return checkoutMessage("Your checkout email must match the signed-in account.", true);
-  if (method === "delivery" && !address) return checkoutMessage("Enter the delivery address or area.", true);
-  if (payment === "mpesa" && !validKenyanPhone(mpesaPhone)) return checkoutMessage("Enter a valid Kenyan M-Pesa phone number.", true);
-
-  submitButton.disabled = true;
-  submitButton.textContent = "PLACING ORDER...";
-  checkoutMessage("Checking stock and saving your order...");
-  try {
-    const freshItems = [];
-    for (const item of customerCart) {
-      const { data, error } = await customerDB.from("products")
-        .select("id,name,price,stock,active,image_url,size,color")
-        .eq("id", item.productId).maybeSingle();
-      if (error) throw error;
-      if (!data || !data.active) throw new Error(`${item.name} is no longer available. Remove it from your bag.`);
-      if (Number(data.stock) < Number(item.quantity)) throw new Error(`Only ${Number(data.stock)} of ${item.name} remain. Update your bag quantity.`);
-      freshItems.push({
-        product_id: data.id, name: data.name || item.name,
-        size: item.size || data.size || "Not specified",
-        color: item.color || data.color || "Not specified",
-        quantity: Number(item.quantity), unit_price: Number(data.price ?? item.price) || 0,
-        line_total: (Number(data.price ?? item.price) || 0) * Number(item.quantity),
-        image_url: data.image_url || item.imageUrl || null
-      });
-    }
-    const subtotal = freshItems.reduce((sum, item) => sum + item.line_total, 0);
-    const orderPayload = {
-      customer_id: user.id,
-      customer_name: name,
-      customer_email: email,
-      customer_phone: phone.replace(/[\s-]/g, ""),
-      receiving_method: method,
-      delivery_address: method === "delivery" ? address : null,
-      payment_method: payment === "mpesa" ? "mpesa" : "cash",
-      payment_status: "unpaid",
-      order_status: "new",
-      subtotal: subtotal,
-      delivery_fee: null,
-      total: subtotal,
-      order_items: freshItems,
-      order_notes: document.getElementById("checkout-order-notes").value.trim() || null,
-      mpesa_phone: payment === "mpesa" ? mpesaPhone.replace(/[\s-]/g, "") : null
-    };
-    const { data: savedOrder, error } = await customerDB.from("customer_orders").insert(orderPayload).select("id,order_number").single();
-    if (error) throw error;
-    const orderRef = savedOrder?.order_number || savedOrder?.id || "saved";
-    customerCart = [];
-    saveCustomerCart();
-    checkoutForm.reset();
-    checkoutForm.hidden = true;
-    updateCheckoutFields();
-    checkoutMessage("");
-    setCartMessage(`Thank you, ${name}, for your order! Receipt number ${orderRef} has been submitted to Kelsiy’s Closet. The owner can now see your order and will update you on its status.`);
-    document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    console.error("Order submission failed:", error);
-    checkoutMessage("Your order could not be submitted: " + (error.message || "Please try again."), true);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "PLACE ORDER";
-  }
-});
-
-// INITIAL LOAD AND REFRESH
 async function loadCustomerPage() {
-  renderCustomerCart();
   await loadCustomerAccount();
-  await prepareContactForm();
+
+  updateCustomerInfo();
+  setMinimumDates();
+  updateCheckoutFields();
+
   await loadCustomerProducts();
+  renderCart();
+  await loadMyOrders();
   await loadCustomerMessages();
 }
 
-loadCustomerPage();
+loadCustomerPage().catch(error => {
+  console.error("Customer page error:", error);
+
+  showStatus(
+    "catalogue-message",
+    "The shopping page could not finish loading. Refresh and try again.",
+    true
+  );
+});
 
 window.addEventListener("focus", () => {
   loadCustomerProducts();
-  loadCustomerMessages();
+  loadMyOrders();
 });
-
-window.setInterval(() => {
-  loadCustomerProducts();
-  loadCustomerMessages();
-}, 30000);
 
 customerDB
   .channel("customer-product-updates")
@@ -674,6 +1171,6 @@ customerDB
       schema: "public",
       table: "products"
     },
-    () => loadCustomerProducts()
+    loadCustomerProducts
   )
   .subscribe();
