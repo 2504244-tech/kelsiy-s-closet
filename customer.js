@@ -33,13 +33,15 @@ function addProductText(parent, tag, text, className = "") {
   return element;
 }
 
-// SHOPPING BAG (saved in this browser so the bag remains after a refresh)
+// SHOPPING BAG
 const CUSTOMER_CART_KEY = "kelsiys_closet_customer_cart_v1";
 let customerCart = readCustomerCart();
 
 function readCustomerCart() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CUSTOMER_CART_KEY) || "[]");
+    const saved = JSON.parse(
+      localStorage.getItem(CUSTOMER_CART_KEY) || "[]"
+    );
     return Array.isArray(saved) ? saved : [];
   } catch (error) {
     console.warn("Could not read the saved shopping bag:", error);
@@ -48,158 +50,397 @@ function readCustomerCart() {
 }
 
 function saveCustomerCart() {
-  try { localStorage.setItem(CUSTOMER_CART_KEY, JSON.stringify(customerCart)); }
-  catch (error) { console.warn("Could not save the shopping bag:", error); }
+  try {
+    localStorage.setItem(
+      CUSTOMER_CART_KEY,
+      JSON.stringify(customerCart)
+    );
+  } catch (error) {
+    console.warn("Could not save the shopping bag:", error);
+  }
+
   renderCustomerCart();
 }
 
 function optionValues(value, fallback) {
   const text = String(value || "").trim();
+
   if (!text) return [fallback];
-  const values = text.split(/[,/|]/).map(item => item.trim()).filter(Boolean);
+
+  const values = text
+    .split(/[,/|]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+
   return values.length ? values : [text];
 }
 
 function makeOptionSelect(labelText, values, className) {
   const label = document.createElement("label");
   label.textContent = labelText;
+
   const select = document.createElement("select");
   select.className = className;
+
   values.forEach(value => {
     const option = document.createElement("option");
-    option.value = value; option.textContent = value; select.appendChild(option);
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
   });
+
   label.appendChild(select);
+
   return { label, select };
 }
 
 function addProductToCart(product, size, color, quantity) {
   const stock = Math.max(0, Number(product.stock) || 0);
   const key = [String(product.id), size, color].join("::");
+
   const existing = customerCart.find(item => item.key === key);
   const currentQuantity = existing ? Number(existing.quantity) : 0;
+
   if (currentQuantity + quantity > stock) {
-    setCartMessage("Only " + Math.max(0, stock - currentQuantity) + " more item(s) of this product are available.");
+    setCartMessage(
+      "Only " + Math.max(0, stock - currentQuantity) +
+      " more item(s) of this product are available."
+    );
     return;
   }
-  if (existing) existing.quantity += quantity;
-  else customerCart.push({
-    key, productId: product.id, name: product.name || "Fashion item",
-    price: Number(product.price) || 0, imageUrl: product.image_url || "",
-    size, color, quantity, stock
-  });
+
+  if (existing) {
+    existing.quantity += quantity;
+  } else {
+    customerCart.push({
+      key,
+      productId: product.id,
+      name: product.name || "Fashion item",
+      price: Number(product.price) || 0,
+      imageUrl: product.image_url || "",
+      size,
+      color,
+      quantity,
+      stock
+    });
+  }
+
   saveCustomerCart();
-  setCartMessage((product.name || "Item") + " added to your shopping bag.");
+
+  setCartMessage(
+    (product.name || "Item") + " added to your shopping bag."
+  );
 }
 
 function setCartMessage(message) {
   const element = document.getElementById("customer-cart-message");
-  if (element) element.textContent = message;
+
+  if (element) {
+    element.textContent = message;
+  }
 }
 
 function renderCustomerCart() {
   const container = document.getElementById("customer-cart-items");
   const count = document.getElementById("customer-cart-count");
-  const subtotalElement = document.getElementById("customer-cart-subtotal");
+  const subtotalElement =
+    document.getElementById("customer-cart-subtotal");
+
   if (!container) return;
+
   container.replaceChildren();
-  const totalItems = customerCart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+  const totalItems = customerCart.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0),
+    0
+  );
+
   if (count) count.textContent = String(totalItems);
-  const subtotal = customerCart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
-  if (subtotalElement) subtotalElement.textContent = priceKES(subtotal);
+
+  const subtotal = customerCart.reduce(
+    (sum, item) =>
+      sum +
+      (Number(item.price) || 0) * (Number(item.quantity) || 0),
+    0
+  );
+
+  if (subtotalElement) {
+    subtotalElement.textContent = priceKES(subtotal);
+  }
 
   if (!customerCart.length) {
-    addProductText(container, "p", "Your shopping bag is empty. Add something you love from the collection.");
+    addProductText(
+      container,
+      "p",
+      "Your shopping bag is empty. Add something you love from the collection."
+    );
     return;
   }
 
   customerCart.forEach(item => {
     const row = document.createElement("article");
     row.className = "customer-cart-row";
+
     const image = document.createElement("img");
-    image.alt = item.name || "Fashion item"; image.loading = "lazy";
+    image.alt = item.name || "Fashion item";
+    image.loading = "lazy";
+
     if (item.imageUrl) image.src = item.imageUrl;
+
     image.onerror = () => image.removeAttribute("src");
+
     row.appendChild(image);
+
     const details = document.createElement("div");
+
     addProductText(details, "h3", item.name || "Fashion item");
     addProductText(details, "p", priceKES(item.price) + " each");
-    addProductText(details, "p", "Size: " + (item.size || "Not specified") + " · Colour: " + (item.color || "Not specified"));
-    const actions = document.createElement("div"); actions.className = "customer-cart-actions";
-    const quantity = document.createElement("input"); quantity.type = "number"; quantity.min = "1"; quantity.max = String(Math.max(1, Number(item.stock) || 1)); quantity.value = String(item.quantity); quantity.className = "customer-cart-quantity"; quantity.setAttribute("aria-label", "Quantity for " + item.name);
+
+    addProductText(
+      details,
+      "p",
+      "Size: " + (item.size || "Not specified") +
+      " · Colour: " + (item.color || "Not specified")
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "customer-cart-actions";
+
+    const quantity = document.createElement("input");
+    quantity.type = "number";
+    quantity.min = "1";
+    quantity.max = String(Math.max(1, Number(item.stock) || 1));
+    quantity.value = String(item.quantity);
+    quantity.className = "customer-cart-quantity";
+    quantity.setAttribute(
+      "aria-label",
+      "Quantity for " + item.name
+    );
+
     quantity.addEventListener("change", () => {
       const requested = Math.floor(Number(quantity.value));
       const stock = Math.max(0, Number(item.stock) || 0);
-      if (!Number.isFinite(requested) || requested < 1) { quantity.value = String(item.quantity); return; }
-      if (requested > stock) { setCartMessage("Quantity cannot exceed available stock (" + stock + ")."); quantity.value = String(item.quantity); return; }
-      item.quantity = requested; saveCustomerCart(); setCartMessage("Shopping bag updated.");
+
+      if (!Number.isFinite(requested) || requested < 1) {
+        quantity.value = String(item.quantity);
+        return;
+      }
+
+      if (requested > stock) {
+        setCartMessage(
+          "Quantity cannot exceed available stock (" + stock + ")."
+        );
+        quantity.value = String(item.quantity);
+        return;
+      }
+
+      item.quantity = requested;
+      saveCustomerCart();
+      setCartMessage("Shopping bag updated.");
     });
-    const remove = document.createElement("button"); remove.type = "button"; remove.className = "customer-cart-remove"; remove.textContent = "REMOVE";
-    remove.addEventListener("click", () => { customerCart = customerCart.filter(cartItem => cartItem.key !== item.key); saveCustomerCart(); setCartMessage("Item removed from your bag."); });
-    actions.append(quantity, remove); details.appendChild(actions); row.appendChild(details);
-    const lineTotal = document.createElement("strong"); lineTotal.textContent = priceKES((Number(item.price) || 0) * (Number(item.quantity) || 0)); row.appendChild(lineTotal);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "customer-cart-remove";
+    remove.textContent = "REMOVE";
+
+    remove.addEventListener("click", () => {
+      customerCart = customerCart.filter(
+        cartItem => cartItem.key !== item.key
+      );
+
+      saveCustomerCart();
+      setCartMessage("Item removed from your bag.");
+    });
+
+    actions.append(quantity, remove);
+    details.appendChild(actions);
+    row.appendChild(details);
+
+    const lineTotal = document.createElement("strong");
+    lineTotal.textContent = priceKES(
+      (Number(item.price) || 0) *
+      (Number(item.quantity) || 0)
+    );
+
+    row.appendChild(lineTotal);
     container.appendChild(row);
   });
 }
 
-const clearCartButton = document.getElementById("customer-clear-cart");
-if (clearCartButton) clearCartButton.addEventListener("click", () => {
-  customerCart = []; saveCustomerCart(); setCartMessage("Your shopping bag has been cleared.");
-});
+const clearCartButton =
+  document.getElementById("customer-clear-cart");
+
+if (clearCartButton) {
+  clearCartButton.addEventListener("click", () => {
+    customerCart = [];
+    saveCustomerCart();
+    setCartMessage("Your shopping bag has been cleared.");
+  });
+}
 
 // PRODUCT CATALOGUE
 function displayProducts() {
   if (!productsContainer) return;
 
   productsContainer.replaceChildren();
+
   const selected = (categoryFilter?.value || "all").toLowerCase();
-  const products = allProducts.filter(product => selected === "all" || String(product.category || "").toLowerCase() === selected);
+
+  const products = allProducts.filter(
+    product =>
+      selected === "all" ||
+      String(product.category || "").toLowerCase() === selected
+  );
 
   if (!products.length) {
-    catalogueMessage.textContent = allProducts.length ? "There are no products in this category yet." : "No active products are available yet. Please check back soon.";
+    catalogueMessage.textContent = allProducts.length
+      ? "There are no products in this category yet."
+      : "No active products are available yet. Please check back soon.";
     return;
   }
 
-  catalogueMessage.textContent = products.length + (products.length === 1 ? " product available." : " products available.");
+  catalogueMessage.textContent =
+    products.length +
+    (products.length === 1
+      ? " product available."
+      : " products available.");
 
   products.forEach(product => {
     const card = document.createElement("article");
     card.className = "customer-product-card";
+
     if (product.image_url) {
-      const image = document.createElement("img"); image.className = "customer-product-image"; image.src = product.image_url; image.alt = product.name || "Fashion product"; image.loading = "lazy";
-      image.onerror = () => { image.removeAttribute("src"); image.alt = "Product image unavailable"; };
+      const image = document.createElement("img");
+      image.className = "customer-product-image";
+      image.src = product.image_url;
+      image.alt = product.name || "Fashion product";
+      image.loading = "lazy";
+
+      image.onerror = () => {
+        image.removeAttribute("src");
+        image.alt = "Product image unavailable";
+      };
+
       card.appendChild(image);
     } else {
-      const placeholder = document.createElement("div"); placeholder.className = "customer-product-image"; placeholder.style.display = "grid"; placeholder.style.placeItems = "center"; placeholder.textContent = "KELSIY'S CLOSET"; card.appendChild(placeholder);
+      const placeholder = document.createElement("div");
+      placeholder.className = "customer-product-image";
+      placeholder.style.display = "grid";
+      placeholder.style.placeItems = "center";
+      placeholder.textContent = "KELSIY'S CLOSET";
+      card.appendChild(placeholder);
     }
 
-    const details = document.createElement("div"); details.className = "customer-product-details";
-    addProductText(details, "h3", product.name || "Fashion item");
-    addProductText(details, "p", priceKES(product.price), "customer-product-price");
-    if (product.category) addProductText(details, "p", "Category: " + product.category);
-    if (product.description) addProductText(details, "p", product.description);
-    const stock = Math.max(0, Number(product.stock) || 0);
-    addProductText(details, "p", stock > 0 ? stock + (stock === 1 ? " item available" : " items available") : "OUT OF STOCK", stock > 0 ? "customer-product-stock" : "customer-product-stock out-of-stock");
+    const details = document.createElement("div");
+    details.className = "customer-product-details";
 
-    const options = document.createElement("div"); options.className = "customer-product-options";
+    addProductText(details, "h3", product.name || "Fashion item");
+    addProductText(
+      details,
+      "p",
+      priceKES(product.price),
+      "customer-product-price"
+    );
+
+    if (product.category) {
+      addProductText(details, "p", "Category: " + product.category);
+    }
+
+    if (product.description) {
+      addProductText(details, "p", product.description);
+    }
+
+    const stock = Math.max(0, Number(product.stock) || 0);
+
+    addProductText(
+      details,
+      "p",
+      stock > 0
+        ? stock + (stock === 1 ? " item available" : " items available")
+        : "OUT OF STOCK",
+      stock > 0
+        ? "customer-product-stock"
+        : "customer-product-stock out-of-stock"
+    );
+
+    const options = document.createElement("div");
+    options.className = "customer-product-options";
+
     const sizes = optionValues(product.size, "One size");
     const colors = optionValues(product.color, "As shown");
-    const sizeControl = makeOptionSelect("SIZE", sizes, "customer-product-size");
-    const colorControl = makeOptionSelect("COLOUR", colors, "customer-product-color");
+
+    const sizeControl = makeOptionSelect(
+      "SIZE",
+      sizes,
+      "customer-product-size"
+    );
+
+    const colorControl = makeOptionSelect(
+      "COLOUR",
+      colors,
+      "customer-product-color"
+    );
+
     options.append(sizeControl.label, colorControl.label);
     details.appendChild(options);
 
-    const quantityLabel = document.createElement("label"); quantityLabel.textContent = "QUANTITY"; quantityLabel.style.display = "block"; quantityLabel.style.fontWeight = "700"; quantityLabel.style.color = "var(--burgundy)"; quantityLabel.style.fontSize = "12px";
-    const quantityInput = document.createElement("input"); quantityInput.type = "number"; quantityInput.min = "1"; quantityInput.max = String(Math.max(1, stock)); quantityInput.value = "1"; quantityInput.disabled = stock < 1; quantityInput.style.width = "100%"; quantityInput.style.boxSizing = "border-box"; quantityInput.style.padding = "10px"; quantityInput.style.marginTop = "5px"; quantityInput.style.border = "1px solid #d9c5c8"; quantityInput.style.borderRadius = "5px"; quantityLabel.appendChild(quantityInput); details.appendChild(quantityLabel);
+    const quantityLabel = document.createElement("label");
+    quantityLabel.textContent = "QUANTITY";
+    quantityLabel.style.display = "block";
+    quantityLabel.style.fontWeight = "700";
+    quantityLabel.style.color = "var(--burgundy)";
+    quantityLabel.style.fontSize = "12px";
 
-    const addButton = document.createElement("button"); addButton.type = "button"; addButton.className = "customer-add-to-cart"; addButton.textContent = stock > 0 ? "ADD TO BAG" : "OUT OF STOCK"; addButton.disabled = stock < 1;
+    const quantityInput = document.createElement("input");
+    quantityInput.type = "number";
+    quantityInput.min = "1";
+    quantityInput.max = String(Math.max(1, stock));
+    quantityInput.value = "1";
+    quantityInput.disabled = stock < 1;
+    quantityInput.style.width = "100%";
+    quantityInput.style.boxSizing = "border-box";
+    quantityInput.style.padding = "10px";
+    quantityInput.style.marginTop = "5px";
+    quantityInput.style.border = "1px solid #d9c5c8";
+    quantityInput.style.borderRadius = "5px";
+
+    quantityLabel.appendChild(quantityInput);
+    details.appendChild(quantityLabel);
+
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "customer-add-to-cart";
+    addButton.textContent = stock > 0 ? "ADD TO BAG" : "OUT OF STOCK";
+    addButton.disabled = stock < 1;
+
     addButton.addEventListener("click", () => {
       const quantity = Math.floor(Number(quantityInput.value));
-      if (!Number.isFinite(quantity) || quantity < 1) { setCartMessage("Please choose a quantity of at least 1."); return; }
-      if (quantity > stock) { setCartMessage("Only " + stock + " item(s) are available in stock."); quantityInput.value = String(Math.max(1, stock)); return; }
-      addProductToCart(product, sizeControl.select.value, colorControl.select.value, quantity);
+
+      if (!Number.isFinite(quantity) || quantity < 1) {
+        setCartMessage("Please choose a quantity of at least 1.");
+        return;
+      }
+
+      if (quantity > stock) {
+        setCartMessage(
+          "Only " + stock + " item(s) are available in stock."
+        );
+        quantityInput.value = String(Math.max(1, stock));
+        return;
+      }
+
+      addProductToCart(
+        product,
+        sizeControl.select.value,
+        colorControl.select.value,
+        quantity
+      );
     });
-    details.appendChild(addButton); card.appendChild(details); productsContainer.appendChild(card);
+
+    details.appendChild(addButton);
+    card.appendChild(details);
+    productsContainer.appendChild(card);
   });
 }
 
@@ -244,6 +485,234 @@ async function loadCustomerAccount() {
   return currentCustomer;
 }
 
+// ==================================================
+// NEW FEATURE: CUSTOMER PREVIOUS ORDERS
+// ==================================================
+
+function createCustomerOrdersSection() {
+  let section = document.getElementById("customer-previous-orders");
+
+  if (section) return section;
+
+  section = document.createElement("section");
+  section.id = "customer-previous-orders";
+  section.className = "kc-section";
+
+  const inner = document.createElement("div");
+  inner.className = "kc-section-inner";
+
+  const heading = document.createElement("h2");
+  heading.className = "kc-section-heading";
+  heading.textContent = "PREVIOUS ORDERS";
+
+  const description = document.createElement("p");
+  description.className = "kc-section-intro";
+  description.textContent =
+    "View the items you ordered, your receipt numbers and order updates.";
+
+  const list = document.createElement("div");
+  list.id = "customer-orders-history";
+  list.setAttribute("aria-live", "polite");
+
+  inner.append(heading, description, list);
+  section.appendChild(inner);
+
+  // Place history immediately after the shopping bag section.
+  const shoppingBag = document.getElementById("shopping-bag");
+
+  if (shoppingBag) {
+    shoppingBag.insertAdjacentElement("afterend", section);
+  } else {
+    const checkoutForm = document.getElementById(
+      "customer-checkout-form"
+    );
+
+    if (checkoutForm) {
+      checkoutForm.insertAdjacentElement("afterend", section);
+    } else if (productsContainer?.parentElement) {
+      productsContainer.parentElement.appendChild(section);
+    } else {
+      document.body.appendChild(section);
+    }
+  }
+
+  return section;
+}
+
+async function loadCustomerOrders() {
+  const section = createCustomerOrdersSection();
+  const history = document.getElementById("customer-orders-history");
+
+  if (!history) return;
+
+  const user = currentCustomer || await loadCustomerAccount();
+
+  history.replaceChildren();
+
+  if (!user) {
+    addProductText(
+      history,
+      "p",
+      "Please sign in to view your previous orders."
+    );
+    return;
+  }
+
+  addProductText(history, "p", "Loading your previous orders...");
+
+  // Use only the signed-in customer's account ID.
+  const { data: orders, error } = await customerDB
+    .from("customer_orders")
+    .select(
+      "id,order_number,customer_id,payment_method,payment_status,order_status,subtotal,order_items,created_at,sales_receipt_number"
+    )
+    .eq("customer_id", user.id)
+    .order("created_at", { ascending: false });
+
+  history.replaceChildren();
+
+  if (error) {
+    console.error("Could not load previous orders:", error);
+
+    addProductText(
+      history,
+      "p",
+      "Previous orders could not be loaded. Please refresh the page and try again."
+    );
+
+    return;
+  }
+
+  if (!orders || orders.length === 0) {
+    addProductText(
+      history,
+      "p",
+      "You have not placed any orders yet. Your orders will appear here after checkout."
+    );
+    return;
+  }
+
+  orders.forEach((order, index) => {
+    const orderBlock = document.createElement("article");
+
+    orderBlock.className = "customer-previous-order";
+    orderBlock.style.padding = "12px 0";
+
+    if (index > 0) {
+      orderBlock.style.borderTop = "1px solid #d9c5c8";
+      orderBlock.style.marginTop = "12px";
+    }
+
+    addProductText(
+      orderBlock,
+      "h3",
+      "Order " + (index + 1)
+    );
+
+    const orderDate = order.created_at
+      ? new Date(order.created_at).toLocaleString("en-KE")
+      : "Date unavailable";
+
+    addProductText(orderBlock, "p", "Order date: " + orderDate);
+
+    const receiptNumber =
+      order.sales_receipt_number ||
+      order.order_number ||
+      order.id ||
+      "Not available";
+
+    addProductText(
+      orderBlock,
+      "p",
+      "Receipt / Order number: " + receiptNumber
+    );
+
+    addProductText(orderBlock, "p", "Items ordered:");
+
+    // Supabase JSONB is normally returned as an array.
+    // This also supports JSON stored as a string.
+    let items = order.order_items;
+
+    if (typeof items === "string") {
+      try {
+        items = JSON.parse(items);
+      } catch (error) {
+        console.warn("Could not parse order items:", error);
+        items = [];
+      }
+    }
+
+    if (Array.isArray(items) && items.length > 0) {
+      const itemList = document.createElement("ul");
+
+      items.forEach(item => {
+        const listItem = document.createElement("li");
+
+        const name =
+          item.name ||
+          item.product_name ||
+          "Fashion item";
+
+        const size = item.size || "Not specified";
+        const color = item.color || "Not specified";
+        const quantity = Number(item.quantity) || 1;
+
+        const unitPrice = Number(
+          item.unit_price ?? item.price ?? 0
+        );
+
+        const lineTotal = Number.isFinite(Number(item.line_total))
+          ? Number(item.line_total)
+          : unitPrice * quantity;
+
+        listItem.textContent =
+          name +
+          " | Size: " + size +
+          " | Colour: " + color +
+          " | Quantity: " + quantity +
+          " | Each: " + priceKES(unitPrice) +
+          " | Total: " + priceKES(lineTotal);
+
+        itemList.appendChild(listItem);
+      });
+
+      orderBlock.appendChild(itemList);
+    } else {
+      addProductText(
+        orderBlock,
+        "p",
+        "Item details are not available for this order."
+      );
+    }
+
+    addProductText(
+      orderBlock,
+      "p",
+      "Order subtotal: " + priceKES(order.subtotal)
+    );
+
+    addProductText(
+      orderBlock,
+      "p",
+      "Payment method: " + (order.payment_method || "Not provided")
+    );
+
+    addProductText(
+      orderBlock,
+      "p",
+      "Payment status: " + (order.payment_status || "Not provided")
+    );
+
+    addProductText(
+      orderBlock,
+      "p",
+      "Order status: " + (order.order_status || "Not provided")
+    );
+
+    history.appendChild(orderBlock);
+  });
+}
+
 // CUSTOMER MESSAGES AND OWNER REPLIES
 function createCustomerMessagesSection() {
   let section = document.getElementById("customer-messages-section");
@@ -277,7 +746,10 @@ function createCustomerMessagesSection() {
   if (contactForm) {
     contactForm.insertAdjacentElement("afterend", section);
   } else if (productsContainer?.parentElement) {
-    productsContainer.parentElement.insertBefore(section, productsContainer);
+    productsContainer.parentElement.insertBefore(
+      section,
+      productsContainer
+    );
   } else {
     document.body.appendChild(section);
   }
@@ -286,7 +758,8 @@ function createCustomerMessagesSection() {
 }
 
 async function loadCustomerMessages() {
-  const section = createCustomerMessagesSection();
+  createCustomerMessagesSection();
+
   const list = document.getElementById("customer-messages-list");
 
   if (!list) return;
@@ -336,7 +809,7 @@ async function loadCustomerMessages() {
     return;
   }
 
-  data.forEach((message) => {
+  data.forEach(message => {
     const card = document.createElement("article");
 
     card.style.padding = "16px";
@@ -367,6 +840,7 @@ async function loadCustomerMessages() {
     const replyHeading = document.createElement("h4");
     replyHeading.textContent = "Reply from Kelsiy's Closet";
     replyHeading.style.marginTop = "16px";
+
     card.appendChild(replyHeading);
 
     if (message.reply && message.reply.trim()) {
@@ -381,7 +855,11 @@ async function loadCustomerMessages() {
         );
       }
     } else {
-      addProductText(card, "p", "Awaiting a reply from the owner.");
+      addProductText(
+        card,
+        "p",
+        "Awaiting a reply from the owner."
+      );
     }
 
     list.appendChild(card);
@@ -392,23 +870,27 @@ async function loadCustomerMessages() {
 const customerContactForm =
   document.getElementById("customer-contact-form");
 
-const contactStatus = document.getElementById("contact-status");
+const contactStatus =
+  document.getElementById("contact-status");
 
 if (customerContactForm) {
-  customerContactForm.addEventListener("submit", async (event) => {
+  customerContactForm.addEventListener("submit", async event => {
     event.preventDefault();
 
     const submitButton = customerContactForm.querySelector(
       'button[type="submit"], input[type="submit"]'
     );
 
-    const name = document.getElementById("contact-name")?.value.trim();
-    const typedEmail = document.getElementById("contact-email")?.value.trim();
-    const message = document.getElementById("contact-message")?.value.trim();
+    const name =
+      document.getElementById("contact-name")?.value.trim();
 
-    if (contactStatus) {
-      contactStatus.textContent = "";
-    }
+    const typedEmail =
+      document.getElementById("contact-email")?.value.trim();
+
+    const message =
+      document.getElementById("contact-message")?.value.trim();
+
+    if (contactStatus) contactStatus.textContent = "";
 
     if (!name || !typedEmail || !message) {
       if (contactStatus) {
@@ -418,9 +900,7 @@ if (customerContactForm) {
       return;
     }
 
-    if (submitButton) {
-      submitButton.disabled = true;
-    }
+    if (submitButton) submitButton.disabled = true;
 
     if (contactStatus) {
       contactStatus.textContent = "Sending your message...";
@@ -454,10 +934,10 @@ if (customerContactForm) {
 
       customerContactForm.reset();
 
-      const emailInput = document.getElementById("contact-email");
-      if (emailInput) {
-        emailInput.value = user.email;
-      }
+      const emailInput =
+        document.getElementById("contact-email");
+
+      if (emailInput) emailInput.value = user.email;
 
       if (contactStatus) {
         contactStatus.textContent =
@@ -470,12 +950,11 @@ if (customerContactForm) {
 
       if (contactStatus) {
         contactStatus.textContent =
-          error.message || "Your message could not be sent. Please try again.";
+          error.message ||
+          "Your message could not be sent. Please try again.";
       }
     } finally {
-      if (submitButton) {
-        submitButton.disabled = false;
-      }
+      if (submitButton) submitButton.disabled = false;
     }
   });
 }
@@ -491,7 +970,8 @@ async function prepareContactForm() {
 }
 
 // CUSTOMER SIGN-OUT
-const customerSignOut = document.getElementById("customer-signout");
+const customerSignOut =
+  document.getElementById("customer-signout");
 
 if (customerSignOut) {
   customerSignOut.addEventListener("click", async () => {
@@ -502,6 +982,7 @@ if (customerSignOut) {
 
     if (error) {
       console.error("Sign-out error:", error);
+
       customerSignOut.disabled = false;
       customerSignOut.textContent = "SIGN OUT";
 
@@ -513,158 +994,367 @@ if (customerSignOut) {
   });
 }
 
-
 // CUSTOMER CHECKOUT AND ORDER SUBMISSION
-const checkoutForm = document.getElementById("customer-checkout-form");
-const checkoutButton = document.getElementById("customer-checkout-button");
-const receivingMethod = document.getElementById("checkout-receiving-method");
-const deliveryAddressWrap = document.getElementById("checkout-address-wrap");
-const deliveryAddressInput = document.getElementById("checkout-address");
-const checkoutPaymentMethod = document.getElementById("checkout-payment-method");
-const mpesaWrap = document.getElementById("checkout-mpesa-wrap");
-const mpesaPhoneInput = document.getElementById("checkout-mpesa-phone");
-const checkoutStatus = document.getElementById("customer-checkout-status");
+const checkoutForm =
+  document.getElementById("customer-checkout-form");
+
+const checkoutButton =
+  document.getElementById("customer-checkout-button");
+
+const receivingMethod =
+  document.getElementById("checkout-receiving-method");
+
+const deliveryAddressWrap =
+  document.getElementById("checkout-address-wrap");
+
+const deliveryAddressInput =
+  document.getElementById("checkout-address");
+
+const checkoutPaymentMethod =
+  document.getElementById("checkout-payment-method");
+
+const mpesaWrap =
+  document.getElementById("checkout-mpesa-wrap");
+
+const mpesaPhoneInput =
+  document.getElementById("checkout-mpesa-phone");
+
+const checkoutStatus =
+  document.getElementById("customer-checkout-status");
 
 function customerCartSubtotal() {
-  return customerCart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
+  return customerCart.reduce(
+    (sum, item) =>
+      sum +
+      (Number(item.price) || 0) * (Number(item.quantity) || 0),
+    0
+  );
 }
+
 function updateCheckoutFields() {
   const isDelivery = receivingMethod?.value === "delivery";
-  if (deliveryAddressWrap) deliveryAddressWrap.hidden = !isDelivery;
-  if (deliveryAddressInput) deliveryAddressInput.required = isDelivery;
+
+  if (deliveryAddressWrap) {
+    deliveryAddressWrap.hidden = !isDelivery;
+  }
+
+  if (deliveryAddressInput) {
+    deliveryAddressInput.required = isDelivery;
+  }
+
   const useMpesa = checkoutPaymentMethod?.value === "mpesa";
+
   if (mpesaWrap) mpesaWrap.hidden = !useMpesa;
   if (mpesaPhoneInput) mpesaPhoneInput.required = useMpesa;
+
   const total = document.getElementById("checkout-order-total");
-  if (total) total.textContent = priceKES(customerCartSubtotal());
+
+  if (total) {
+    total.textContent = priceKES(customerCartSubtotal());
+  }
 }
+
 function checkoutMessage(message, isError = false) {
   if (checkoutStatus) {
     checkoutStatus.textContent = message;
-    checkoutStatus.style.color = isError ? "#a21b2d" : "var(--burgundy)";
+    checkoutStatus.style.color = isError
+      ? "#a21b2d"
+      : "var(--burgundy)";
   }
 }
-if (checkoutButton) checkoutButton.addEventListener("click", async () => {
-  if (!customerCart.length) { setCartMessage("Your bag is empty. Add an item before checkout."); return; }
-  const user = currentCustomer || await loadCustomerAccount();
-  if (!user) { setCartMessage("Please sign in to your customer account before placing an order."); return; }
-  const emailInput = document.getElementById("checkout-customer-email");
-  if (emailInput) emailInput.value = user.email || "";
-  checkoutForm.hidden = false;
-  updateCheckoutFields();
-  checkoutForm.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-if (receivingMethod) receivingMethod.addEventListener("change", updateCheckoutFields);
-if (checkoutPaymentMethod) checkoutPaymentMethod.addEventListener("change", updateCheckoutFields);
-const backToBag = document.getElementById("customer-back-to-bag");
-if (backToBag) backToBag.addEventListener("click", () => {
-  checkoutForm.hidden = true;
-  document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
+
+if (checkoutButton) {
+  checkoutButton.addEventListener("click", async () => {
+    if (!customerCart.length) {
+      setCartMessage(
+        "Your bag is empty. Add an item before checkout."
+      );
+      return;
+    }
+
+    const user = currentCustomer || await loadCustomerAccount();
+
+    if (!user) {
+      setCartMessage(
+        "Please sign in to your customer account before placing an order."
+      );
+      return;
+    }
+
+    const emailInput =
+      document.getElementById("checkout-customer-email");
+
+    if (emailInput) emailInput.value = user.email || "";
+
+    checkoutForm.hidden = false;
+    updateCheckoutFields();
+
+    checkoutForm.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+}
+
+if (receivingMethod) {
+  receivingMethod.addEventListener("change", updateCheckoutFields);
+}
+
+if (checkoutPaymentMethod) {
+  checkoutPaymentMethod.addEventListener(
+    "change",
+    updateCheckoutFields
+  );
+}
+
+const backToBag =
+  document.getElementById("customer-back-to-bag");
+
+if (backToBag) {
+  backToBag.addEventListener("click", () => {
+    checkoutForm.hidden = true;
+
+    document.getElementById("shopping-bag")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+}
 
 function validKenyanPhone(value) {
   const digits = String(value || "").replace(/[\s-]/g, "");
   return /^(?:\+254|0)?[17]\d{8}$/.test(digits);
 }
-if (checkoutForm) checkoutForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  const submitButton = document.getElementById("customer-place-order");
-  if (!customerCart.length) return checkoutMessage("Your bag is empty. Add an item before placing an order.", true);
-  const user = currentCustomer || await loadCustomerAccount();
-  if (!user) return checkoutMessage("Please sign in again before placing your order.", true);
-  const name = document.getElementById("checkout-customer-name").value.trim();
-  const phone = document.getElementById("checkout-customer-phone").value.trim();
-  const email = document.getElementById("checkout-customer-email").value.trim();
-  const method = receivingMethod.value;
-  const address = deliveryAddressInput.value.trim();
-  const payment = checkoutPaymentMethod.value;
-  const mpesaPhone = mpesaPhoneInput.value.trim();
-  if (!name) return checkoutMessage("Enter your full name.", true);
-  if (!validKenyanPhone(phone)) return checkoutMessage("Enter a valid Kenyan phone number, for example 0712345678.", true);
-  if (!email || email.toLowerCase() !== String(user.email || "").toLowerCase()) return checkoutMessage("Your checkout email must match the signed-in account.", true);
-  if (method === "delivery" && !address) return checkoutMessage("Enter the delivery address or area.", true);
-  if (payment === "mpesa" && !validKenyanPhone(mpesaPhone)) return checkoutMessage("Enter a valid Kenyan M-Pesa phone number.", true);
 
-  submitButton.disabled = true;
-  submitButton.textContent = "PLACING ORDER...";
-  checkoutMessage("Checking stock and saving your order...");
-  try {
-    const freshItems = [];
-    for (const item of customerCart) {
-      const { data, error } = await customerDB.from("products")
-        .select("id,name,price,stock,active,image_url,size,color")
-        .eq("id", item.productId).maybeSingle();
-      if (error) throw error;
-      if (!data || !data.active) throw new Error(`${item.name} is no longer available. Remove it from your bag.`);
-      if (Number(data.stock) < Number(item.quantity)) throw new Error(`Only ${Number(data.stock)} of ${item.name} remain. Update your bag quantity.`);
-      freshItems.push({
-        product_id: data.id, name: data.name || item.name,
-        size: item.size || data.size || "Not specified",
-        color: item.color || data.color || "Not specified",
-        quantity: Number(item.quantity), unit_price: Number(data.price ?? item.price) || 0,
-        line_total: (Number(data.price ?? item.price) || 0) * Number(item.quantity),
-        image_url: data.image_url || item.imageUrl || null
-      });
+if (checkoutForm) {
+  checkoutForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const submitButton =
+      document.getElementById("customer-place-order");
+
+    if (!customerCart.length) {
+      return checkoutMessage(
+        "Your bag is empty. Add an item before placing an order.",
+        true
+      );
     }
-    const subtotal = freshItems.reduce((sum, item) => sum + item.line_total, 0);
-    const orderPayload = {
-      customer_id: user.id,
-      customer_name: name,
-      customer_email: email,
-      customer_phone: phone.replace(/[\s-]/g, ""),
-      receiving_method: method,
-      delivery_address: method === "delivery" ? address : null,
-      payment_method: payment === "mpesa" ? "mpesa" : "cash",
-      payment_status: "unpaid",
-      order_status: "new",
-      subtotal: subtotal,
-      delivery_fee: null,
-      total: subtotal,
-      order_items: freshItems,
-      order_notes: document.getElementById("checkout-order-notes").value.trim() || null,
-      mpesa_phone: payment === "mpesa" ? mpesaPhone.replace(/[\s-]/g, "") : null
-    };
-    const { data: savedOrder, error } = await customerDB.from("customer_orders").insert(orderPayload).select("id,order_number").single();
-    if (error) throw error;
-    const orderRef = savedOrder?.order_number || savedOrder?.id || "saved";
-    customerCart = [];
-    saveCustomerCart();
-    checkoutForm.reset();
-    checkoutForm.hidden = true;
-    updateCheckoutFields();
-    checkoutMessage("");
-    setCartMessage(`Thank you, ${name}, for your order! Receipt number ${orderRef} has been submitted to Kelsiy’s Closet. The owner can now see your order and will update you on its status.`);
-    document.getElementById("shopping-bag")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    console.error("Order submission failed:", error);
-    checkoutMessage("Your order could not be submitted: " + (error.message || "Please try again."), true);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "PLACE ORDER";
-  }
-});
+
+    const user = currentCustomer || await loadCustomerAccount();
+
+    if (!user) {
+      return checkoutMessage(
+        "Please sign in again before placing your order.",
+        true
+      );
+    }
+
+    const name =
+      document.getElementById("checkout-customer-name").value.trim();
+
+    const phone =
+      document.getElementById("checkout-customer-phone").value.trim();
+
+    const email =
+      document.getElementById("checkout-customer-email").value.trim();
+
+    const method = receivingMethod.value;
+    const address = deliveryAddressInput.value.trim();
+    const payment = checkoutPaymentMethod.value;
+    const mpesaPhone = mpesaPhoneInput.value.trim();
+
+    if (!name) {
+      return checkoutMessage("Enter your full name.", true);
+    }
+
+    if (!validKenyanPhone(phone)) {
+      return checkoutMessage(
+        "Enter a valid Kenyan phone number, for example 0712345678.",
+        true
+      );
+    }
+
+    if (
+      !email ||
+      email.toLowerCase() !== String(user.email || "").toLowerCase()
+    ) {
+      return checkoutMessage(
+        "Your checkout email must match the signed-in account.",
+        true
+      );
+    }
+
+    if (method === "delivery" && !address) {
+      return checkoutMessage(
+        "Enter the delivery address or area.",
+        true
+      );
+    }
+
+    if (payment === "mpesa" && !validKenyanPhone(mpesaPhone)) {
+      return checkoutMessage(
+        "Enter a valid Kenyan M-Pesa phone number.",
+        true
+      );
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = "PLACING ORDER...";
+
+    checkoutMessage("Checking stock and saving your order...");
+
+    try {
+      const freshItems = [];
+
+      for (const item of customerCart) {
+        const { data, error } = await customerDB
+          .from("products")
+          .select("id,name,price,stock,active,image_url,size,color")
+          .eq("id", item.productId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data || !data.active) {
+          throw new Error(
+            `${item.name} is no longer available. Remove it from your bag.`
+          );
+        }
+
+        if (Number(data.stock) < Number(item.quantity)) {
+          throw new Error(
+            `Only ${Number(data.stock)} of ${item.name} remain. Update your bag quantity.`
+          );
+        }
+
+        freshItems.push({
+          product_id: data.id,
+          name: data.name || item.name,
+          size: item.size || data.size || "Not specified",
+          color: item.color || data.color || "Not specified",
+          quantity: Number(item.quantity),
+          unit_price: Number(data.price ?? item.price) || 0,
+          line_total:
+            (Number(data.price ?? item.price) || 0) *
+            Number(item.quantity),
+          image_url: data.image_url || item.imageUrl || null
+        });
+      }
+
+      const subtotal = freshItems.reduce(
+        (sum, item) => sum + item.line_total,
+        0
+      );
+
+      const orderPayload = {
+        customer_id: user.id,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone.replace(/[\s-]/g, ""),
+        receiving_method: method,
+        delivery_address: method === "delivery" ? address : null,
+        payment_method: payment === "mpesa" ? "mpesa" : "cash",
+        payment_status: "unpaid",
+        order_status: "new",
+        subtotal: subtotal,
+        delivery_fee: null,
+        total: subtotal,
+        order_items: freshItems,
+        order_notes:
+          document.getElementById("checkout-order-notes").value.trim() ||
+          null,
+        mpesa_phone:
+          payment === "mpesa"
+            ? mpesaPhone.replace(/[\s-]/g, "")
+            : null
+      };
+
+      const {
+        data: savedOrder,
+        error
+      } = await customerDB
+        .from("customer_orders")
+        .insert(orderPayload)
+        .select("id,order_number")
+        .single();
+
+      if (error) throw error;
+
+      const orderRef =
+        savedOrder?.order_number || savedOrder?.id || "saved";
+
+      customerCart = [];
+      saveCustomerCart();
+
+      checkoutForm.reset();
+      checkoutForm.hidden = true;
+
+      updateCheckoutFields();
+      checkoutMessage("");
+
+      setCartMessage(
+        `Thank you, ${name}, for your order! Order reference ${orderRef} has been submitted to Kelsiy's Closet. The owner can now see your order and will update you on its status.`
+      );
+
+      // NEW: Refresh previous orders immediately after checkout.
+      await loadCustomerOrders();
+
+      document.getElementById("shopping-bag")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    } catch (error) {
+      console.error("Order submission failed:", error);
+
+      checkoutMessage(
+        "Your order could not be submitted: " +
+          (error.message || "Please try again."),
+        true
+      );
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "PLACE ORDER";
+    }
+  });
+}
 
 // INITIAL LOAD AND REFRESH
 async function loadCustomerPage() {
   renderCustomerCart();
+
   await loadCustomerAccount();
   await prepareContactForm();
   await loadCustomerProducts();
   await loadCustomerMessages();
+
+  // NEW: Load this customer's previous orders.
+  await loadCustomerOrders();
+
+  updateCheckoutFields();
 }
 
-loadCustomerPage();
+loadCustomerPage().catch(error => {
+  console.error("Customer page error:", error);
+
+  if (catalogueMessage) {
+    catalogueMessage.textContent =
+      "The shopping page could not finish loading. Refresh and try again.";
+  }
+});
 
 window.addEventListener("focus", () => {
   loadCustomerProducts();
   loadCustomerMessages();
+  loadCustomerOrders();
 });
 
 window.setInterval(() => {
   loadCustomerProducts();
   loadCustomerMessages();
+  loadCustomerOrders();
 }, 30000);
 
+// REALTIME PRODUCT UPDATES
 customerDB
   .channel("customer-product-updates")
   .on(
